@@ -4,11 +4,19 @@ import net from 'net';
 
 const failureCounts = new Map();
 
+// Helper untuk mencatat log ke Database (system_logs)
+const addDaemonLog = async (level, message) => {
+  try {
+    await db.query('INSERT INTO system_logs (level, source, message) VALUES (?, ?, ?)', [level, 'DAEMON', message]);
+  } catch (err) {
+    console.error('[DAEMON ERROR] Gagal menulis log ke database:', err);
+  }
+};
+
 // Test ICMP Ping
 const checkIcmp = async (ip) => {
   try {
     const res = await ping.promise.probe(ip, { timeout: 2 });
-    // Pastikan jika sukses, kita bulatkan nilainya (misal 1.8 jadi 2) agar aman masuk ke database INT
     return { isUp: res.alive, latency: res.alive ? Math.round(res.time) : null };
   } catch (err) {
     return { isUp: false, latency: null };
@@ -34,8 +42,11 @@ const checkTcp = (ip, port) => {
   });
 };
 
-export const startMonitoringDaemon = () => {
-  console.log('[Daemon] Layanan Monitoring Aktif...');
+// PASTIKAN ADA KATA 'export' DI SINI
+export const startMonitoringDaemon = async () => {
+  const startupMsg = 'Layanan Monitoring (Daemon) berhasil diaktifkan.';
+  console.log(`[INFO] ${startupMsg}`);
+  await addDaemonLog('INFO', startupMsg);
 
   setInterval(async () => {
     try {
@@ -49,6 +60,9 @@ export const startMonitoringDaemon = () => {
         // Jika waktunya dicek
         if (elapsedSeconds >= target.check_interval) {
           
+          // Log interaksi terkecil ke terminal (tidak ke DB agar performa terjaga)
+          console.log(`[TRACE] Mengecek ${target.protocol} ke ${target.name} (${target.ip_address})...`);
+
           let result;
           if (target.protocol === 'ICMP PING') {
             result = await checkIcmp(target.ip_address);
@@ -59,17 +73,38 @@ export const startMonitoringDaemon = () => {
           let currentFails = failureCounts.get(target.id) || 0;
           let newStatus = target.status;
 
+          // Evaluasi Hasil
           if (result.isUp) {
+            // Jika sebelumnya DOWN dan sekarang UP (Recovery)
+            if (target.status === 'DOWN') {
+              const recMsg = `Koneksi Pulih: ${target.name} (${target.ip_address}) kembali ONLINE. Latency: ${result.latency}ms`;
+              console.log(`[INFO] ${recMsg}`);
+              await addDaemonLog('INFO', recMsg);
+            }
             currentFails = 0;
             newStatus = 'UP';
           } else {
             currentFails++;
-            if (currentFails >= target.max_retries) newStatus = 'DOWN';
+            
+            // Jika belum melewati batas maksimal gagal (Fase Warning/Retry)
+            if (currentFails < target.max_retries) {
+              const warnMsg = `RTO/Timeout: ${target.name} (${target.ip_address}). Percobaan gagal ke-${currentFails} dari ${target.max_retries}.`;
+              console.log(`[WARNING] ${warnMsg}`);
+              await addDaemonLog('WARNING', warnMsg);
+            } 
+            // Jika sudah melewati batas maksimal gagal dan sebelumnya UP (Fase Down)
+            else if (currentFails >= target.max_retries) {
+              newStatus = 'DOWN';
+              if (target.status !== 'DOWN') {
+                const errMsg = `Koneksi Terputus: ${target.name} (${target.ip_address}) dinyatakan OFFLINE setelah ${target.max_retries} kali gagal.`;
+                console.log(`[ERROR] ${errMsg}`);
+                await addDaemonLog('ERROR', errMsg);
+              }
+            }
           }
 
           failureCounts.set(target.id, currentFails);
           
-          // String untuk tabel utama (bisa ada 'ms' atau 'TIMEOUT')
           const latencyStr = result.latency !== null ? `${result.latency} ms` : 'TIMEOUT';
 
           // 1. Update tabel utama
@@ -78,13 +113,13 @@ export const startMonitoringDaemon = () => {
             [newStatus, latencyStr, target.id]
           );
 
-          // 2. Insert ke tabel riwayat (target_history)
+          // 2. Insert ke tabel riwayat
           await db.query(
             'INSERT INTO target_history (target_id, latency_ms, status) VALUES (?, ?, ?)',
             [target.id, result.latency, newStatus]
           );
 
-          // 3. Hapus data lama agar tabel riwayat maksimal berisi 20 data per target
+          // 3. Batasi riwayat 20 baris per target
           await db.query(
             `DELETE FROM target_history WHERE target_id = ? AND id NOT IN (
               SELECT id FROM (SELECT id FROM target_history WHERE target_id = ? ORDER BY id DESC LIMIT 20) foo
@@ -93,7 +128,9 @@ export const startMonitoringDaemon = () => {
         }
       }
     } catch (error) {
-      console.error('Daemon Error:', error);
+      const sysErrMsg = `Daemon Master Loop Error: ${error.message}`;
+      console.error(`[ERROR] ${sysErrMsg}`);
+      await addDaemonLog('ERROR', sysErrMsg);
     }
-  }, 5000); // Daemon berjalan tiap 5 detik
+  }, 5000); 
 };

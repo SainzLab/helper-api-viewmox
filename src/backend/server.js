@@ -7,6 +7,7 @@ import { login } from './controllers/authController.js';
 import { getUsers, createUser, updateUser, deleteUser, getToken, resetToken } from './controllers/userController.js';
 import { getTargets, createTarget, updateTarget, deleteTarget, toggleTargetStatus, getTargetHistory, getSystemStatus } from './controllers/targetController.js';
 import { startMonitoringDaemon } from './services/monitoringDaemon.js';
+import { getProxmoxNodes, createProxmoxNode, updateProxmoxNode, deleteProxmoxNode, testProxmoxConnection, getProxmoxResources, getProxmoxNodeStatus } from './controllers/proxmoxController.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -47,6 +48,15 @@ app.get('/api/targets/:id/history', getTargetHistory);
 
 // Route Status Konektivitas Node
 app.get('/api/system/status', getSystemStatus);
+
+// Daftarkan route API Proxmox
+app.get('/api/proxmox', getProxmoxNodes);
+app.post('/api/proxmox', createProxmoxNode);
+app.put('/api/proxmox/:id', updateProxmoxNode);
+app.delete('/api/proxmox/:id', deleteProxmoxNode);
+app.post('/api/proxmox/:id/test', testProxmoxConnection);
+app.get('/api/proxmox/:id/resources', getProxmoxResources);
+app.get('/api/proxmox/:id/status', getProxmoxNodeStatus);
 
 // Route Utama
 app.get(/^(?!\/api).*/, (req, res) => {

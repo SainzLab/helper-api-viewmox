@@ -33,7 +33,7 @@
             <router-link to="/target-monitoring" 
                 :class="['flex items-center justify-between px-3 py-2.5 rounded-lg text-sm transition', 
                           route.name === 'target-monitoring' ? 'bg-moxgreen/10 text-moxgreen border border-moxgreen/20 font-medium' : 'text-slate-400 hover:text-white hover:bg-slate-800/50']">
-                <div class="flex items-center gap-3"><i class="ph ph-graph text-lg"></i> Monitoring Target</div>
+                <div class="flex items-center gap-3"><i class="ph ph-graph text-lg"></i> Monitoring</div>
                 <span v-if="downCount > 0" class="text-xs px-2 py-0.5 rounded border bg-rose-500 text-white border-rose-500 font-bold animate-pulse shadow-[0_0_8px_rgba(244,63,94,0.6)] transition-all">
                   {{ downCount }}
                 </span>
@@ -59,6 +59,13 @@
                 :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition', 
                           route.name === 'proxmox-config' ? 'bg-moxgreen/10 text-moxgreen border border-moxgreen/20 font-medium' : 'text-slate-400 hover:text-white hover:bg-slate-800/50']">
                 <i class="ph ph-hard-drives text-lg"></i> Proxmox API Config
+            </router-link>
+          </li>
+          <li>
+            <router-link to="/log" 
+                :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition', 
+                          route.name === 'log' ? 'bg-moxgreen/10 text-moxgreen border border-moxgreen/20 font-medium' : 'text-slate-400 hover:text-white hover:bg-slate-800/50']">
+                <i class="ph ph-terminal text-lg"></i> Log
             </router-link>
           </li>
         </ul>
