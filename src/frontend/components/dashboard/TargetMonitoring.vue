@@ -1,122 +1,597 @@
 <template>
-  <main class="p-8 pb-12 overflow-x-hidden">
+  <main class="p-8 pb-12 overflow-x-hidden relative">
+    
     <!-- Header Halaman -->
     <div class="flex justify-between items-end mb-6">
       <div>
         <h2 class="text-2xl font-bold text-white mb-1 flex items-center gap-3">
           <i class="ph-bold ph-tree-structure text-moxgreen"></i> Daftar Layanan Target Monitoring
         </h2>
-        <p class="text-slate-400 text-sm">Pemantauan status berkala untuk protokol ICMP (Ping) dan TCP Port di lingkungan Diskominfo.</p>
+        <p class="text-slate-400 text-sm">Pemantauan status berkala untuk protokol ICMP Ping dan TCP Port.</p>
       </div>
       <div class="flex gap-3">
-        <button class="px-4 py-2.5 border border-slate-700 bg-slate-800/50 text-slate-300 rounded-lg flex items-center gap-2 hover:bg-slate-700 text-sm font-medium transition">
-          <i class="ph ph-funnel"></i> Filter Status
-        </button>
-        <button class="px-4 py-2.5 bg-moxgreen text-moxdark rounded-lg flex items-center gap-2 hover:bg-emerald-400 text-sm font-bold transition">
-          <i class="ph-bold ph-plus-circle text-lg"></i> TAMBAH TARGET MONITORING
+        <!-- V-MODEL Filter Status -->
+        <div class="relative">
+          <i class="ph ph-funnel absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+          <select v-model="filterStatus" class="pl-10 pr-8 py-2.5 border border-slate-700 bg-slate-800/50 text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-700 transition outline-none appearance-none cursor-pointer h-full">
+            <option value="ALL">Semua Status</option>
+            <option value="UP">UP (Online)</option>
+            <option value="DOWN">DOWN (Offline)</option>
+            <option value="PAUSED">PAUSED</option>
+          </select>
+          <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none"></i>
+        </div>
+
+        <button @click="openAddModal" class="px-4 py-2.5 bg-moxgreen text-moxdark rounded-lg flex items-center gap-2 hover:bg-emerald-400 text-sm font-bold transition shadow-lg">
+          <i class="ph-bold ph-plus-circle text-lg"></i> TAMBAH TARGET
         </button>
       </div>
     </div>
 
-    <!-- Data Table -->
-    <div class="bg-moxcard border border-slate-800 rounded-xl shadow-lg overflow-hidden">
-      <table class="w-full text-left border-collapse">
-        <thead>
-          <tr class="bg-slate-800/50 border-b border-slate-700 text-[11px] uppercase tracking-wider text-slate-400">
-            <th class="px-6 py-4 font-semibold w-1/3">Nama Layanan</th>
-            <th class="px-6 py-4 font-semibold">Jenis Protokol</th>
-            <th class="px-6 py-4 font-semibold">Target (IP / Port)</th>
-            <th class="px-6 py-4 font-semibold">Latency / Terakhir Dicek</th>
-            <th class="px-6 py-4 font-semibold">Status Terkini</th>
-            <th class="px-6 py-4 font-semibold text-right">Aksi</th>
-          </tr>
-        </thead>
-        <tbody class="text-sm">
-          <tr v-for="(target, index) in monitoringTargets" :key="index" 
-              :class="['border-b border-slate-800/50 transition', target.status === 'DOWN' ? 'bg-rose-500/5 hover:bg-rose-500/10' : 'hover:bg-slate-800/30']">
+    <!-- Data Table Container -->
+    <div class="bg-moxcard border border-slate-800 rounded-xl shadow-lg overflow-hidden flex flex-col">
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-800/50 border-b border-slate-700 text-[11px] uppercase tracking-wider text-slate-400">
+              <th class="px-6 py-4 font-semibold w-1/4">Nama Layanan</th>
+              <th class="px-6 py-4 font-semibold">Jenis Protokol</th>
+              <th class="px-6 py-4 font-semibold">Target (IP / Port)</th>
+              <th class="px-6 py-4 font-semibold">Latency / Terakhir Dicek</th>
+              <th class="px-6 py-4 font-semibold">Status Terkini</th>
+              <th class="px-6 py-4 font-semibold text-right w-32">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="text-sm">
+            <tr v-if="isLoading" class="border-b border-slate-800/50">
+              <td colspan="6" class="px-6 py-12 text-center text-slate-400">
+                <i class="ph-bold ph-spinner animate-spin text-2xl text-moxgreen mb-2 inline-block"></i>
+                <p>Memuat dan menyinkronkan data target...</p>
+              </td>
+            </tr>
+            <tr v-else-if="filteredTargets.length === 0" class="border-b border-slate-800/50">
+              <td colspan="6" class="px-6 py-12 text-center text-slate-500">
+                <i class="ph-duotone ph-tree-structure text-4xl mb-2"></i>
+                <p>Tidak ada target yang cocok dengan filter.</p>
+              </td>
+            </tr>
             
-            <!-- Kolom Nama Layanan -->
-            <td class="px-6 py-4">
-              <p class="font-bold text-slate-200">{{ target.name }}</p>
-              <p :class="['text-xs mt-0.5', target.status === 'DOWN' ? 'text-rose-500' : 'text-slate-400']">
-                {{ target.desc }}
-              </p>
-            </td>
-            
-            <!-- Kolom Jenis Protokol -->
-            <td class="px-6 py-4">
-              <span class="inline-block bg-slate-900/80 border border-slate-700 text-blue-400 font-mono text-[10px] px-2.5 py-1 rounded">
-                {{ target.protocol }}
-              </span>
-            </td>
+            <template v-else v-for="target in paginatedTargets" :key="target.id">
+              
+              <!-- Baris Utama -->
+              <tr @click="toggleExpanded(target)" 
+                  class="border-b border-slate-800/50 transition cursor-pointer group"
+                  :class="[
+                    !target.is_active ? 'bg-slate-800/20 opacity-60' : 
+                    target.status === 'DOWN' ? 'bg-rose-500/5 hover:bg-rose-500/10' : 'hover:bg-slate-800/30',
+                    expandedTargetId === target.id ? 'bg-slate-800/40 border-b-transparent' : ''
+                  ]">
+                
+                <!-- Nama Layanan -->
+                <td class="px-6 py-4">
+                  <p class="font-bold text-slate-200 group-hover:text-moxgreen transition flex items-center gap-2">
+                    {{ target.name }}
+                    <i v-if="expandedTargetId === target.id" class="ph-bold ph-caret-up text-xs text-slate-500"></i>
+                    <i v-else class="ph-bold ph-caret-down text-xs text-slate-500 opacity-0 group-hover:opacity-100 transition"></i>
+                  </p>
+                  <p :class="['text-xs mt-0.5', target.status === 'DOWN' && target.is_active ? 'text-rose-500' : 'text-slate-400']">
+                    {{ target.description }}
+                  </p>
+                </td>
+                
+                <!-- Protokol -->
+                <td class="px-6 py-4">
+                  <span class="inline-block bg-slate-900/80 border border-slate-700 text-blue-400 font-mono text-[10px] px-2.5 py-1 rounded">
+                    {{ target.protocol }}
+                  </span>
+                </td>
 
-            <!-- Kolom Target (IP/Port) -->
-            <td class="px-6 py-4 text-slate-300 font-mono text-xs font-bold">
-              {{ target.ipPort }}
-            </td>
-            
-            <!-- Kolom Latency -->
-            <td class="px-6 py-4 text-xs">
-              <span :class="['font-bold', target.status === 'DOWN' ? 'text-rose-500' : 'text-white']">
-                {{ target.latency }}
-              </span>
-              <span class="text-slate-500 ml-1">({{ target.lastCheck }})</span>
-            </td>
-            
-            <!-- Kolom Status -->
-            <td class="px-6 py-4">
-              <span v-if="target.status === 'UP'" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> UP
-              </span>
-              <span v-else class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-bold">
-                <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> DOWN
-              </span>
-            </td>
-            
-            <!-- Kolom Aksi -->
-            <td class="px-6 py-4 text-right">
-              <div class="flex items-center justify-end gap-3 text-slate-400">
-                <button class="hover:text-white transition" title="Test Manual"><i class="ph ph-play text-lg"></i></button>
-                <button class="hover:text-moxgreen transition" title="Pengaturan"><i class="ph ph-gear text-lg"></i></button>
-                <button class="hover:text-rose-500 transition" title="Hapus"><i class="ph ph-trash text-lg"></i></button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                <!-- IP / Port -->
+                <td class="px-6 py-4 text-slate-300 font-mono text-xs font-bold">
+                  {{ target.ip_address }} <span v-if="target.protocol === 'TCP SOCKET' && target.port" class="text-slate-500">: {{ target.port }}</span>
+                </td>
+                
+                <!-- Latency -->
+                <td class="px-6 py-4 text-xs">
+                  <span v-if="!target.is_active" class="text-slate-500 italic">PAUSED</span>
+                  <template v-else>
+                    <span :class="['font-bold', target.status === 'DOWN' ? 'text-rose-500' : 'text-white']">
+                      {{ target.last_latency || '-' }}
+                    </span>
+                    <span class="text-slate-500 ml-1">({{ formatTimeAgo(target.last_check) }})</span>
+                  </template>
+                </td>
+                
+                <!-- Status Terkini -->
+                <td class="px-6 py-4">
+                  <span v-if="!target.is_active" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-xs font-bold shadow-[0_0_10px_rgba(245,158,11,0.1)]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> PAUSED
+                  </span>
+                  <span v-else-if="target.status === 'UP'" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold shadow-[0_0_10px_rgba(16,185,129,0.1)]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> UP
+                  </span>
+                  <span v-else-if="target.status === 'DOWN'" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-bold shadow-[0_0_10px_rgba(244,63,94,0.1)]">
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> DOWN
+                  </span>
+                  <span v-else class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-500/10 border border-slate-500/20 text-slate-400 text-xs font-bold">
+                    <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span> UNKNOWN
+                  </span>
+                </td>
+
+                <!-- Aksi (Dipindah ke Kanan) -->
+                <td class="px-6 py-4 text-right" @click.stop>
+                  <div class="flex items-center justify-end gap-3 text-slate-500">
+                    <button @click="togglePause(target)" class="hover:text-amber-400 transition" :title="target.is_active ? 'Jeda Monitoring' : 'Mulai Monitoring'">
+                      <i :class="target.is_active ? 'ph-bold ph-pause' : 'ph-bold ph-play'" class="text-lg"></i>
+                    </button>
+                    <button @click="editTarget(target)" class="hover:text-blue-400 transition" title="Pengaturan">
+                      <i class="ph ph-gear text-lg"></i>
+                    </button>
+                    <button @click="confirmDeleteTarget(target)" class="hover:text-rose-500 transition" title="Hapus">
+                      <i class="ph ph-trash text-lg"></i>
+                    </button>
+                  </div>
+                </td>
+
+              </tr>
+
+              <!-- Baris Dropdown Grafik (Accordion) -->
+              <tr v-if="expandedTargetId === target.id">
+                <td colspan="6" class="p-0 border-b border-slate-800/50 bg-slate-800/20">
+                  <div class="px-8 py-6 flex gap-6 animate-fade-in">
+                    
+                    <!-- Area Chart -->
+                    <div class="flex-1 bg-slate-900/50 border border-slate-700/50 rounded-xl p-4 h-[200px] relative">
+                      <div class="flex justify-between items-center mb-2">
+                        <h4 class="text-xs font-bold text-slate-400 flex items-center gap-2">
+                          <i class="ph-fill ph-chart-line-up text-moxgreen"></i> Riwayat Latency (20 Pengecekan Terakhir)
+                        </h4>
+                        <!-- Tombol Refresh Data History Manual -->
+                        <button @click="fetchHistory(target.id, false)" class="text-slate-500 hover:text-moxgreen transition text-xs flex items-center gap-1">
+                          <i class="ph-bold ph-arrows-clockwise" :class="{'animate-spin text-moxgreen': isLoadingHistory}"></i> Segarkan
+                        </button>
+                      </div>
+
+                      <div v-if="isLoadingHistory && !chartData" class="absolute inset-0 flex items-center justify-center">
+                        <i class="ph-bold ph-spinner animate-spin text-2xl text-slate-500"></i>
+                      </div>
+                      <div v-else-if="chartData" class="w-full h-[140px]">
+                        <Line :data="chartData" :options="chartOptions" />
+                      </div>
+                      <div v-else class="absolute inset-0 flex flex-col items-center justify-center text-xs text-slate-500 mt-6">
+                        <i class="ph-duotone ph-chart-line-down text-3xl mb-2 text-slate-600"></i>
+                        <p>Belum ada riwayat data yang tersimpan.</p>
+                        <p class="text-[10px] text-slate-600 mt-1 max-w-sm text-center">Pastikan tabel "target_history" sudah Anda eksekusi di Database dan tunggu setidaknya {{ target.check_interval }} detik agar Daemon mencatat hasil.</p>
+                      </div>
+                    </div>
+
+                    <!-- Panel Info -->
+                    <div class="w-64 bg-slate-900/50 border border-slate-700/50 rounded-xl p-4 space-y-4">
+                       <h4 class="text-xs font-bold text-slate-400 mb-2 border-b border-slate-700/50 pb-2">Konfigurasi Daemon</h4>
+                       <div>
+                         <p class="text-[10px] uppercase text-slate-500 font-bold">Interval Pengecekan</p>
+                         <p class="text-sm text-slate-200 font-mono">{{ target.check_interval }} detik</p>
+                       </div>
+                       <div>
+                         <p class="text-[10px] uppercase text-slate-500 font-bold">Toleransi time Out</p>
+                         <p class="text-sm text-slate-200 font-mono">{{ target.max_retries }} kali gagal</p>
+                       </div>
+                    </div>
+
+                  </div>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Controls -->
+      <div v-if="!isLoading && filteredTargets.length > 0" class="bg-slate-900/30 px-6 py-4 flex items-center justify-between border-t border-slate-800">
+        
+        <!-- Bagian Kiri: Info Rentang Data -->
+        <span class="text-xs text-slate-400">
+          Menampilkan <span class="font-bold text-white">{{ (currentPage - 1) * itemsPerPage + 1 }}</span> 
+          sampai <span class="font-bold text-white">{{ Math.min(currentPage * itemsPerPage, filteredTargets.length) }}</span> 
+          dari <span class="font-bold text-white">{{ filteredTargets.length }}</span> target
+        </span>
+        
+        <!-- Bagian Kanan: Tombol & Info Halaman -->
+        <div class="flex items-center gap-3">
+          <button @click="prevPage" :disabled="currentPage === 1" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-50 transition">
+            <i class="ph-bold ph-caret-left"></i>
+          </button>
+          <button @click="nextPage" :disabled="currentPage === totalPages" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-50 transition">
+            <i class="ph-bold ph-caret-right"></i>
+          </button>
+        </div>
+        
+      </div>
     </div>
+
+    <!-- MODAL FORM TARGET (TAMBAH / EDIT) -->
+    <div v-if="showModal" class="fixed inset-0 z-[40] flex items-center justify-center bg-moxdark/80 backdrop-blur-sm p-4 animate-fade-in">
+      <div class="bg-moxcard border border-slate-700 rounded-2xl w-full max-w-lg shadow-[0_0_40px_rgba(0,0,0,0.5)] overflow-hidden">
+        <div class="flex justify-between items-center p-6 border-b border-slate-800">
+          <h3 class="text-lg font-bold text-white flex items-center gap-2">
+            <i class="ph-fill ph-gear text-moxgreen"></i> {{ isEditMode ? 'Edit Target Monitoring' : 'Tambah Target Baru' }}
+          </h3>
+          <button @click="closeModal" class="text-slate-400 hover:text-white"><i class="ph ph-x text-xl"></i></button>
+        </div>
+
+        <form @submit.prevent="saveTarget" class="p-6 space-y-5">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Nama Layanan</label>
+              <input type="text" v-model="form.name" required placeholder="Contoh: Core Gateway Diskominfo" class="w-full bg-slate-900/50 border border-slate-700 text-white text-sm rounded-lg px-4 py-2 focus:border-moxgreen outline-none transition">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Deskripsi Layanan</label>
+              <input type="text" v-model="form.description" placeholder="Contoh: Router Utama Mikrotik CCR" class="w-full bg-slate-900/50 border border-slate-700 text-white text-sm rounded-lg px-4 py-2 focus:border-moxgreen outline-none transition">
+            </div>
+          </div>
+
+          <div class="p-4 bg-slate-800/30 border border-slate-700/80 rounded-lg space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Jenis Protokol</label>
+              <select v-model="form.protocol" class="w-full bg-slate-900 border border-slate-700 text-white text-sm rounded-lg px-4 py-2 focus:border-moxgreen outline-none appearance-none cursor-pointer">
+                <option value="ICMP PING">ICMP PING (Test Konektivitas)</option>
+                <option value="TCP SOCKET">TCP SOCKET (Test Port Spesifik)</option>
+              </select>
+            </div>
+            <div class="flex gap-4">
+              <div class="flex-[2]">
+                <label class="block text-xs font-bold text-slate-400 uppercase mb-2">IP Address / Host</label>
+                <input type="text" v-model="form.ip_address" required placeholder="Contoh: 10.10.0.1" class="w-full bg-slate-900 border border-slate-700 text-white text-sm rounded-lg px-4 py-2 font-mono focus:border-moxgreen outline-none transition">
+              </div>
+              <div class="flex-1" v-if="form.protocol === 'TCP SOCKET'">
+                <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Port</label>
+                <input type="number" v-model="form.port" required placeholder="443" class="w-full bg-slate-900 border border-slate-700 text-white text-sm rounded-lg px-4 py-2 font-mono focus:border-moxgreen outline-none transition">
+              </div>
+            </div>
+          </div>
+
+          <div class="p-4 bg-amber-500/5 border border-amber-500/20 rounded-lg space-y-4">
+            <h4 class="text-xs font-bold text-amber-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+              <i class="ph-fill ph-sliders"></i> Parameter Pengecekan
+            </h4>
+            <div class="flex gap-4">
+              <div class="flex-1">
+                <label class="block text-xs font-bold text-slate-400 mb-2">Interval Cek (Detik)</label>
+                <div class="relative">
+                  <input type="number" v-model="form.check_interval" required min="10" class="w-full bg-slate-900 border border-slate-700 text-white text-sm rounded-lg pl-4 pr-10 py-2 focus:border-amber-500 outline-none transition">
+                  <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-bold">dtk</span>
+                </div>
+              </div>
+              <div class="flex-1">
+                <label class="block text-xs font-bold text-slate-400 mb-2">Batas Gagal (Retries)</label>
+                <div class="relative">
+                  <input type="number" v-model="form.max_retries" required min="1" max="10" class="w-full bg-slate-900 border border-slate-700 text-white text-sm rounded-lg pl-4 pr-12 py-2 focus:border-amber-500 outline-none transition">
+                  <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-bold">kali</span>
+                </div>
+              </div>
+            </div>
+            <p class="text-[10px] text-slate-400 leading-relaxed mt-2">
+               Sistem akan melakukan test setiap <span class="font-bold text-white">{{ form.check_interval }} detik</span>. Jika terjadi Timeout berturut-turut <span class="font-bold text-white">{{ form.max_retries }} kali</span>, status akan diubah ke <span class="text-rose-500 font-bold">DOWN</span>.
+            </p>
+          </div>
+
+          <div class="pt-4 border-t border-slate-800 flex justify-end gap-3 mt-6">
+            <button type="button" @click="closeModal" class="px-5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 transition">Batal</button>
+            <button type="submit" class="px-5 py-2.5 bg-moxgreen text-moxdark rounded-lg text-sm font-bold hover:bg-emerald-400 transition" :disabled="isSaving">
+              {{ isSaving ? 'Menyimpan...' : (isEditMode ? 'Simpan Perubahan' : 'Tambah Target') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL KONFIRMASI HAPUS (Enterprise UI) -->
+    <div v-if="showDeleteModal" class="fixed inset-0 z-[50] flex items-center justify-center bg-moxdark/90 backdrop-blur-sm p-4 animate-fade-in">
+      <div class="bg-[#151e2b] border border-slate-700 shadow-2xl rounded-xl w-full max-w-md overflow-hidden transform transition-all relative">
+        <div class="h-1.5 w-full bg-rose-500 absolute top-0 left-0"></div>
+        <div class="p-6 pt-7">
+          <div class="flex items-start gap-4">
+            <div class="flex-shrink-0 w-12 h-12 bg-rose-500/10 border border-rose-500/20 rounded-full flex items-center justify-center text-rose-500 mt-0.5">
+              <i class="ph-fill ph-warning-circle text-2xl"></i>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-white mb-2">Hapus Target Monitoring?</h3>
+              <p class="text-sm text-slate-400 leading-relaxed">
+                Anda akan menghapus target <span class="font-bold text-white">{{ targetToDelete?.name }}</span> (<span class="font-mono text-slate-300 text-xs">{{ targetToDelete?.ip_address }}</span>). 
+                <br><br>
+                Sistem daemon tidak akan lagi memantau infrastruktur ini. Tindakan ini tidak dapat dibatalkan.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-slate-800/40 px-6 py-4 flex justify-end gap-3 border-t border-slate-700/80">
+          <button @click="closeDeleteModal" class="px-5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-700/80 transition">
+            Batal
+          </button>
+          <button @click="executeDeleteTarget" class="px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-sm font-bold transition shadow-[0_4px_12px_rgba(244,63,94,0.3)] flex items-center gap-2" :disabled="isDeleting">
+            <i class="ph-bold ph-trash" v-if="!isDeleting"></i>
+            {{ isDeleting ? 'Menghapus...' : 'Ya, Hapus Target' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div v-if="toast.show" 
+         class="fixed top-8 right-8 z-[100] w-[400px] bg-[#151e2b] border-t-4 rounded-b-xl rounded-t-sm shadow-[0_10px_40px_rgba(0,0,0,0.5)] p-5 flex gap-4 animate-slide-in"
+         :class="toast.type === 'success' ? 'border-emerald-400' : 'border-rose-500'">
+      <div class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center border" 
+           :class="toast.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-500'">
+        <i class="text-2xl" :class="toast.type === 'success' ? 'ph-fill ph-check-circle' : 'ph-fill ph-warning-circle'"></i>
+      </div>
+      <div class="flex-1">
+        <div class="flex justify-between items-start">
+          <h3 class="text-white font-bold text-lg leading-none mb-2.5">{{ toast.title }}</h3>
+          <button @click="toast.show = false" class="text-slate-400 hover:text-white transition">
+            <i class="ph ph-x"></i>
+          </button>
+        </div>
+        <p class="text-slate-300 text-sm leading-relaxed">{{ toast.message }}</p>
+      </div>
+    </div>
+
   </main>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, computed, onUnmounted, watch } from 'vue';
 
-// Data Mockup sesuai dengan desain gambar image_7742fe.png
-const monitoringTargets = ref([
-  {
-    name: 'Core Gateway Diskominfo', desc: 'Router Utama Mikrotik CCR', 
-    protocol: 'ICMP PING', ipPort: '10.10.0.1', 
-    latency: '1.8 ms', lastCheck: '5 dtk lalu', status: 'UP'
+// --- IMPORT VUE-CHARTJS ---
+import {
+  Chart as ChartJS,
+  CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler
+} from 'chart.js';
+import { Line } from 'vue-chartjs';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler);
+
+// State Data Utama
+const targets = ref([]);
+const isLoading = ref(true);
+
+// State Accordion Grafik
+const expandedTargetId = ref(null);
+const isLoadingHistory = ref(false);
+const chartData = ref(null);
+
+// Konfigurasi Visual Chart.js
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+  scales: {
+    y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8', font: { size: 10 } } },
+    x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 }, maxRotation: 0 } }
   },
-  {
-    name: 'Portal Resmi Pemda', desc: 'Nginx Ingress Cluster PVE', 
-    protocol: 'TCP SOCKET', ipPort: '10.10.10.25 : 443', 
-    latency: '8.4 ms', lastCheck: '10 dtk lalu', status: 'UP'
-  },
-  {
-    name: 'Server OPD Bappeda', desc: 'Link FO Gedung Bappeda RTO', 
-    protocol: 'ICMP PING', ipPort: '10.20.15.2', 
-    latency: 'TIMEOUT', lastCheck: '1 dtk lalu', status: 'DOWN'
-  },
-  {
-    name: 'Cluster MySQL Galera', desc: 'Master DB Aplikasi Kepegawaian', 
-    protocol: 'TCP SOCKET', ipPort: '10.10.20.100 : 3306', 
-    latency: '1.1 ms', lastCheck: '3 dtk lalu', status: 'UP'
-  },
-  {
-    name: 'PVE API Endpoint', desc: 'Backend Metrics Collector', 
-    protocol: 'TCP SOCKET', ipPort: '10.10.1.10 : 8006', 
-    latency: '3.2 ms', lastCheck: '15 dtk lalu', status: 'UP'
+  elements: {
+    line: { tension: 0.3, borderWidth: 2, borderColor: '#10b981' },
+    point: { radius: 2, backgroundColor: '#10b981' }
   }
-]);
+};
+
+// State Pagination, Modal Form, Modal Hapus, Toast
+const filterStatus = ref('ALL');
+const currentPage = ref(1);
+const itemsPerPage = 15;
+let pollTimer = null;
+
+const showModal = ref(false);
+const isSaving = ref(false);
+const isEditMode = ref(false);
+const editTargetId = ref(null);
+const form = ref({
+  name: '', description: '', protocol: 'ICMP PING', ip_address: '', port: null, check_interval: 60, max_retries: 3
+});
+
+const showDeleteModal = ref(false);
+const targetToDelete = ref(null);
+const isDeleting = ref(false);
+
+const toast = ref({ show: false, type: 'success', title: '', message: '' });
+let toastTimer = null;
+
+const showToast = (type, title, message) => {
+  toast.value = { show: true, type, title, message };
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.value.show = false; }, 5000);
+};
+
+// ==========================================
+// LOGIKA FILTER & PAGINATION
+// ==========================================
+const filteredTargets = computed(() => {
+  let list = targets.value;
+  if (filterStatus.value === 'PAUSED') {
+    return list.filter(t => t.is_active === 0);
+  } else if (filterStatus.value !== 'ALL') {
+    return list.filter(t => t.status === filterStatus.value && t.is_active === 1);
+  }
+  return list;
+});
+const totalPages = computed(() => Math.ceil(filteredTargets.value.length / itemsPerPage) || 1);
+const paginatedTargets = computed(() => filteredTargets.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage));
+const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++; };
+const prevPage = () => { if (currentPage.value > 1) currentPage.value--; };
+
+// ==========================================
+// API CALLS
+// ==========================================
+const fetchTargets = async (isBackground = false) => {
+  if (!isBackground) isLoading.value = true;
+  try {
+    const res = await fetch('/api/targets');
+    const data = await res.json();
+    if (data.success) {
+      targets.value = data.data;
+      
+      // Sinkronisasi grafik jika ada accordion yang terbuka
+      if (expandedTargetId.value && isBackground) {
+        fetchHistory(expandedTargetId.value, true);
+      }
+    }
+  } catch (error) {
+    console.error(error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// ==========================================
+// FITUR TOGGLE PAUSE & GRAFIK (ACCORDION)
+// ==========================================
+const togglePause = async (target) => {
+  const newStatus = target.is_active ? 0 : 1;
+  try {
+    await fetch(`/api/targets/${target.id}/toggle`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_active: newStatus })
+    });
+    fetchTargets(true); 
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+const toggleExpanded = (target) => {
+  if (expandedTargetId.value === target.id) {
+    expandedTargetId.value = null;
+    chartData.value = null;
+  } else {
+    expandedTargetId.value = target.id;
+    fetchHistory(target.id, false);
+  }
+};
+
+const fetchHistory = async (targetId, isSilent) => {
+  if (!isSilent) isLoadingHistory.value = true;
+  try {
+    const res = await fetch(`/api/targets/${targetId}/history`);
+    const data = await res.json();
+    
+    if (data.success && data.data.length > 0) {
+      const labels = data.data.map(d => d.time);
+      const dataPoints = data.data.map(d => d.status === 'DOWN' ? 0 : (d.latency_ms || 0));
+
+      chartData.value = {
+        labels: labels,
+        datasets: [{
+          data: dataPoints,
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          fill: true
+        }]
+      };
+    } else {
+      chartData.value = null;
+    }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    isLoadingHistory.value = false;
+  }
+};
+
+// ==========================================
+// MODAL CONTROLS & HELPERS
+// ==========================================
+const openAddModal = () => {
+  isEditMode.value = false;
+  form.value = { name: '', description: '', protocol: 'ICMP PING', ip_address: '', port: null, check_interval: 60, max_retries: 3 };
+  showModal.value = true;
+};
+
+const editTarget = (target) => {
+  isEditMode.value = true;
+  editTargetId.value = target.id;
+  form.value = { ...target }; 
+  showModal.value = true;
+};
+
+const saveTarget = async () => {
+  isSaving.value = true;
+  try {
+    const url = isEditMode.value ? `/api/targets/${editTargetId.value}` : '/api/targets';
+    const method = isEditMode.value ? 'PUT' : 'POST';
+
+    if (form.value.protocol === 'ICMP PING') form.value.port = null;
+
+    const res = await fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form.value)
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      closeModal();
+      fetchTargets();
+      showToast('success', isEditMode.value ? 'Target Diperbarui' : 'Target Ditambahkan', data.message);
+    } else {
+      showToast('error', 'Gagal', data.message);
+    }
+  } catch (error) {
+    showToast('error', 'Kesalahan', 'Gagal menghubungi server backend.');
+  } finally {
+    isSaving.value = false;
+  }
+};
+
+const confirmDeleteTarget = (target) => { targetToDelete.value = target; showDeleteModal.value = true; };
+const closeDeleteModal = () => { showDeleteModal.value = false; targetToDelete.value = null; };
+const executeDeleteTarget = async () => {
+  if (!targetToDelete.value) return;
+  isDeleting.value = true;
+
+  try {
+    const res = await fetch(`/api/targets/${targetToDelete.value.id}`, { method: 'DELETE' });
+    const data = await res.json();
+
+    if (data.success) {
+      await fetchTargets();
+      showToast('success', 'Target Dihapus', data.message);
+      closeDeleteModal();
+    } else {
+      showToast('error', 'Gagal Menghapus', data.message);
+    }
+  } catch (error) {
+    showToast('error', 'Kesalahan', 'Gagal menghapus target monitoring.');
+  } finally {
+    isDeleting.value = false;
+  }
+};
+const closeModal = () => { showModal.value = false; };
+
+const formatTimeAgo = (timestamp) => {
+  if (!timestamp) return 'Belum dicek';
+  const diffInSeconds = Math.floor((new Date() - new Date(timestamp)) / 1000);
+  if (diffInSeconds < 60) return `${diffInSeconds} dtk lalu`;
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return `${diffInMinutes} mnt lalu`;
+  return '> 1 jam lalu';
+};
+
+onMounted(() => {
+  fetchTargets();
+  pollTimer = setInterval(() => { fetchTargets(true); }, 5000);
+});
+
+onUnmounted(() => {
+  if (pollTimer) clearInterval(pollTimer);
+});
 </script>
+
+<style scoped>
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+</style>

@@ -1,6 +1,12 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import cookieParser from 'cookie-parser';
+
+import { login } from './controllers/authController.js';
+import { getUsers, createUser, updateUser, deleteUser, getToken, resetToken } from './controllers/userController.js';
+import { getTargets, createTarget, updateTarget, deleteTarget, toggleTargetStatus, getTargetHistory, getSystemStatus } from './controllers/targetController.js';
+import { startMonitoringDaemon } from './services/monitoringDaemon.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,15 +15,45 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const isProd = process.env.NODE_ENV === 'production';
 
+// Middleware Parsing
+app.use(express.json()); 
+app.use(cookieParser());
+
+// Konfigurasi EJS
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// Static files
 app.use(express.static(path.join(process.cwd(), 'public')));
 
-app.get(/.*/, (req, res) => {
+// Route Auth
+app.post('/api/auth/login', login);
+
+// Route Users
+app.get('/api/users', getUsers);
+app.post('/api/users', createUser);
+app.put('/api/users/:id', updateUser);
+app.delete('/api/users/:id', deleteUser);
+app.get('/api/users/:id/token', getToken);          
+app.post('/api/users/:id/token/reset', resetToken);
+
+// Route Target Monitoring
+app.get('/api/targets', getTargets);
+app.post('/api/targets', createTarget);
+app.put('/api/targets/:id', updateTarget);
+app.delete('/api/targets/:id', deleteTarget);
+app.put('/api/targets/:id/toggle', toggleTargetStatus);
+app.get('/api/targets/:id/history', getTargetHistory);
+
+// Route Status Konektivitas Node
+app.get('/api/system/status', getSystemStatus);
+
+// Route Utama
+app.get(/^(?!\/api).*/, (req, res) => {
   res.render('index', { isProd });
 });
 
 app.listen(PORT, () => {
   console.log(`Server berjalan di http://localhost:${PORT}`);
+  startMonitoringDaemon();
 });
