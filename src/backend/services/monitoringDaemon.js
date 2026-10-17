@@ -42,7 +42,7 @@ const checkTcp = (ip, port) => {
   });
 };
 
-// PASTIKAN ADA KATA 'export' DI SINI
+// Fungsi Utama Daemon
 export const startMonitoringDaemon = async () => {
   const startupMsg = 'Layanan Monitoring (Daemon) berhasil diaktifkan.';
   console.log(`[INFO] ${startupMsg}`);
@@ -50,17 +50,18 @@ export const startMonitoringDaemon = async () => {
 
   setInterval(async () => {
     try {
-      const [targets] = await db.query('SELECT * FROM monitoring_targets WHERE is_active = 1');
-      const now = new Date();
+      // PERBAIKAN: Menggunakan TIMESTAMPDIFF agar hitungan detik 100% akurat dari sisi Database
+      const [targets] = await db.query(`
+        SELECT *, TIMESTAMPDIFF(SECOND, IFNULL(last_check, '1970-01-01 00:00:00'), NOW()) AS elapsed_seconds 
+        FROM monitoring_targets 
+        WHERE is_active = 1
+      `);
 
       for (const target of targets) {
-        const lastCheck = target.last_check ? new Date(target.last_check) : new Date(0);
-        const elapsedSeconds = (now - lastCheck) / 1000;
-
-        // Jika waktunya dicek
-        if (elapsedSeconds >= target.check_interval) {
+        
+        // Membandingkan waktu dari MySQL langsung, bukan dari Node.js Date()
+        if (target.elapsed_seconds >= target.check_interval) {
           
-          // Log interaksi terkecil ke terminal (tidak ke DB agar performa terjaga)
           console.log(`[TRACE] Mengecek ${target.protocol} ke ${target.name} (${target.ip_address})...`);
 
           let result;
@@ -75,7 +76,6 @@ export const startMonitoringDaemon = async () => {
 
           // Evaluasi Hasil
           if (result.isUp) {
-            // Jika sebelumnya DOWN dan sekarang UP (Recovery)
             if (target.status === 'DOWN') {
               const recMsg = `Koneksi Pulih: ${target.name} (${target.ip_address}) kembali ONLINE. Latency: ${result.latency}ms`;
               console.log(`[INFO] ${recMsg}`);
@@ -86,13 +86,11 @@ export const startMonitoringDaemon = async () => {
           } else {
             currentFails++;
             
-            // Jika belum melewati batas maksimal gagal (Fase Warning/Retry)
             if (currentFails < target.max_retries) {
               const warnMsg = `RTO/Timeout: ${target.name} (${target.ip_address}). Percobaan gagal ke-${currentFails} dari ${target.max_retries}.`;
               console.log(`[WARNING] ${warnMsg}`);
               await addDaemonLog('WARNING', warnMsg);
             } 
-            // Jika sudah melewati batas maksimal gagal dan sebelumnya UP (Fase Down)
             else if (currentFails >= target.max_retries) {
               newStatus = 'DOWN';
               if (target.status !== 'DOWN') {
@@ -107,19 +105,19 @@ export const startMonitoringDaemon = async () => {
           
           const latencyStr = result.latency !== null ? `${result.latency} ms` : 'TIMEOUT';
 
-          // 1. Update tabel utama
+          // Update Status
           await db.query(
             'UPDATE monitoring_targets SET status = ?, last_latency = ?, last_check = NOW() WHERE id = ?',
             [newStatus, latencyStr, target.id]
           );
 
-          // 2. Insert ke tabel riwayat
+          // Masukkan Riwayat Latency
           await db.query(
             'INSERT INTO target_history (target_id, latency_ms, status) VALUES (?, ?, ?)',
             [target.id, result.latency, newStatus]
           );
 
-          // 3. Batasi riwayat 20 baris per target
+          // Batasi Data Riwayat maksimal 20 per target
           await db.query(
             `DELETE FROM target_history WHERE target_id = ? AND id NOT IN (
               SELECT id FROM (SELECT id FROM target_history WHERE target_id = ? ORDER BY id DESC LIMIT 20) foo
@@ -132,5 +130,5 @@ export const startMonitoringDaemon = async () => {
       console.error(`[ERROR] ${sysErrMsg}`);
       await addDaemonLog('ERROR', sysErrMsg);
     }
-  }, 5000); 
+  }, 1000); 
 };

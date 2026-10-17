@@ -94,13 +94,13 @@
                 </div>
                 <div v-else-if="node.status === 'TERHUBUNG'" class="flex items-center gap-2">
                   <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold shadow-[0_0_10px_rgba(16,185,129,0.1)]">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> TERHUBUNG
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> UP
                   </span>
                   <span class="text-[10px] text-slate-500">{{ node.latency }}</span>
                 </div>
                 <div v-else-if="node.status === 'GAGAL'" class="flex items-center gap-2">
                   <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-bold shadow-[0_0_10px_rgba(244,63,94,0.1)]">
-                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> GAGAL KONEK
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> DOWN
                   </span>
                 </div>
                 <div v-else class="flex items-center gap-2">
@@ -137,8 +137,8 @@
                     <p class="text-sm text-slate-400">Menarik data Resources dari node {{ node.name }}...</p>
                   </div>
                   
-                  <!-- Data Resources (Jika tidak terhubung) -->
-                  <div v-else-if="node.status !== 'TERHUBUNG'" class="flex flex-col items-center justify-center py-8 text-slate-500">
+                  <!-- Data Resources (Jika tidak UP) -->
+                  <div v-else-if="node.status !== 'UP'" class="flex flex-col items-center justify-center py-8 text-slate-500">
                     <i class="ph-duotone ph-plugs text-4xl mb-2"></i>
                     <p class="text-sm">Silakan 'Uji Koneksi' terlebih dahulu agar sistem dapat menarik data resource.</p>
                   </div>
@@ -470,7 +470,7 @@ const toggleExpanded = (node) => {
     nodeDetails.value = { vms: [], lxcs: [], storages: [] };
   } else {
     expandedNodeId.value = node.id;
-    if (node.status === 'TERHUBUNG') fetchNodeResources(node.id);
+    if (node.status === 'UP') fetchNodeResources(node.id);
   }
 };
 
