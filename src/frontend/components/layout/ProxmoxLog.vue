@@ -25,7 +25,7 @@
           <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
           <input type="text" v-model="searchQuery" :placeholder="activeTab === 'tasks' ? 'Cari deskripsi, user...' : 'Cari pesan, service...'" class="pl-9 pr-4 py-2.5 w-64 border border-slate-700 bg-slate-800/50 text-white rounded-lg text-sm font-medium hover:bg-slate-700 focus:bg-slate-900 focus:border-emerald-400 transition outline-none">
           <button v-if="searchQuery" @click="searchQuery = ''" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition">
-             <i class="ph-bold ph-x"></i>
+             <i class="ph-bold ph-x"></i>  
           </button>
         </div>
       </div>
