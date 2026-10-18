@@ -138,15 +138,13 @@
                   </div>
                   
                   <!-- Data Resources (Jika tidak UP) -->
-                  <div v-else-if="node.status !== 'UP'" class="flex flex-col items-center justify-center py-8 text-slate-500">
+                  <div v-else-if="node.status !== 'TERHUBUNG'" class="flex flex-col items-center justify-center py-8 text-slate-500">
                     <i class="ph-duotone ph-plugs text-4xl mb-2"></i>
                     <p class="text-sm">Silakan 'Uji Koneksi' terlebih dahulu agar sistem dapat menarik data resource.</p>
                   </div>
 
-                  <!-- Grid Data Resources (Jika berhasil fetch) -->
                   <div v-else class="grid grid-cols-3 gap-6">
                     
-                    <!-- Kolom Virtual Machines -->
                     <div class="bg-slate-900/50 border border-slate-700/50 rounded-xl p-4">
                       <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-4 flex items-center justify-between border-b border-slate-700/50 pb-2">
                         <span class="flex items-center gap-2"><i class="ph-fill ph-desktop text-blue-400"></i> Virtual Machines</span>
@@ -164,7 +162,6 @@
                       </ul>
                     </div>
 
-                    <!-- Kolom LXC Containers -->
                     <div class="bg-slate-900/50 border border-slate-700/50 rounded-xl p-4">
                       <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-4 flex items-center justify-between border-b border-slate-700/50 pb-2">
                         <span class="flex items-center gap-2"><i class="ph-fill ph-cube text-purple-400"></i> LXC Containers</span>
@@ -470,7 +467,7 @@ const toggleExpanded = (node) => {
     nodeDetails.value = { vms: [], lxcs: [], storages: [] };
   } else {
     expandedNodeId.value = node.id;
-    if (node.status === 'UP') fetchNodeResources(node.id);
+    if (node.status === 'TERHUBUNG') fetchNodeResources(node.id);
   }
 };
 

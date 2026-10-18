@@ -83,7 +83,6 @@ export const login = async (req, res) => {
 export const logout = async (req, res) => {
   try {
     // Ambil username dari request (jika middleware token sudah mem-parsingnya)
-    // Atau fallback ke pesan logout umum
     const username = req.user ? req.user.username : 'Seorang pengguna';
 
     // Hapus HTTP-Only Cookie

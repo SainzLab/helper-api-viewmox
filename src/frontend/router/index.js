@@ -8,16 +8,56 @@ import TargetMonitoring from '@/components/dashboard/TargetMonitoring.vue';
 import ThresholdConfig from '@/components/dashboard/ThresholdConfig.vue';
 import ProxmoxConfig from '@/components/config/ProxmoxConfig.vue';
 import RekapGangguan from '@/components/dashboard/RekapGangguan.vue';
+import LogSystem from '@/components/dashboard/Log.vue';
 
 const routes = [
-  { path: '/', redirect: '/dashboard' },
-  { path: '/login', name: 'login', component: Login, meta: { requiresGuest: true } },
-  { path: '/dashboard', name: 'dashboard', component: Dashboard, meta: { requiresAuth: true } },
-  { path: '/kelola-pengguna', name: 'kelola-pengguna', component: KelolaPengguna, meta: { requiresAuth: true } },
-  { path: '/target-monitoring', name: 'target-monitoring', component: TargetMonitoring, meta: { requiresAuth: true } },
-  { path: '/threshold-config', name: 'threshold-config', component: ThresholdConfig, meta: { requiresAuth: true } },
-  { path: '/proxmox-config', name: 'proxmox-config', component: ProxmoxConfig, meta: { requiresAuth: true } },
-  { path: '/rekap-gangguan', name: 'rekap-gangguan', component: RekapGangguan, meta: { requiresAuth: true } },
+  { path: '/', 
+    redirect: '/dashboard' 
+  },
+  { path: '/login', 
+    name: 'login', 
+    component: Login, meta: { 
+      requiresGuest: true 
+    } 
+  },
+  { path: '/dashboard', 
+    name: 'dashboard', 
+    component: Dashboard, meta: { 
+      requiresAuth: true 
+    } 
+  },
+  { path: '/kelola-pengguna', 
+    name: 'kelola-pengguna', 
+    component: KelolaPengguna, meta: { 
+      requiresAuth: true 
+    } 
+  },
+  { path: '/target-monitoring', 
+    name: 'target-monitoring', 
+    component: TargetMonitoring, meta: { 
+      requiresAuth: true 
+    } 
+  },
+  { path: '/threshold-config', 
+    name: 'threshold-config', component: ThresholdConfig, meta: { 
+      requiresAuth: true 
+    } 
+  },
+  { path: '/proxmox-config', 
+    name: 'proxmox-config', component: ProxmoxConfig, meta: { 
+      requiresAuth: true 
+    } 
+  },
+  { path: '/rekap-gangguan', 
+    name: 'rekap-gangguan', component: RekapGangguan, meta: { 
+      requiresAuth: true 
+    } 
+  },
+  { path: '/log', 
+    name: 'Log', component: LogSystem, meta: { 
+      requiresAuth: true 
+    } 
+  },
 ];
 
 const router = createRouter({

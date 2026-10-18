@@ -1,45 +1,41 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProxView</title>
-    
-    <!-- Tailwind CSS (CDN) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Tailwind Config untuk menyamakan warna dengan referensi desain -->
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              moxdark: '#0f172a',
-              moxcard: '#1e293b',
-              moxgreen: '#10b981',
-            }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProxView</title>
+  
+  <!-- Tailwind CSS (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Tailwind Config untuk menyamakan warna dengan referensi desain -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            moxdark: '#0f172a',
+            moxcard: '#1e293b',
+            moxgreen: '#10b981',
           }
         }
       }
-    </script>
-
-    <!-- Phosphor Icons -->
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    }
+  </script>
+  
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-moxdark text-white font-sans antialiased">
-    <!-- Vue Root Element -->
-    <div id="app"></div>
+  
+  <!-- Vue Root Element -->
+  <div id="app"></div>
 
-    <!-- Script Injection (Development vs Production) -->
-    <% if (isProd) { %>
-        <!-- Di mode production, load dari hasil build Vite (butuh helper parsing manifest.json, untuk sekarang abaikan jika fokus dev) -->
-        <script type="module" src="/dist/main.js"></script>
-    <% } else { %>
-        <!-- Di mode development, connect ke Vite dev server -->
-        <script type="module" src="http://localhost:5173/@vite/client"></script>
-        <script type="module" src="http://localhost:5173/src/frontend/main.js"></script>
-    <% } %>
+  <!-- Vite secara otomatis akan mendeteksi dan mengonversi rute ini saat production build -->
+  <script type="module" src="/src/frontend/main.js"></script>
+  
 </body>
 </html>

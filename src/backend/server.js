@@ -9,6 +9,9 @@ import { getTargets, createTarget, updateTarget, deleteTarget, toggleTargetStatu
 import { startMonitoringDaemon } from './services/monitoringDaemon.js';
 import { getProxmoxNodes, createProxmoxNode, updateProxmoxNode, deleteProxmoxNode, testProxmoxConnection, getProxmoxResources, getProxmoxNodeStatus } from './controllers/proxmoxController.js';
 
+// IMPORT CONTROLLER LOG PROXMOX BARU
+import { getTasksLog, getClusterLog, getTaskDetailLog } from './controllers/proxmoxLogController.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -49,7 +52,12 @@ app.get('/api/targets/:id/history', getTargetHistory);
 // Route Status Konektivitas Node
 app.get('/api/system/status', getSystemStatus);
 
-// Daftarkan route API Proxmox
+// ROUTE API PROXMOX LOGS 
+app.get('/api/proxmox/logs/tasks', getTasksLog);
+app.get('/api/proxmox/logs/cluster', getClusterLog);
+app.get('/api/proxmox/logs/task-detail', getTaskDetailLog);
+
+// Route API Proxmox (Node Config & Metrik)
 app.get('/api/proxmox', getProxmoxNodes);
 app.post('/api/proxmox', createProxmoxNode);
 app.put('/api/proxmox/:id', updateProxmoxNode);

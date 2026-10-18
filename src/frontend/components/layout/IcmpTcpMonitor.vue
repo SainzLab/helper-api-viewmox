@@ -9,6 +9,7 @@
         <p class="text-slate-400 text-sm">Pemantauan status berkala untuk protokol ICMP Ping dan TCP Port.</p>
       </div>
       <div class="flex gap-4 items-center">
+        
         <!-- TOGGLE MODE BUTTON -->
         <div class="flex bg-slate-900 border border-slate-700 p-1 rounded-lg shadow-inner">
           <button class="px-4 py-2 rounded-md text-xs font-bold transition-all duration-300 flex items-center gap-2 bg-moxgreen text-moxdark shadow">
@@ -16,6 +17,16 @@
           </button>
           <button @click="$emit('change-view', 'proxmox')" class="px-4 py-2 rounded-md text-xs font-bold transition-all duration-300 flex items-center gap-2 text-slate-400 hover:text-white">
             <i class="ph-bold ph-hard-drives"></i> PROXMOX
+          </button>
+        </div>
+
+        <!-- SEARCH BAR BARU -->
+        <div class="relative">
+          <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+          <input type="text" v-model="searchQuery" placeholder="Cari nama, IP, atau deskripsi..." class="pl-9 pr-4 py-2.5 w-64 border border-slate-700 bg-slate-800/50 text-white rounded-lg text-sm font-medium hover:bg-slate-700 focus:bg-slate-900 focus:border-emerald-400 transition outline-none">
+          <!-- Tombol silang untuk menghapus pencarian -->
+          <button v-if="searchQuery" @click="searchQuery = ''" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition">
+             <i class="ph-bold ph-x"></i>
           </button>
         </div>
 
@@ -35,6 +46,7 @@
         <button @click="openAddModal" class="px-4 py-2.5 bg-moxgreen text-moxdark rounded-lg flex items-center gap-2 hover:bg-emerald-400 text-sm font-bold transition shadow-lg">
           <i class="ph-bold ph-plus-circle text-lg"></i> TAMBAH TARGET
         </button>
+
       </div>
     </div>
 
@@ -61,8 +73,10 @@
             </tr>
             <tr v-else-if="filteredTargets.length === 0" class="border-b border-slate-800/50">
               <td colspan="6" class="px-6 py-12 text-center text-slate-500">
-                <i class="ph-duotone ph-tree-structure text-4xl mb-2"></i>
-                <p>Tidak ada target yang cocok dengan filter.</p>
+                <i class="ph-duotone ph-magnifying-glass text-4xl mb-2" v-if="searchQuery"></i>
+                <i class="ph-duotone ph-tree-structure text-4xl mb-2" v-else></i>
+                <p v-if="searchQuery">Tidak ada target yang cocok dengan kata kunci "<span class="text-white">{{ searchQuery }}</span>".</p>
+                <p v-else>Tidak ada target yang cocok dengan filter.</p>
               </td>
             </tr>
             <template v-else v-for="target in paginatedTargets" :key="target.id">
@@ -122,6 +136,7 @@
                   </div>
                 </td>
               </tr>
+              
               <!-- Dropdown Grafik ICMP -->
               <tr v-if="expandedTargetId === target.id">
                 <td colspan="6" class="p-0 border-b border-slate-800/50 bg-slate-800/20">
@@ -160,6 +175,7 @@
           </tbody>
         </table>
       </div>
+
       <!-- Pagination -->
       <div v-if="!isLoading && filteredTargets.length > 0" class="bg-slate-900/30 px-6 py-4 flex items-center justify-between border-t border-slate-800">
         <span class="text-xs text-slate-400">
@@ -292,11 +308,8 @@
 
     <!-- TOAST NOTIFICATION -->
     <Teleport to="body">
-      <div v-if="toast.show" 
-           class="fixed top-8 right-8 z-[1100] w-[400px] bg-[#151e2b] border-t-4 rounded-b-xl rounded-t-sm shadow-[0_10px_40px_rgba(0,0,0,0.5)] p-5 flex gap-4 animate-slide-in"
-           :class="toast.type === 'success' ? 'border-emerald-400' : 'border-rose-500'">
-        <div class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center border" 
-             :class="toast.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-500'">
+      <div v-if="toast.show" class="fixed top-8 right-8 z-[1100] w-[400px] bg-[#151e2b] border-t-4 rounded-b-xl rounded-t-sm shadow-[0_10px_40px_rgba(0,0,0,0.5)] p-5 flex gap-4 animate-slide-in" :class="toast.type === 'success' ? 'border-emerald-400' : 'border-rose-500'">
+        <div class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center border" :class="toast.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-500'">
           <i class="text-2xl" :class="toast.type === 'success' ? 'ph-fill ph-check-circle' : 'ph-fill ph-warning-circle'"></i>
         </div>
         <div class="flex-1">
@@ -310,18 +323,18 @@
         </div>
       </div>
     </Teleport>
-    
+
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+// PERBAIKAN IMPORT: Menambahkan watch
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler } from 'chart.js';
 import { Line } from 'vue-chartjs';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler);
 
-// Emits untuk memberi tahu file Induk
 defineEmits(['change-view']);
 
 const targets = ref([]);
@@ -340,9 +353,12 @@ const chartOptions = {
   elements: { line: { tension: 0.3, borderWidth: 2, borderColor: '#10b981' }, point: { radius: 2, backgroundColor: '#10b981' } }
 };
 
+// STATE SEARCH DAN FILTER
 const filterStatus = ref('ALL');
+const searchQuery = ref(''); // State baru untuk input pencarian
 const currentPage = ref(1);
 const itemsPerPage = 15;
+
 const showModal = ref(false);
 const isSaving = ref(false);
 const isEditMode = ref(false);
@@ -360,14 +376,38 @@ const showToast = (type, title, message) => {
   toastTimer = setTimeout(() => { toast.value.show = false; }, 5000);
 };
 
+// LOGIKA FILTER DAN PENCARIAN GABUNGAN
 const filteredTargets = computed(() => {
   let list = targets.value;
-  if (filterStatus.value === 'PAUSED') return list.filter(t => t.is_active === 0);
-  else if (filterStatus.value !== 'ALL') return list.filter(t => t.status === filterStatus.value && t.is_active === 1);
+
+  // 1. Eksekusi filter pencarian (Mencari di Nama, IP, dan Deskripsi)
+  if (searchQuery.value.trim() !== '') {
+    const query = searchQuery.value.toLowerCase();
+    list = list.filter(t => 
+      t.name.toLowerCase().includes(query) || 
+      t.ip_address.toLowerCase().includes(query) ||
+      (t.description && t.description.toLowerCase().includes(query))
+    );
+  }
+
+  // 2. Eksekusi filter status (Dropdown)
+  if (filterStatus.value === 'PAUSED') {
+    return list.filter(t => t.is_active === 0);
+  } else if (filterStatus.value !== 'ALL') {
+    return list.filter(t => t.status === filterStatus.value && t.is_active === 1);
+  }
+  
   return list;
 });
+
+// Auto-reset halaman 1 jika user mulai mengetik pencarian
+watch(searchQuery, () => {
+  currentPage.value = 1;
+});
+
 const totalPages = computed(() => Math.ceil(filteredTargets.value.length / itemsPerPage) || 1);
 const paginatedTargets = computed(() => filteredTargets.value.slice((currentPage.value - 1) * itemsPerPage, currentPage.value * itemsPerPage));
+
 const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++; };
 const prevPage = () => { if (currentPage.value > 1) currentPage.value--; };
 
@@ -408,6 +448,7 @@ const fetchHistory = async (targetId, isSilent) => {
 
 const openAddModal = () => { isEditMode.value = false; form.value = { name: '', description: '', protocol: 'ICMP PING', ip_address: '', port: null, check_interval: 60, max_retries: 3 }; showModal.value = true; };
 const editTarget = (target) => { isEditMode.value = true; editTargetId.value = target.id; form.value = { ...target }; showModal.value = true; };
+
 const saveTarget = async () => {
   isSaving.value = true;
   try {

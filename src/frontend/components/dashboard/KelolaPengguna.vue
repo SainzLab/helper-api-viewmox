@@ -143,7 +143,7 @@
 
         <div class="p-6 space-y-6">
           <p class="text-sm text-slate-400 leading-relaxed">
-            API Token untuk pengguna <span class="font-bold text-white">@{{ activeTokenUser?.username }}</span>. Gunakan kunci ini pada aplikasi Mobile E-BK / ProxView untuk otentikasi server.
+            API Token untuk pengguna <span class="font-bold text-white">@{{ activeTokenUser?.username }}</span>. Gunakan kunci ini pada aplikasi Mobile untuk otentifikasi.
           </p>
 
           <div v-if="isLoadingToken" class="flex justify-center py-6">

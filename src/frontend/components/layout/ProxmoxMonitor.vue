@@ -20,6 +20,10 @@
           </button>
         </div>
 
+        <button @click="fetchProxmoxData(true)" class="w-[42px] h-[42px] flex items-center justify-center border border-slate-700 bg-slate-800/50 text-slate-300 rounded-lg hover:bg-slate-700 hover:text-emerald-400 transition shadow-sm" title="Segarkan Data Secara Manual">
+          <i class="ph-bold ph-arrows-clockwise text-lg" :class="{'animate-spin text-emerald-400': isRefreshing}"></i>
+        </button>
+
         <router-link to="/proxmox-config" class="px-4 py-2.5 border border-slate-700 bg-slate-800/50 text-slate-300 rounded-lg flex items-center gap-2 hover:bg-slate-700 text-sm font-bold transition">
           <i class="ph-bold ph-gear"></i> Konfigurasi Node
         </router-link>
@@ -257,10 +261,15 @@ defineEmits(['change-view']);
 
 const proxmoxNodesData = ref([]);
 const isLoadingProxmox = ref(false);
+const isRefreshing = ref(false);
 let pollTimerProxmox = null;
 
 const fetchProxmoxData = async (isBackground = false) => {
   if (!isBackground) isLoadingProxmox.value = true;
+  else isRefreshing.value = true; 
+
+  const startTime = Date.now();
+
   try {
     const resNodes = await fetch('/api/proxmox');
     const nodesData = await resNodes.json();
@@ -269,15 +278,31 @@ const fetchProxmoxData = async (isBackground = false) => {
       const nodes = nodesData.data;
       for (let i = 0; i < nodes.length; i++) {
         if (nodes[i].status === 'TERHUBUNG') {
+          // Fetch Status Detail
           try {
             const resStatus = await fetch(`/api/proxmox/${nodes[i].id}/status`);
             const statusJson = await resStatus.json();
-            if (statusJson.success) nodes[i].statusData = statusJson.data;
+            if (statusJson.success) {
+              nodes[i].statusData = statusJson.data.sort((a, b) => a.node_name.localeCompare(b.node_name));
+            }
           } catch (e) {}
+          
+          // Fetch Resources (VM, LXC, Storage)
           try {
             const resResources = await fetch(`/api/proxmox/${nodes[i].id}/resources`);
             const resJson = await resResources.json();
-            if (resJson.success) nodes[i].resourceData = resJson.data;
+            if (resJson.success) {
+              let rd = resJson.data;
+              if (rd.vms) rd.vms.sort((a, b) => a.vmid - b.vmid);
+              if (rd.lxcs) rd.lxcs.sort((a, b) => a.vmid - b.vmid);
+              if (rd.storages) {
+                rd.storages.sort((a, b) => {
+                  if (a.storage === b.storage) return a.node.localeCompare(b.node);
+                  return a.storage.localeCompare(b.storage);
+                });
+              }
+              nodes[i].resourceData = rd;
+            }
           } catch (e) {}
         }
       }
@@ -287,12 +312,23 @@ const fetchProxmoxData = async (isBackground = false) => {
     console.error('Gagal memuat data Proxmox:', error); 
   } finally { 
     isLoadingProxmox.value = false; 
+    
+    const timeElapsed = Date.now() - startTime;
+    const minimumSpinTime = 1000; 
+    
+    if (isBackground && timeElapsed < minimumSpinTime) {
+      setTimeout(() => {
+        isRefreshing.value = false;
+      }, minimumSpinTime - timeElapsed);
+    } else {
+      isRefreshing.value = false;
+    }
   }
 };
 
 onMounted(() => {
   fetchProxmoxData();
-  pollTimerProxmox = setInterval(() => { fetchProxmoxData(true); }, 10000);
+  pollTimerProxmox = setInterval(() => { fetchProxmoxData(true); }, 5000);
 });
 
 onUnmounted(() => {
