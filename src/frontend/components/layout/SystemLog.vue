@@ -104,32 +104,24 @@
 </template>
 
 <script setup>
-// 1. TAMBAHKAN COMPUTED
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 
 defineEmits(['change-view']);
 
 const isLoading = ref(false);
 const searchQuery = ref('');
 const filterLevel = ref('ALL');
+const logs = ref([]);
+let logInterval = null;
 
-const logs = ref([
-  { id: 1, timestamp: '2026-10-18 10:05:12', level: 'INFO', source: 'AuthService', message: 'User admin berhasil login.' },
-  { id: 2, timestamp: '2026-10-18 10:07:30', level: 'WARNING', source: 'DaemonICMP', message: 'Target 10.10.0.3 (DNS Main 1) Timeout ke-1.' },
-  { id: 3, timestamp: '2026-10-18 10:12:45', level: 'ERROR', source: 'ProxmoxAPI', message: 'Gagal terhubung ke Cluster PVE: Connection Refused.' },
-  { id: 4, timestamp: '2026-10-18 10:15:00', level: 'INFO', source: 'DaemonICMP', message: 'Target 10.10.0.3 (DNS Main 1) kembali UP.' }
-]);
-
-// 2. LOGIKA PENCARIAN & FILTER GABUNGAN
+// Filter pencarian dan level
 const filteredLogs = computed(() => {
   let result = logs.value;
 
-  // Saring berdasarkan dropdown Level (Jika bukan "ALL")
   if (filterLevel.value !== 'ALL') {
     result = result.filter(log => log.level === filterLevel.value);
   }
 
-  // Saring berdasarkan teks pencarian (Jika tidak kosong)
   if (searchQuery.value.trim() !== '') {
     const query = searchQuery.value.toLowerCase();
     result = result.filter(log => 
@@ -141,15 +133,35 @@ const filteredLogs = computed(() => {
   return result;
 });
 
-const fetchSystemLogs = async () => {
-  isLoading.value = true;
-  // Contoh: const res = await fetch('/api/logs/system');
-  // logs.value = await res.json();
-  setTimeout(() => { isLoading.value = false; }, 500); 
+// Fetch data dari Backend
+const fetchSystemLogs = async (isSilent = false) => {
+  if (!isSilent) isLoading.value = true;
+  
+  try {
+    const res = await fetch('/api/logs/system');
+    const data = await res.json();
+    
+    if (data.success) {
+      logs.value = data.data;
+    }
+  } catch (error) {
+    console.error("Gagal menarik data log sistem:", error);
+  } finally {
+    if (!isSilent) isLoading.value = false;
+  }
 };
 
 onMounted(() => {
-  fetchSystemLogs();
+  fetchSystemLogs(false); // Hit pertama kali dengan loading
+  
+  // Auto-refresh setiap 5 detik secara transparan
+  logInterval = setInterval(() => {
+    fetchSystemLogs(true);
+  }, 5000);
+});
+
+onUnmounted(() => {
+  if (logInterval) clearInterval(logInterval);
 });
 </script>
 

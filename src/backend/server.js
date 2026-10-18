@@ -8,6 +8,7 @@ import { getUsers, createUser, updateUser, deleteUser, getToken, resetToken } fr
 import { getTargets, createTarget, updateTarget, deleteTarget, toggleTargetStatus, getTargetHistory, getSystemStatus } from './controllers/targetController.js';
 import { startMonitoringDaemon } from './services/monitoringDaemon.js';
 import { getProxmoxNodes, createProxmoxNode, updateProxmoxNode, deleteProxmoxNode, testProxmoxConnection, getProxmoxResources, getProxmoxNodeStatus } from './controllers/proxmoxController.js';
+import { getSystemLogs } from './controllers/systemLogController.js';
 
 // IMPORT CONTROLLER LOG PROXMOX BARU
 import { getTasksLog, getClusterLog, getTaskDetailLog } from './controllers/proxmoxLogController.js';
@@ -65,6 +66,9 @@ app.delete('/api/proxmox/:id', deleteProxmoxNode);
 app.post('/api/proxmox/:id/test', testProxmoxConnection);
 app.get('/api/proxmox/:id/resources', getProxmoxResources);
 app.get('/api/proxmox/:id/status', getProxmoxNodeStatus);
+
+// Route API System Log (Internal)
+app.get('/api/logs/system', getSystemLogs);
 
 // Route Utama
 app.get(/^(?!\/api).*/, (req, res) => {
