@@ -1,6 +1,5 @@
 <template>
   <main class="p-8 pb-12 overflow-x-hidden relative">
-    
     <!-- Header Halaman -->
     <div class="flex justify-between items-end mb-6">
       <div>
@@ -20,12 +19,7 @@
     <div class="bg-moxcard border border-slate-800 p-4 rounded-xl shadow-lg mb-6 flex justify-between items-center">
       <div class="relative w-96">
         <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg"></i>
-        <input 
-          type="text" 
-          v-model="searchQuery" 
-          placeholder="Cari nama atau username..." 
-          class="w-full bg-slate-900/50 border border-slate-700 text-white text-sm rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:border-moxgreen transition"
-        >
+        <input type="text" v-model="searchQuery" placeholder="Cari nama atau username..." class="w-full bg-slate-900/50 border border-slate-700 text-white text-sm rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:border-moxgreen transition" >
       </div>
       <div class="flex items-center gap-4">
         <!-- V-MODEL untuk Filter Role -->
@@ -48,47 +42,76 @@
               <th class="px-6 py-4 font-semibold">Username</th>
               <th class="px-6 py-4 font-semibold">Role Akses</th>
               <th class="px-6 py-4 font-semibold">Status Token API</th>
+              <th class="px-6 py-4 font-semibold text-center">Status Akun</th>
               <th class="px-6 py-4 font-semibold text-center">Aksi</th>
             </tr>
           </thead>
           <tbody class="text-sm">
             <tr v-if="isLoading" class="border-b border-slate-800/50">
-              <td colspan="5" class="px-6 py-8 text-center text-slate-400">
+              <td colspan="6" class="px-6 py-8 text-center text-slate-400">
                 <i class="ph-bold ph-spinner animate-spin text-2xl text-moxgreen mb-2 inline-block"></i>
                 <p>Memuat data pengguna...</p>
               </td>
             </tr>
             <tr v-else-if="filteredUsers.length === 0" class="border-b border-slate-800/50">
-              <td colspan="5" class="px-6 py-12 text-center text-slate-500">
+              <td colspan="6" class="px-6 py-12 text-center text-slate-500">
                 <i class="ph-duotone ph-users-slash text-4xl mb-2"></i>
                 <p>Tidak ada pengguna yang ditemukan.</p>
               </td>
             </tr>
+            
             <!-- Looping menggunakan paginatedUsers (Maks 10) -->
-            <tr v-else v-for="user in paginatedUsers" :key="user.id" class="border-b border-slate-800/50 hover:bg-slate-800/30 transition">
+            <tr v-else v-for="user in paginatedUsers" :key="user.id" 
+                class="border-b border-slate-800/50 hover:bg-slate-800/30 transition"
+                :class="!user.is_active ? 'opacity-50 grayscale-[30%]' : ''">
+              
               <td class="px-6 py-4">
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm" :class="getAvatarStyle(user.role)">
                     {{ getInitials(user.name) }}
                   </div>
                   <div>
-                    <p class="text-slate-200 font-bold">{{ user.name }}</p>
+                    <p class="text-slate-200 font-bold flex items-center gap-2">
+                      {{ user.name }}
+                      <i v-if="!user.is_active" class="ph-fill ph-lock-key text-rose-500 text-xs" title="Akun Dinonaktifkan"></i>
+                    </p>
                     <p class="text-slate-500 text-xs">{{ user.email || '-' }}</p>
                   </div>
                 </div>
               </td>
+              
               <td class="px-6 py-4 text-slate-300 font-mono text-xs">@{{ user.username }}</td>
+              
               <td class="px-6 py-4">
                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold" :class="getRoleStyle(user.role).class">
                   <i :class="getRoleStyle(user.role).icon"></i> {{ user.role }}
                 </span>
               </td>
+              
               <td class="px-6 py-4">
                 <div class="flex items-center gap-1.5 text-xs font-bold" :class="getTokenStatus(user).color">
                   <span class="w-1.5 h-1.5 rounded-full" :class="getTokenStatus(user).dot"></span>
                   {{ getTokenStatus(user).text }}
                 </div>
               </td>
+              
+              <!-- KOLOM TOGGLE STATUS AKUN -->
+              <td class="px-6 py-4 text-center">
+                 <button 
+                  @click="toggleStatus(user)" 
+                  :disabled="isToggling === user.id"
+                  class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center justify-center rounded-full focus:outline-none transition-colors duration-300 ease-in-out"
+                  :class="user.is_active ? 'bg-emerald-500/20 border border-emerald-500/30' : 'bg-slate-700/50 border border-slate-600'"
+                  :title="user.is_active ? 'Nonaktifkan Akun' : 'Aktifkan Akun'">
+                  <span class="sr-only">Toggle user status</span>
+                  <span 
+                    class="pointer-events-none flex h-5 w-5 items-center justify-center transform rounded-full shadow ring-0 transition duration-300 ease-in-out"
+                    :class="user.is_active ? 'translate-x-2.5 bg-emerald-500' : '-translate-x-2.5 bg-slate-400'">
+                    <i v-if="isToggling === user.id" class="ph-bold ph-spinner animate-spin text-white text-[10px]"></i>
+                  </span>
+                </button>
+              </td>
+
               <td class="px-6 py-4 text-center">
                 <div class="flex items-center justify-center gap-3 text-slate-400">
                   <button v-if="user.role !== 'Admin'" @click="openTokenModal(user)" class="hover:text-amber-400 transition" title="Manajemen Token API">
@@ -116,7 +139,6 @@
           sampai <span class="font-bold text-white">{{ Math.min(currentPage * itemsPerPage, filteredUsers.length) }}</span> 
           dari <span class="font-bold text-white">{{ filteredUsers.length }}</span> pengguna
         </span>
-        
         <div class="flex items-center gap-2">
           <button @click="prevPage" :disabled="currentPage === 1" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition">
             <i class="ph-bold ph-caret-left"></i>
@@ -140,12 +162,10 @@
           </h3>
           <button @click="closeTokenModal" class="text-slate-400 hover:text-white"><i class="ph ph-x text-xl"></i></button>
         </div>
-
         <div class="p-6 space-y-6">
           <p class="text-sm text-slate-400 leading-relaxed">
             API Token untuk pengguna <span class="font-bold text-white">@{{ activeTokenUser?.username }}</span>. Gunakan kunci ini pada aplikasi Mobile untuk otentifikasi.
           </p>
-
           <div v-if="isLoadingToken" class="flex justify-center py-6">
             <i class="ph-bold ph-spinner animate-spin text-3xl text-amber-500"></i>
           </div>
@@ -153,12 +173,7 @@
             <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Access Token</label>
             <div class="flex gap-2">
               <div class="relative flex-1">
-                <input 
-                  :type="showApiToken ? 'text' : 'password'" 
-                  :value="apiTokenString" 
-                  readonly 
-                  class="w-full bg-slate-900 border border-slate-700 text-white text-sm rounded-lg pl-4 pr-10 py-2.5 outline-none font-mono selection:bg-moxgreen/30"
-                >
+                <input :type="showApiToken ? 'text' : 'password'" :value="apiTokenString" readonly class="w-full bg-slate-900 border border-slate-700 text-white text-sm rounded-lg pl-4 pr-10 py-2.5 outline-none font-mono selection:bg-moxgreen/30" >
                 <button type="button" @click="showApiToken = !showApiToken" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition">
                   <i :class="showApiToken ? 'ph ph-eye-slash' : 'ph ph-eye'" class="text-lg"></i>
                 </button>
@@ -169,7 +184,6 @@
             </div>
           </div>
         </div>
-
         <div class="bg-slate-800/40 px-6 py-4 flex justify-between items-center border-t border-slate-700/80">
           <button @click="confirmResetToken" class="px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500 hover:text-moxdark text-amber-500 border border-amber-500/20 rounded-lg text-sm font-bold transition flex items-center gap-2">
             <i class="ph-bold ph-arrows-clockwise"></i> Generate Ulang Token
@@ -195,8 +209,7 @@
             <div>
               <h3 class="text-lg font-bold text-white mb-2">Generate Token Baru?</h3>
               <p class="text-sm text-slate-400 leading-relaxed">
-                Anda akan mereset API Token untuk <span class="font-bold text-white">@{{ activeTokenUser?.username }}</span>.
-                <br><br>
+                Anda akan mereset API Token untuk <span class="font-bold text-white">@{{ activeTokenUser?.username }}</span>. <br><br>
                 Token lama akan langsung <span class="text-amber-400 font-bold">hangus</span> dan semua perangkat mobile yang menggunakan token tersebut akan terputus dari server.
               </p>
             </div>
@@ -221,7 +234,6 @@
           <h3 class="text-lg font-bold text-white">{{ isEditMode ? 'Edit Pengguna' : 'Tambah Pengguna Baru' }}</h3>
           <button @click="closeModal" class="text-slate-400 hover:text-white"><i class="ph ph-x text-xl"></i></button>
         </div>
-
         <form @submit.prevent="saveUser" class="p-6 space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
@@ -233,12 +245,10 @@
               <input type="email" v-model="form.email" class="w-full bg-slate-900/50 border border-slate-700 text-white text-sm rounded-lg px-4 py-2 focus:border-moxgreen outline-none transition">
             </div>
           </div>
-
           <div>
             <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Username</label>
             <input type="text" v-model="form.username" required class="w-full bg-slate-900/50 border border-slate-700 text-white text-sm rounded-lg px-4 py-2 focus:border-moxgreen outline-none transition">
           </div>
-
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Password <span v-if="isEditMode" class="text-[9px] font-normal lowercase text-emerald-400">(Opsional)</span></label>
@@ -259,7 +269,6 @@
               </div>
             </div>
           </div>
-
           <div>
             <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Role Akses</label>
             <select v-model="form.role" class="w-full bg-slate-900/50 border border-slate-700 text-white text-sm rounded-lg px-4 py-2 focus:border-moxgreen outline-none appearance-none cursor-pointer">
@@ -268,7 +277,7 @@
               <option value="Kepala Bidang">Kepala Bidang (Read-Only Mobile API)</option>
             </select>
           </div>
-
+          
           <div v-if="form.role === 'Teknisi' || form.role === 'Kepala Bidang'" class="bg-slate-800/50 p-4 rounded-lg border border-slate-700 mt-2">
             <label class="block text-xs font-bold text-amber-400 uppercase mb-2">
               <i class="ph-fill ph-key"></i> Masa Berlaku Token API Mobile
@@ -300,8 +309,7 @@
             <div>
               <h3 class="text-lg font-bold text-white mb-2">Hapus Akses Pengguna?</h3>
               <p class="text-sm text-slate-400 leading-relaxed">
-                Anda akan menghapus akun <span class="font-bold text-white">@{{ userToDelete?.username }}</span> (<span class="text-slate-300">{{ userToDelete?.name }}</span>) secara permanen. 
-                <br><br>
+                Anda akan menghapus akun <span class="font-bold text-white">@{{ userToDelete?.username }}</span> (<span class="text-slate-300">{{ userToDelete?.name }}</span>) secara permanen. <br><br>
                 Pengguna ini tidak akan bisa lagi mengakses API daemon maupun ProxView.
               </p>
             </div>
@@ -320,10 +328,9 @@
     </div>
 
     <!-- TOAST NOTIFICATION -->
-    <div v-if="toast.show" 
-         class="fixed top-8 right-8 z-[100] w-[400px] bg-[#151e2b] border-t-4 rounded-b-xl rounded-t-sm shadow-[0_10px_40px_rgba(0,0,0,0.5)] p-5 flex gap-4 animate-slide-in"
+    <div v-if="toast.show" class="fixed top-8 right-8 z-[100] w-[400px] bg-[#151e2b] border-t-4 rounded-b-xl rounded-t-sm shadow-[0_10px_40px_rgba(0,0,0,0.5)] p-5 flex gap-4 animate-slide-in"
          :class="toast.type === 'success' ? 'border-blue-500' : 'border-rose-500'">
-      <div class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center border" 
+      <div class="flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center border"
            :class="toast.type === 'success' ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-500'">
         <i class="text-2xl" :class="toast.type === 'success' ? 'ph-fill ph-floppy-disk' : 'ph-fill ph-warning-circle'"></i>
       </div>
@@ -337,7 +344,6 @@
         <p class="text-slate-300 text-sm leading-relaxed">{{ toast.message }}</p>
       </div>
     </div>
-
   </main>
 </template>
 
@@ -348,6 +354,7 @@ const users = ref([]);
 const isLoading = ref(true);
 const showModal = ref(false);
 const isSaving = ref(false);
+const isToggling = ref(null); // Menyimpan ID user yang sedang diubah statusnya
 
 // Fitur Search, Filter, dan Pagination
 const searchQuery = ref('');
@@ -357,7 +364,6 @@ const itemsPerPage = 10;
 
 const isEditMode = ref(false);
 const editUserId = ref(null);
-
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 
@@ -389,9 +395,7 @@ const form = ref({
 const showToast = (type, title, message) => {
   toast.value = { show: true, type, title, message };
   if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    toast.value.show = false;
-  }, 5000);
+  toastTimer = setTimeout(() => { toast.value.show = false; }, 5000);
 };
 
 // ==========================================
@@ -399,13 +403,9 @@ const showToast = (type, title, message) => {
 // ==========================================
 const filteredUsers = computed(() => {
   let result = users.value;
-
-  // Filter berdasarkan Role
   if (filterRole.value !== 'Semua Role') {
     result = result.filter(user => user.role === filterRole.value);
   }
-
-  // Filter berdasarkan Search (Nama / Username)
   if (searchQuery.value) {
     const lowerCaseQuery = searchQuery.value.toLowerCase();
     result = result.filter(user => 
@@ -413,35 +413,22 @@ const filteredUsers = computed(() => {
       user.username.toLowerCase().includes(lowerCaseQuery)
     );
   }
-
   return result;
 });
 
-// Hitung total halaman
 const totalPages = computed(() => Math.ceil(filteredUsers.value.length / itemsPerPage) || 1);
-
-// Ambil data hanya untuk halaman saat ini
 const paginatedUsers = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
   const end = start + itemsPerPage;
   return filteredUsers.value.slice(start, end);
 });
 
-// Fungsi Navigasi Halaman
-const nextPage = () => {
-  if (currentPage.value < totalPages.value) currentPage.value++;
-};
+const nextPage = () => { if (currentPage.value < totalPages.value) currentPage.value++; };
+const prevPage = () => { if (currentPage.value > 1) currentPage.value--; };
 
-const prevPage = () => {
-  if (currentPage.value > 1) currentPage.value--;
-};
+watch([searchQuery, filterRole], () => { currentPage.value = 1; });
 
-// Reset ke halaman 1 setiap kali Filter atau Pencarian berubah
-watch([searchQuery, filterRole], () => {
-  currentPage.value = 1;
-});
 // ==========================================
-
 // API Fetch Data Users
 const fetchUsers = async () => {
   isLoading.value = true;
@@ -453,6 +440,27 @@ const fetchUsers = async () => {
     showToast('error', 'Koneksi Terputus', 'Gagal memuat data pengguna dari server.');
   } finally {
     isLoading.value = false;
+  }
+};
+
+// FUNGSI TOGGLE STATUS AKUN (ON/OFF)
+const toggleStatus = async (user) => {
+  isToggling.value = user.id;
+  try {
+    const res = await fetch(`/api/users/${user.id}/toggle-status`, { method: 'PUT' });
+    const data = await res.json();
+    
+    if (data.success) {
+      // Memperbarui state lokal agar tombol langsung bereaksi tanpa me-reload data
+      user.is_active = data.is_active; 
+      showToast('success', 'Status Diperbarui', data.message);
+    } else {
+      showToast('error', 'Gagal', data.message);
+    }
+  } catch (error) {
+    showToast('error', 'Kesalahan', 'Gagal terhubung ke server saat mengubah status akun.');
+  } finally {
+    isToggling.value = null;
   }
 };
 
@@ -474,8 +482,8 @@ const openTokenModal = async (user) => {
       closeTokenModal();
     }
   } catch(e) {
-     showToast('error', 'Kesalahan', 'Gagal terhubung ke server saat mengambil token.');
-     closeTokenModal();
+    showToast('error', 'Kesalahan', 'Gagal terhubung ke server saat mengambil token.');
+    closeTokenModal();
   } finally {
     isLoadingToken.value = false;
   }
@@ -496,13 +504,8 @@ const copyToken = async () => {
   }
 };
 
-const confirmResetToken = () => {
-  showConfirmResetTokenModal.value = true;
-};
-
-const closeConfirmResetTokenModal = () => {
-  showConfirmResetTokenModal.value = false;
-};
+const confirmResetToken = () => { showConfirmResetTokenModal.value = true; };
+const closeConfirmResetTokenModal = () => { showConfirmResetTokenModal.value = false; };
 
 const executeResetToken = async () => {
   isResettingToken.value = true;
@@ -539,14 +542,12 @@ const editUser = (user) => {
   if (user.token_expires_at) {
     formattedDate = new Date(user.token_expires_at).toISOString().split('T')[0];
   }
-
-  form.value = {
-    name: user.name, email: user.email || '', username: user.username,
-    password: '', password_confirm: '', role: user.role, token_expires_at: formattedDate
-  };
   
-  showPassword.value = false;
-  showConfirmPassword.value = false;
+  form.value = { 
+    name: user.name, email: user.email || '', username: user.username, 
+    password: '', password_confirm: '', role: user.role, token_expires_at: formattedDate 
+  };
+  showPassword.value = false; showConfirmPassword.value = false;
   showModal.value = true;
 };
 
@@ -555,19 +556,15 @@ const saveUser = async () => {
     showToast('error', 'Validasi Gagal', 'Konfirmasi password yang Anda masukkan tidak cocok!');
     return;
   }
-
   isSaving.value = true;
   try {
     const url = isEditMode.value ? `/api/users/${editUserId.value}` : '/api/users';
     const method = isEditMode.value ? 'PUT' : 'POST';
-
     const res = await fetch(url, {
-      method: method,
-      headers: { 'Content-Type': 'application/json' },
+      method: method, headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form.value)
     });
     const data = await res.json();
-    
     if (data.success) {
       closeModal();
       fetchUsers();
@@ -587,25 +584,18 @@ const confirmDeleteUser = (user) => {
   showDeleteModal.value = true;
 };
 
-const closeDeleteModal = () => {
-  showDeleteModal.value = false;
-  userToDelete.value = null;
-};
+const closeDeleteModal = () => { showDeleteModal.value = false; userToDelete.value = null; };
 
 const executeDeleteUser = async () => {
   if (!userToDelete.value) return;
   isDeleting.value = true;
-
   try {
     const res = await fetch(`/api/users/${userToDelete.value.id}`, { method: 'DELETE' });
     const data = await res.json();
-
     if (data.success) {
       fetchUsers();
       showToast('success', 'Pengguna Dihapus', `Akun ${userToDelete.value.name} berhasil dihapus secara permanen dari sistem.`);
       closeDeleteModal();
-      
-      // Jika data di halaman saat ini habis, mundur 1 halaman otomatis
       if (paginatedUsers.value.length === 1 && currentPage.value > 1) {
         currentPage.value--;
       }
@@ -619,9 +609,7 @@ const executeDeleteUser = async () => {
   }
 };
 
-const closeModal = () => {
-  showModal.value = false;
-};
+const closeModal = () => { showModal.value = false; };
 
 // --- Helper UI ---
 const getInitials = (name) => {
@@ -633,7 +621,7 @@ const getInitials = (name) => {
 const getAvatarStyle = (role) => {
   if (role === 'Admin') return 'bg-emerald-500/20 text-emerald-400';
   if (role === 'Kepala Bidang') return 'bg-purple-500/20 text-purple-400';
-  return 'bg-blue-500/20 text-blue-400'; 
+  return 'bg-blue-500/20 text-blue-400';
 };
 
 const getRoleStyle = (role) => {
@@ -645,10 +633,9 @@ const getRoleStyle = (role) => {
 const getTokenStatus = (user) => {
   if (user.role === 'Admin') return { text: 'Akses Web Penuh', color: 'text-slate-400', dot: 'hidden' };
   if (!user.token_expires_at) return { text: 'Token Tidak Aktif', color: 'text-slate-500', dot: 'bg-slate-500' };
-
+  
   const expDate = new Date(user.token_expires_at);
   const today = new Date();
-  
   if (expDate < today) {
     return { text: 'Kedaluwarsa', color: 'text-rose-500', dot: 'bg-rose-500' };
   }
@@ -656,9 +643,7 @@ const getTokenStatus = (user) => {
   return { text: `Aktif (Exp: ${formattedDate})`, color: 'text-blue-400', dot: 'bg-blue-500' };
 };
 
-onMounted(() => {
-  fetchUsers();
-});
+onMounted(() => { fetchUsers(); });
 </script>
 
 <style scoped>
@@ -666,24 +651,13 @@ onMounted(() => {
   0% { transform: translateX(100%); opacity: 0; }
   100% { transform: translateX(0); opacity: 1; }
 }
-.animate-slide-in {
-  animation: slide-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-.animate-fade-in {
-  animation: fade-in 0.2s ease-out forwards;
-}
-
+.animate-slide-in { animation: slide-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.animate-fade-in { animation: fade-in 0.2s ease-out forwards; }
 @keyframes bounce-in {
   0% { transform: scale(0.9); opacity: 0; }
   50% { transform: scale(1.02); opacity: 1; }
   100% { transform: scale(1); opacity: 1; }
 }
-.animate-bounce-in {
-  animation: bounce-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
+.animate-bounce-in { animation: bounce-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 </style>

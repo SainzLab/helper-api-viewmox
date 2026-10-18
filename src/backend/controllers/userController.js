@@ -179,3 +179,43 @@ export const resetToken = async (req, res) => {
     res.status(500).json({ success: false, message: 'Gagal mereset token.' });
   }
 };
+
+// ==========================================
+// TOGGLE STATUS USER (ON/OFF)
+// ==========================================
+export const toggleUserStatus = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // Cek pengguna berdasarkan ID
+        const [rows] = await db.query('SELECT username, is_active FROM users WHERE id = ?', [id]);
+        
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Pengguna tidak ditemukan.' });
+        }
+
+        const user = rows[0];
+        // Membalikkan nilai is_active saat ini (1 menjadi 0, atau 0 menjadi 1)
+        const newStatus = user.is_active ? 0 : 1;
+        const statusText = newStatus ? 'diaktifkan' : 'dinonaktifkan';
+
+        // 1. Update status di database
+        await db.query('UPDATE users SET is_active = ? WHERE id = ?', [newStatus, id]);
+
+        // 2. CATAT KE SYSTEM LOGS SECARA LANGSUNG
+        await db.query(
+            'INSERT INTO system_logs (level, source, message) VALUES (?, ?, ?)',
+            ['INFO', 'KELOLA PENGGUNA', `Status akun '${user.username}' berhasil ${statusText} oleh Admin.`]
+        );
+
+        return res.status(200).json({ 
+            success: true, 
+            message: `Akun ${user.username} berhasil ${statusText}.`,
+            is_active: newStatus 
+        });
+
+    } catch (error) {
+        console.error('Toggle User Status Error:', error);
+        return res.status(500).json({ success: false, message: 'Gagal memperbarui status pengguna.' });
+    }
+};

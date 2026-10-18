@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import cookieParser from 'cookie-parser';
 
 import { login } from './controllers/authController.js';
-import { getUsers, createUser, updateUser, deleteUser, getToken, resetToken } from './controllers/userController.js';
+import { getUsers, createUser, updateUser, deleteUser, getToken, resetToken, toggleUserStatus } from './controllers/userController.js';
 import { getTargets, createTarget, updateTarget, deleteTarget, toggleTargetStatus, getTargetHistory, getSystemStatus } from './controllers/targetController.js';
 import { startMonitoringDaemon } from './services/monitoringDaemon.js';
 import { getProxmoxNodes, createProxmoxNode, updateProxmoxNode, deleteProxmoxNode, testProxmoxConnection, getProxmoxResources, getProxmoxNodeStatus } from './controllers/proxmoxController.js';
@@ -41,6 +41,7 @@ app.put('/api/users/:id', updateUser);
 app.delete('/api/users/:id', deleteUser);
 app.get('/api/users/:id/token', getToken);          
 app.post('/api/users/:id/token/reset', resetToken);
+app.put('/api/users/:id/toggle-status', toggleUserStatus);
 
 // Route Target Monitoring
 app.get('/api/targets', getTargets);
