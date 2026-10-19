@@ -1,49 +1,51 @@
 <template>
   <div class="animate-fade-in">
     <!-- Header Halaman ICMP -->
-    <div class="flex justify-between items-end mb-6">
-      <div>
+    <div class="flex flex-nowrap justify-between items-center gap-4 mb-6">
+      <div class="shrink-0">
         <h2 class="text-2xl font-bold text-white mb-1 flex items-center gap-3">
           <i class="ph-bold ph-tree-structure text-moxgreen"></i> Daftar Layanan Ping & TCP
         </h2>
-        <p class="text-slate-400 text-sm">Pemantauan status berkala untuk protokol ICMP Ping dan TCP Port.</p>
+        <p class="text-slate-400 text-sm">Pemantauan status untuk protokol ICMP Ping dan TCP Port.</p>
       </div>
-      <div class="flex gap-4 items-center">
+      <div class="flex flex-wrap lg:flex-nowrap gap-3 items-center">
         
         <!-- TOGGLE MODE BUTTON -->
-        <div class="flex bg-slate-900 border border-slate-700 p-1 rounded-lg shadow-inner">
-          <button class="px-4 py-2 rounded-md text-xs font-bold transition-all duration-300 flex items-center gap-2 bg-moxgreen text-moxdark shadow">
-            <i class="ph-bold ph-plugs"></i> ICMP / TCP
+        <div class="flex bg-slate-900 border border-slate-700 p-1 rounded-lg shadow-inner h-[42px] items-center shrink-0">
+          <button type="button" aria-pressed="true" class="px-3 rounded-md text-xs font-bold transition-all duration-300 flex items-center gap-1.5 bg-emerald-500 text-slate-900 shadow cursor-default whitespace-nowrap h-full">
+            <i class="ph-bold ph-plugs text-sm"></i> ICMP / TCP
           </button>
-          <button @click="$emit('change-view', 'proxmox')" class="px-4 py-2 rounded-md text-xs font-bold transition-all duration-300 flex items-center gap-2 text-slate-400 hover:text-white">
-            <i class="ph-bold ph-hard-drives"></i> PROXMOX
+          <button type="button" aria-pressed="false" @click="$emit('change-view', 'proxmox')" class="px-3 rounded-md text-xs font-bold transition-all duration-300 flex items-center gap-1.5 text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer whitespace-nowrap h-full">
+            <i class="ph-bold ph-hard-drives text-sm"></i> PROXMOX
           </button>
         </div>
 
-        <!-- SEARCH BAR BARU -->
-        <div class="relative">
-          <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
-          <input type="text" v-model="searchQuery" placeholder="Cari nama, IP, atau deskripsi..." class="pl-9 pr-4 py-2.5 w-64 border border-slate-700 bg-slate-800/50 text-white rounded-lg text-sm font-medium hover:bg-slate-700 focus:bg-slate-900 focus:border-emerald-400 transition outline-none">
+        <!-- SEARCH BAR -->
+        <div class="relative h-[42px] flex items-center grow min-w-[200px]">
+          <i class="ph ph-magnifying-glass absolute left-3 text-slate-400 pointer-events-none"></i>
+          <input type="text" v-model="searchQuery" placeholder="Cari nama, IP, atau deskripsi..." class="pl-9 pr-8 h-full w-full border border-slate-700 bg-slate-800/50 text-white rounded-lg text-sm font-medium hover:bg-slate-700 focus:bg-slate-900 focus:border-emerald-400 transition outline-none">
           <!-- Tombol silang untuk menghapus pencarian -->
-          <button v-if="searchQuery" @click="searchQuery = ''" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition">
+          <button v-if="searchQuery" @click="searchQuery = ''" class="absolute right-3 text-slate-400 hover:text-white transition">
              <i class="ph-bold ph-x"></i>
           </button>
         </div>
 
-        <!-- Filter Status -->
-        <div class="relative">
-          <i class="ph ph-funnel absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
-          <select v-model="filterStatus" class="pl-10 pr-8 py-2.5 border border-slate-700 bg-slate-800/50 text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-700 transition outline-none appearance-none cursor-pointer h-full">
+        <!-- Filter Status (ICON ONLY DROPDOWN) -->
+        <div class="relative h-[42px] w-[42px] shrink-0">
+          <select v-model="filterStatus" title="Filter Status" class="w-full h-full border border-slate-700 bg-slate-800/50 text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-700 transition outline-none appearance-none cursor-pointer text-center opacity-0 absolute inset-0 z-10">
             <option value="ALL">Semua Status</option>
             <option value="UP">UP (Online)</option>
             <option value="DOWN">DOWN (Offline)</option>
             <option value="PAUSED">PAUSED</option>
           </select>
-          <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none"></i>
+          <!-- Custom Icon UI -->
+          <div class="w-full h-full border border-slate-700 bg-slate-800/50 rounded-lg flex items-center justify-center text-slate-300 pointer-events-none transition hover:bg-slate-700">
+            <i class="ph-bold ph-funnel text-base" :class="{'text-emerald-400': filterStatus !== 'ALL'}"></i>
+          </div>
         </div>
 
         <!-- Tombol Tambah -->
-        <button @click="openAddModal" class="px-4 py-2.5 bg-moxgreen text-moxdark rounded-lg flex items-center gap-2 hover:bg-emerald-400 text-sm font-bold transition shadow-lg">
+        <button @click="openAddModal" class="px-4 h-[42px] bg-moxgreen text-moxdark rounded-lg flex items-center gap-2 hover:bg-emerald-400 text-sm font-bold transition shadow-lg whitespace-nowrap shrink-0">
           <i class="ph-bold ph-plus-circle text-lg"></i> TAMBAH TARGET
         </button>
 

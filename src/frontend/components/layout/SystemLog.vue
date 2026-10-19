@@ -30,16 +30,19 @@
           </button>
         </div>
 
-        <!-- FILTER LEVEL LOG -->
-        <div class="relative">
-          <select v-model="filterLevel" class="pl-4 pr-8 py-2.5 border border-slate-700 bg-slate-800/50 text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-700 transition outline-none appearance-none cursor-pointer h-full">
+        <!-- FILTER LEVEL LOG (ICON ONLY DROPDOWN) -->
+        <div class="relative h-[42px] w-[42px] shrink-0">
+          <select v-model="filterLevel" title="Filter Level" class="w-full h-full border border-slate-700 bg-slate-800/50 text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-700 transition outline-none appearance-none cursor-pointer text-center opacity-0 absolute inset-0 z-10">
             <option value="ALL">Semua Level</option>
             <option value="INFO">INFO</option>
             <option value="WARNING">WARNING</option>
             <option value="ERROR">ERROR</option>
           </select>
-          <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs pointer-events-none"></i>
+          <div class="w-full h-full border border-slate-700 bg-slate-800/50 rounded-lg flex items-center justify-center text-slate-300 pointer-events-none transition hover:bg-slate-700">
+            <i class="ph-bold ph-funnel text-base" :class="{'text-emerald-400': filterLevel !== 'ALL'}"></i>
+          </div>
         </div>
+
       </div>
     </div>
 
