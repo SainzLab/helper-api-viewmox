@@ -27,8 +27,8 @@
     </div>
 
     <!-- Grid Konfigurasi Per Target -->
-    <div v-else class="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-      <div v-for="(target, index) in monitoredTargets" :key="target.id" class="bg-moxcard border border-slate-800 rounded-xl shadow-lg overflow-hidden flex flex-col transition-all hover:border-slate-700">
+    <div v-else class="columns-1 xl:columns-2 gap-6">
+      <div v-for="(target, index) in monitoredTargets" :key="target.id" class="bg-moxcard border border-slate-800 rounded-xl shadow-lg overflow-hidden flex flex-col transition-all hover:border-slate-700 break-inside-avoid mb-6 w-full">
         
         <!-- Target Header -->
         <div class="px-6 py-4 bg-slate-800/40 border-b border-slate-700/80 flex justify-between items-center">
@@ -51,7 +51,6 @@
           <div>
             <div class="flex justify-between items-end mb-3">
               <label class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5"><i class="ph-fill ph-cpu text-slate-400"></i> Utilisasi CPU</label>
-              <span class="text-[10px] text-slate-500">Durasi pemicu: > 5 menit</span>
             </div>
             <div class="space-y-3 bg-slate-900/50 p-4 rounded-lg border border-slate-700/50">
               <div class="flex items-center gap-4">
@@ -90,7 +89,6 @@
           <div v-if="target.type === 'NODE'">
             <div class="flex justify-between items-end mb-3">
               <label class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5"><i class="ph-fill ph-hard-drives text-slate-400"></i> Keterlambatan I/O Disk (IO Delay)</label>
-              <span class="text-[10px] text-slate-500">Durasi pemicu: > 3 menit</span>
             </div>
             <div class="space-y-3 bg-slate-900/50 p-4 rounded-lg border border-slate-700/50">
               <div class="flex items-center gap-4">
@@ -186,9 +184,9 @@
           <div>
             <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Pilih Target Dari Katalog</label>
             <div class="relative">
-              <select v-model="selectedTargetId" class="w-full bg-slate-900/50 border border-slate-700 text-white text-sm rounded-lg pl-4 pr-10 py-2.5 outline-none focus:border-emerald-500 appearance-none cursor-pointer">
-                <option value="" disabled>-- Pilih Node / VM / LXC --</option>
-                <option v-for="target in availableTargets" :key="target.id" :value="target.id">
+              <select v-model="selectedTargetJSON" class="w-full bg-slate-900/50 border border-slate-700 text-white text-sm rounded-lg pl-4 pr-10 py-2.5 outline-none focus:border-emerald-500 appearance-none cursor-pointer">
+                <option value="" disabled>{{ isFetchingCatalog ? 'Mengambil data live dari Proxmox...' : '-- Pilih Node / VM / LXC --' }}</option>
+                <option v-for="target in availableTargets" :key="target.uniqueKey" :value="JSON.stringify(target)">
                   {{ target.name }} ({{ target.node }}) - {{ target.type }} {{ target.vmid || '' }}
                 </option>
               </select>

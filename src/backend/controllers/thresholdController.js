@@ -124,20 +124,18 @@ export const getProxmoxThresholds = async (req, res) => {
 export const saveProxmoxThresholds = async (req, res) => {
     const { targets } = req.body;
     try {
-        // 1. Reset semua target menjadi tidak aktif
+        // 1. Reset semua target menjadi tidak aktif (0) sementara
         await db.query('UPDATE proxmox_targets SET is_alert_enabled = 0');
 
+        // 2. Masukkan (INSERT) atau Perbarui (UPDATE) target yang masih aktif di UI
         if (targets && targets.length > 0) {
             for (const target of targets) {
-                // 2. Cari apakah mesin ini sudah pernah tersimpan di database lokal
-                // Gunakan pencarian spesifik berdasarkan nama node dan vmid/nama mesin
                 const [existing] = await db.query(
                     'SELECT id FROM proxmox_targets WHERE type = ? AND node = ? AND (vmid = ? OR name = ?)',
                     [target.type, target.node, target.vmid || null, target.name]
                 );
 
                 if (existing.length > 0) {
-                    // UPDATE JIKA SUDAH ADA
                     await db.query(`
                         UPDATE proxmox_targets 
                         SET is_alert_enabled = 1,
@@ -155,7 +153,6 @@ export const saveProxmoxThresholds = async (req, res) => {
                         existing[0].id
                     ]);
                 } else {
-                    // INSERT JIKA INI MESIN BARU DARI LIVE API
                     await db.query(`
                         INSERT INTO proxmox_targets 
                         (vmid, name, type, node, is_alert_enabled, 
@@ -172,6 +169,10 @@ export const saveProxmoxThresholds = async (req, res) => {
                 }
             }
         }
+
+        // 3. [BARU] Hapus permanen data mesin yang sudah tidak terpakai/dihapus dari UI
+        await db.query('DELETE FROM proxmox_targets WHERE is_alert_enabled = 0');
+
         res.json({ success: true, message: 'Konfigurasi Proxmox berhasil disimpan' });
     } catch (error) {
         console.error("Error saveProxmoxThresholds:", error);
