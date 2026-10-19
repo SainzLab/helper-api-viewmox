@@ -9,7 +9,7 @@ import { getTargets, createTarget, updateTarget, deleteTarget, toggleTargetStatu
 import { startMonitoringDaemon } from './services/monitoringDaemon.js';
 import { getProxmoxNodes, createProxmoxNode, updateProxmoxNode, deleteProxmoxNode, testProxmoxConnection, getProxmoxResources, getProxmoxNodeStatus } from './controllers/proxmoxController.js';
 import { getSystemLogs } from './controllers/systemLogController.js';
-import { getNetworkThresholds, saveNetworkThresholds, getProxmoxThresholds, saveProxmoxThresholds, getNetworkCatalog } from './controllers/thresholdController.js';
+import { getNetworkThresholds, saveNetworkThresholds, getProxmoxThresholds, saveProxmoxThresholds, getNetworkCatalog, getProxmoxCatalog } from './controllers/thresholdController.js';
 import { getActiveAlerts } from './controllers/mobileAlertController.js';
 import { getTasksLog, getClusterLog, getTaskDetailLog } from './controllers/proxmoxLogController.js';
 import { verifyApiToken } from './middlewares/authMiddleware.js';
@@ -78,6 +78,7 @@ app.get('/api/thresholds/network', getNetworkThresholds);
 app.put('/api/thresholds/network', saveNetworkThresholds);
 
 // Route Threshold Proxmox
+app.get('/api/thresholds/proxmox/catalog', getProxmoxCatalog);
 app.get('/api/thresholds/proxmox', getProxmoxThresholds);
 app.put('/api/thresholds/proxmox', saveProxmoxThresholds);
 
