@@ -1,5 +1,6 @@
 import db from '../config/database.js';
 import bcrypt from 'bcrypt';
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 
 // ==========================================
@@ -25,7 +26,7 @@ const getClientInfo = (req) => {
 };
 
 // ==========================================
-// 1. LOGIN
+// 1. LOGIN (WEB)
 // ==========================================
 export const login = async (req, res) => {
     const { username, password } = req.body;
@@ -34,12 +35,11 @@ export const login = async (req, res) => {
     try {
         // 1. Cari user di database
         const [rows] = await db.query('SELECT * FROM users WHERE username = ? LIMIT 1', [username]);
-        
         if (rows.length === 0) {
             await addSystemLog('WARNING', 'AUTENTIFIKASI', `Percobaan login gagal: Username '${username}' tidak ditemukan. ${clientInfo}`);
             return res.status(401).json({ success: false, message: 'Username tidak ditemukan.' });
         }
-        
+
         const user = rows[0];
 
         // 2. Cek status aktif
@@ -75,13 +75,13 @@ export const login = async (req, res) => {
 
         // CATAT LOG LOGIN BERHASIL
         await addSystemLog('INFO', 'AUTENTIFIKASI', `Login berhasil: Pengguna '${username}' masuk ke sistem. ${clientInfo}`);
-        
+
         return res.status(200).json({
             success: true,
             message: 'Login berhasil',
             user: { name: user.name, username: user.username, role: user.role }
         });
-        
+
     } catch (error) {
         console.error('Login Error:', error);
         await addSystemLog('ERROR', 'AUTENTIFIKASI', `Terjadi kesalahan sistem saat percobaan login '${username}'. ${clientInfo}`);
@@ -90,23 +90,110 @@ export const login = async (req, res) => {
 };
 
 // ==========================================
-// 2. LOGOUT
+// 2. LOGOUT (WEB)
 // ==========================================
 export const logout = async (req, res) => {
     const clientInfo = getClientInfo(req);
     try {
         const username = req.user ? req.user.username : 'Seorang pengguna';
-        
         res.clearCookie('mox_token', {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict'
         });
-
         await addSystemLog('INFO', 'AUTENTIFIKASI', `Logout berhasil: ${username} telah keluar dari sistem. ${clientInfo}`);
         return res.status(200).json({ success: true, message: 'Logout berhasil.' });
     } catch (error) {
         console.error('Logout Error:', error);
         return res.status(500).json({ success: false, message: 'Gagal melakukan logout.' });
+    }
+};
+
+// ==========================================
+// 3. LOGIN KHUSUS MOBILE APP (3-Factor)
+// ==========================================
+export const mobileLogin = async (req, res) => {
+    // Menangkap 3 parameter dari body request Flutter
+    const { username, password, token } = req.body;
+    const clientInfo = getClientInfo(req); // Ambil info IP dan Device Flutter
+
+    if (!username || !password || !token) {
+        await addSystemLog('WARNING', 'MOBILE_AUTH', `Percobaan login ditolak: Parameter tidak lengkap. ${clientInfo}`);
+        return res.status(400).json({
+            success: false,
+            message: 'Akses ditolak: Username, password, dan token otorisasi wajib diisi lengkap.'
+        });
+    }
+
+    try {
+        // 1. Cari User berdasarkan Username dan Token
+        const [users] = await db.query(
+            'SELECT * FROM users WHERE username = ? AND api_token = ?',
+            [username, token]
+        );
+
+        if (users.length === 0) {
+            await addSystemLog('WARNING', 'MOBILE_AUTH', `Percobaan login gagal: Username '${username}' atau Token tidak valid. ${clientInfo}`);
+            return res.status(401).json({
+                success: false,
+                message: 'Kredensial tidak valid: Username atau Token otorisasi tidak ditemukan.'
+            });
+        }
+
+        const user = users[0];
+
+        // 2. Cek status aktif (Toggled Off)
+        if (user.is_active === 0) {
+            await addSystemLog('WARNING', 'MOBILE_AUTH', `Percobaan login ditolak: Akun '${username}' sedang dinonaktifkan. ${clientInfo}`);
+            return res.status(403).json({
+                success: false,
+                message: 'Akun Anda sedang dinonaktifkan oleh Administrator.'
+            });
+        }
+
+        // 3. Verifikasi Password menggunakan Bcrypt
+        const validPassword = await bcrypt.compare(password, user.password);
+        if (!validPassword) {
+            await addSystemLog('WARNING', 'MOBILE_AUTH', `Percobaan login gagal: Password salah untuk pengguna '${username}'. ${clientInfo}`);
+            return res.status(401).json({
+                success: false,
+                message: 'Password yang Anda masukkan salah.'
+            });
+        }
+
+        // 4. Cek masa berlaku token (Kadaluarsa)
+        if (user.token_expires_at) {
+            const now = new Date();
+            const expiresAt = new Date(user.token_expires_at);
+
+            if (expiresAt < now) {
+                await addSystemLog('WARNING', 'MOBILE_AUTH', `Percobaan login ditolak: Token untuk '${username}' sudah kadaluarsa. ${clientInfo}`);
+                return res.status(401).json({
+                    success: false,
+                    message: 'Token otorisasi Anda sudah kadaluarsa. Silakan generate ulang di Dashboard Web.'
+                });
+            }
+        }
+
+        // CATAT LOG LOGIN BERHASIL
+        await addSystemLog('INFO', 'MOBILE_AUTH', `Login Mobile berhasil: Pengguna '${username}' masuk ke sistem. ${clientInfo}`);
+
+        // 5. Kembalikan Response Sukses ke Flutter
+        res.json({
+            success: true,
+            message: 'Otentikasi berhasil. Perangkat terhubung.',
+            data: {
+                id: user.id,
+                name: user.name,
+                username: user.username,
+                role: user.role,
+                api_token: user.api_token
+            }
+        });
+
+    } catch (error) {
+        console.error("Error mobileLogin:", error);
+        await addSystemLog('ERROR', 'MOBILE_AUTH', `Terjadi kesalahan sistem saat percobaan login Mobile '${username}'. ${clientInfo}`);
+        res.status(500).json({ success: false, message: 'Terjadi kesalahan pada server saat login.' });
     }
 };

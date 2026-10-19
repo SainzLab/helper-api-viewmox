@@ -3,15 +3,16 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import cookieParser from 'cookie-parser';
 
-import { login } from './controllers/authController.js';
+import { login, mobileLogin } from './controllers/authController.js';
 import { getUsers, createUser, updateUser, deleteUser, getToken, resetToken, toggleUserStatus } from './controllers/userController.js';
 import { getTargets, createTarget, updateTarget, deleteTarget, toggleTargetStatus, getTargetHistory, getSystemStatus } from './controllers/targetController.js';
 import { startMonitoringDaemon } from './services/monitoringDaemon.js';
 import { getProxmoxNodes, createProxmoxNode, updateProxmoxNode, deleteProxmoxNode, testProxmoxConnection, getProxmoxResources, getProxmoxNodeStatus } from './controllers/proxmoxController.js';
 import { getSystemLogs } from './controllers/systemLogController.js';
-
-// IMPORT CONTROLLER LOG PROXMOX BARU
+import { getNetworkThresholds, saveNetworkThresholds, getProxmoxThresholds, saveProxmoxThresholds, getNetworkCatalog } from './controllers/thresholdController.js';
+import { getActiveAlerts } from './controllers/mobileAlertController.js';
 import { getTasksLog, getClusterLog, getTaskDetailLog } from './controllers/proxmoxLogController.js';
+import { verifyApiToken } from './middlewares/authMiddleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -70,6 +71,21 @@ app.get('/api/proxmox/:id/status', getProxmoxNodeStatus);
 
 // Route API System Log (Internal)
 app.get('/api/logs/system', getSystemLogs);
+
+// Route Threshold 
+app.get('/api/thresholds/network/catalog', getNetworkCatalog);
+app.get('/api/thresholds/network', getNetworkThresholds);
+app.put('/api/thresholds/network', saveNetworkThresholds);
+
+// Route Threshold Proxmox
+app.get('/api/thresholds/proxmox', getProxmoxThresholds);
+app.put('/api/thresholds/proxmox', saveProxmoxThresholds);
+
+// Gunakan middleware verifyApiToken agar rute ini wajib menggunakan Token di header
+app.get('/api/mobile/v1/alerts/active', verifyApiToken, getActiveAlerts);
+app.get('/api/mobile/v1/targets', verifyApiToken, getTargets);
+app.post('/api/mobile/v1/auth/login', mobileLogin);
+app.get('/api/mobile/v1/alerts/active', verifyApiToken, getActiveAlerts);
 
 // Route Utama
 app.get(/^(?!\/api).*/, (req, res) => {

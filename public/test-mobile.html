@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API Mobile (Flutter) - ProxView</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-h-screen p-8 font-sans">
+    <div class="max-w-4xl mx-auto space-y-8">
+        
+        <div class="border-b border-slate-700 pb-4">
+            <h2 class="text-2xl font-bold text-blue-400">Simulator API Mobile (Flutter)</h2>
+            <p class="text-slate-400 text-sm">Validasi 3 Faktor: Username + Password + Token.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <!-- PANEL 1: UJI COBA LOGIN (3-FACTOR) -->
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
+                <div class="mb-4">
+                    <h3 class="text-lg font-bold text-white mb-1 flex items-center gap-2">
+                        <span class="bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-0.5 rounded border border-emerald-500/30 uppercase">POST</span>
+                        1. Endpoint Login Mobile
+                    </h3>
+                    <code class="text-xs text-slate-400">/api/mobile/v1/auth/login</code>
+                </div>
+
+                <div class="space-y-4 mb-6">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Username</label>
+                        <input type="text" id="loginUsername" placeholder="Contoh: teknisi" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 outline-none focus:border-emerald-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Password</label>
+                        <input type="password" id="loginPassword" placeholder="***" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 outline-none focus:border-emerald-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">API Token (Dari Web Dashboard)</label>
+                        <input type="text" id="loginToken" placeholder="Masukkan token pairing..." class="w-full font-mono bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 outline-none focus:border-emerald-500 text-sm">
+                    </div>
+                    <button onclick="testLogin()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold py-2.5 px-4 rounded-lg transition shadow">
+                        Verifikasi Login 3-Faktor
+                    </button>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Response JSON (Login)</label>
+                    <div class="bg-slate-900 rounded-lg border border-slate-700 overflow-hidden relative">
+                        <pre id="loginResult" class="p-4 text-[11px] font-mono text-slate-300 overflow-x-auto whitespace-pre-wrap min-h-[120px]">Hasil verifikasi akan muncul di sini...</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 2: UJI COBA TARIK ALERTS -->
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
+                <div class="mb-4">
+                    <h3 class="text-lg font-bold text-white mb-1 flex items-center gap-2">
+                        <span class="bg-blue-500/20 text-blue-400 text-[10px] px-2 py-0.5 rounded border border-blue-500/30 uppercase">GET</span>
+                        2. Tarik Data Notifikasi
+                    </h3>
+                    <code class="text-xs text-slate-400">/api/mobile/v1/alerts/active</code>
+                </div>
+
+                <div class="space-y-4 mb-6">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Authorization Header</label>
+                        <input type="text" id="apiToken" placeholder="Bearer Token..." class="w-full font-mono bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 outline-none focus:border-blue-500 text-sm text-amber-400">
+                    </div>
+                    <button onclick="fetchAlerts()" class="w-full bg-blue-500 hover:bg-blue-400 text-white font-bold py-2.5 px-4 rounded-lg transition shadow">
+                        Tarik Notifikasi Aktif
+                    </button>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Response JSON (Alerts)</label>
+                    <div class="bg-slate-900 rounded-lg border border-slate-700 overflow-hidden">
+                        <pre id="alertResult" class="p-4 text-[11px] font-mono text-slate-300 overflow-x-auto whitespace-pre-wrap min-h-[150px]">Data notifikasi akan muncul di sini...</pre>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        async function testLogin() {
+            const usernameInput = document.getElementById('loginUsername').value.trim();
+            const passwordInput = document.getElementById('loginPassword').value.trim();
+            const tokenInput = document.getElementById('loginToken').value.trim();
+            const resultBox = document.getElementById('loginResult');
+            const authHeaderBox = document.getElementById('apiToken');
+
+            if (!usernameInput || !passwordInput || !tokenInput) {
+                resultBox.innerHTML = '<span class="text-rose-500">Error: Ketiga parameter wajib diisi lengkap!</span>';
+                return;
+            }
+
+            resultBox.innerHTML = '<span class="text-emerald-400">Memverifikasi kredensial...</span>';
+
+            try {
+                const response = await fetch('/api/mobile/v1/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: usernameInput, password: passwordInput, token: tokenInput })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    resultBox.innerHTML = `<span class="text-emerald-400">${JSON.stringify(data, null, 4)}</span>`;
+                    // Isi token ke panel sebelah untuk testing API GET
+                    authHeaderBox.value = data.data.api_token;
+                } else {
+                    resultBox.innerHTML = `<span class="text-amber-400">Response Error (${response.status}):\n${JSON.stringify(data, null, 4)}</span>`;
+                }
+            } catch (error) {
+                resultBox.innerHTML = `<span class="text-rose-500">Network Error:\n${error.message}</span>`;
+            }
+        }
+
+        async function fetchAlerts() {
+            const authInput = document.getElementById('apiToken').value.trim();
+            const resultBox = document.getElementById('alertResult');
+
+            if (!authInput) {
+                resultBox.innerHTML = '<span class="text-rose-500">Error: Token di Authorization Header kosong!</span>';
+                return;
+            }
+
+            resultBox.innerHTML = '<span class="text-blue-400">Sedang menarik data...</span>';
+
+            try {
+                const response = await fetch('/api/mobile/v1/alerts/active', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authInput}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultBox.innerHTML = `<span class="${data.total_active > 0 ? 'text-rose-400' : 'text-blue-400'}">${JSON.stringify(data, null, 4)}</span>`;
+                } else {
+                    resultBox.innerHTML = `<span class="text-amber-400">Response Error (${response.status}):\n${JSON.stringify(data, null, 4)}</span>`;
+                }
+            } catch (error) {
+                resultBox.innerHTML = `<span class="text-rose-500">Network Error:\n${error.message}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>
