@@ -7,29 +7,25 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-900 text-white min-h-screen p-8 font-sans">
-    <div class="max-w-4xl mx-auto space-y-8">
-        
+    <div class="max-w-6xl mx-auto space-y-8">
         <div class="border-b border-slate-700 pb-4">
             <h2 class="text-2xl font-bold text-blue-400">Simulator API Mobile (Flutter)</h2>
-            <p class="text-slate-400 text-sm">Validasi 3 Faktor: Username + Password + Token.</p>
+            <p class="text-slate-400 text-sm">Validasi Alur Aplikasi Teknisi: Login -> Cek Notif -> Konfirmasi (Join) -> Selesai (Resolve)</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-            
             <!-- PANEL 1: UJI COBA LOGIN (3-FACTOR) -->
             <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
                 <div class="mb-4">
                     <h3 class="text-lg font-bold text-white mb-1 flex items-center gap-2">
-                        <span class="bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-0.5 rounded border border-emerald-500/30 uppercase">POST</span>
-                        1. Endpoint Login Mobile
+                        <span class="bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-0.5 rounded border border-emerald-500/30 uppercase">POST</span> 1. Endpoint Login Mobile
                     </h3>
                     <code class="text-xs text-slate-400">/api/mobile/v1/auth/login</code>
                 </div>
-
                 <div class="space-y-4 mb-6">
                     <div>
                         <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Username</label>
-                        <input type="text" id="loginUsername" placeholder="Contoh: teknisi" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 outline-none focus:border-emerald-500 text-sm">
+                        <input type="text" id="loginUsername" placeholder="Contoh: Sainzlab" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 outline-none focus:border-emerald-500 text-sm">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Password</label>
@@ -43,7 +39,6 @@
                         Verifikasi Login 3-Faktor
                     </button>
                 </div>
-
                 <div>
                     <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Response JSON (Login)</label>
                     <div class="bg-slate-900 rounded-lg border border-slate-700 overflow-hidden relative">
@@ -56,26 +51,89 @@
             <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
                 <div class="mb-4">
                     <h3 class="text-lg font-bold text-white mb-1 flex items-center gap-2">
-                        <span class="bg-blue-500/20 text-blue-400 text-[10px] px-2 py-0.5 rounded border border-blue-500/30 uppercase">GET</span>
-                        2. Tarik Data Notifikasi
+                        <span class="bg-blue-500/20 text-blue-400 text-[10px] px-2 py-0.5 rounded border border-blue-500/30 uppercase">GET</span> 2. Tarik Data Notifikasi
                     </h3>
                     <code class="text-xs text-slate-400">/api/mobile/v1/alerts/active</code>
                 </div>
-
                 <div class="space-y-4 mb-6">
                     <div>
                         <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Authorization Header</label>
-                        <input type="text" id="apiToken" placeholder="Bearer Token..." class="w-full font-mono bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 outline-none focus:border-blue-500 text-sm text-amber-400">
+                        <input type="text" id="apiToken" placeholder="Bearer Token (Otomatis terisi dari Login)..." class="w-full font-mono bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 outline-none focus:border-blue-500 text-sm text-amber-400">
                     </div>
                     <button onclick="fetchAlerts()" class="w-full bg-blue-500 hover:bg-blue-400 text-white font-bold py-2.5 px-4 rounded-lg transition shadow">
                         Tarik Notifikasi Aktif
                     </button>
                 </div>
-
                 <div>
                     <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Response JSON (Alerts)</label>
                     <div class="bg-slate-900 rounded-lg border border-slate-700 overflow-hidden">
                         <pre id="alertResult" class="p-4 text-[11px] font-mono text-slate-300 overflow-x-auto whitespace-pre-wrap min-h-[150px]">Data notifikasi akan muncul di sini...</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 3: UJI COBA KONFIRMASI (JOIN TIKET) -->
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
+                <div class="mb-4">
+                    <h3 class="text-lg font-bold text-white mb-1 flex items-center gap-2">
+                        <span class="bg-cyan-500/20 text-cyan-400 text-[10px] px-2 py-0.5 rounded border border-cyan-500/30 uppercase">POST</span> 3. Teknisi Join Tiket
+                    </h3>
+                    <code class="text-xs text-slate-400">/api/incidents/join</code>
+                </div>
+                <div class="space-y-4 mb-6">
+                    <div class="flex gap-4">
+                        <div class="w-1/3">
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Alert ID</label>
+                            <input type="number" id="joinAlertId" placeholder="ID (ex: 76)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 outline-none focus:border-cyan-500 text-sm">
+                        </div>
+                        <div class="w-1/3">
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">User ID</label>
+                            <input type="number" id="joinUserId" value="99" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 outline-none focus:border-cyan-500 text-sm">
+                        </div>
+                        <div class="w-1/3">
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Username</label>
+                            <input type="text" id="joinUserName" value="Sainzlab" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 outline-none focus:border-cyan-500 text-sm">
+                        </div>
+                    </div>
+                    <button onclick="joinAlert()" class="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold py-2.5 px-4 rounded-lg transition shadow">
+                        Kirim Konfirmasi Tangani Gangguan
+                    </button>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Response JSON (Join)</label>
+                    <div class="bg-slate-900 rounded-lg border border-slate-700 overflow-hidden">
+                        <pre id="joinResult" class="p-4 text-[11px] font-mono text-slate-300 overflow-x-auto whitespace-pre-wrap min-h-[120px]">Hasil response join tiket...</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL 4: UJI COBA SELESAI (RESOLVE TIKET) -->
+            <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl">
+                <div class="mb-4">
+                    <h3 class="text-lg font-bold text-white mb-1 flex items-center gap-2">
+                        <span class="bg-violet-500/20 text-violet-400 text-[10px] px-2 py-0.5 rounded border border-violet-500/30 uppercase">POST</span> 4. Teknisi Selesai Tiket
+                    </h3>
+                    <code class="text-xs text-slate-400">/api/incidents/resolve</code>
+                </div>
+                <div class="space-y-4 mb-6">
+                    <div class="flex gap-4">
+                        <div class="w-1/2">
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Alert ID</label>
+                            <input type="number" id="resolveAlertId" placeholder="ID (ex: 76)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 outline-none focus:border-violet-500 text-sm">
+                        </div>
+                        <div class="w-1/2">
+                            <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Username</label>
+                            <input type="text" id="resolveUserName" value="Sainzlab" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 outline-none focus:border-violet-500 text-sm">
+                        </div>
+                    </div>
+                    <button onclick="resolveAlert()" class="w-full bg-violet-500 hover:bg-violet-400 text-white font-bold py-2.5 px-4 rounded-lg transition shadow">
+                        Kirim Penutupan Tiket (Resolve)
+                    </button>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Response JSON (Resolve)</label>
+                    <div class="bg-slate-900 rounded-lg border border-slate-700 overflow-hidden">
+                        <pre id="resolveResult" class="p-4 text-[11px] font-mono text-slate-300 overflow-x-auto whitespace-pre-wrap min-h-[120px]">Hasil response penutupan tiket (Pastikan status di DB sudah RECOVERED)...</pre>
                     </div>
                 </div>
             </div>
@@ -106,11 +164,13 @@
                 });
 
                 const data = await response.json();
-                
+
                 if (response.ok && data.success) {
                     resultBox.innerHTML = `<span class="text-emerald-400">${JSON.stringify(data, null, 4)}</span>`;
                     // Isi token ke panel sebelah untuk testing API GET
-                    authHeaderBox.value = data.data.api_token;
+                    if(data.data && data.data.api_token) {
+                         authHeaderBox.value = data.data.api_token;
+                    }
                 } else {
                     resultBox.innerHTML = `<span class="text-amber-400">Response Error (${response.status}):\n${JSON.stringify(data, null, 4)}</span>`;
                 }
@@ -140,11 +200,81 @@
                 });
 
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     resultBox.innerHTML = `<span class="${data.total_active > 0 ? 'text-rose-400' : 'text-blue-400'}">${JSON.stringify(data, null, 4)}</span>`;
                 } else {
                     resultBox.innerHTML = `<span class="text-amber-400">Response Error (${response.status}):\n${JSON.stringify(data, null, 4)}</span>`;
+                }
+            } catch (error) {
+                resultBox.innerHTML = `<span class="text-rose-500">Network Error:\n${error.message}</span>`;
+            }
+        }
+
+        async function joinAlert() {
+            const alertId = document.getElementById('joinAlertId').value.trim();
+            const userId = document.getElementById('joinUserId').value.trim();
+            const userName = document.getElementById('joinUserName').value.trim();
+            const resultBox = document.getElementById('joinResult');
+
+            if (!alertId || !userId || !userName) {
+                resultBox.innerHTML = '<span class="text-rose-500">Error: Semua parameter (Alert ID, User ID, Username) wajib diisi!</span>';
+                return;
+            }
+
+            resultBox.innerHTML = '<span class="text-cyan-400">Mengirim data konfirmasi...</span>';
+
+            try {
+                const response = await fetch('/api/incidents/join', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        alert_id: parseInt(alertId), 
+                        user_id: parseInt(userId), 
+                        user_name: userName 
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    resultBox.innerHTML = `<span class="text-cyan-400">${JSON.stringify(data, null, 4)}</span>`;
+                } else {
+                    resultBox.innerHTML = `<span class="text-amber-400">Response Error (${response.status}):\n${JSON.stringify(data, null, 4)}</span>`;
+                }
+            } catch (error) {
+                resultBox.innerHTML = `<span class="text-rose-500">Network Error:\n${error.message}</span>`;
+            }
+        }
+
+        async function resolveAlert() {
+            const alertId = document.getElementById('resolveAlertId').value.trim();
+            const userName = document.getElementById('resolveUserName').value.trim();
+            const resultBox = document.getElementById('resolveResult');
+
+            if (!alertId || !userName) {
+                resultBox.innerHTML = '<span class="text-rose-500">Error: Parameter Alert ID dan Username wajib diisi!</span>';
+                return;
+            }
+
+            resultBox.innerHTML = '<span class="text-violet-400">Memeriksa status RECOVERED dan menutup tiket...</span>';
+
+            try {
+                const response = await fetch('/api/incidents/resolve', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        alert_id: parseInt(alertId), 
+                        user_name: userName 
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    resultBox.innerHTML = `<span class="text-violet-400">${JSON.stringify(data, null, 4)}</span>`;
+                } else {
+                    resultBox.innerHTML = `<span class="text-rose-500">Response Error (${response.status}):\n${JSON.stringify(data, null, 4)}</span>`;
                 }
             } catch (error) {
                 resultBox.innerHTML = `<span class="text-rose-500">Network Error:\n${error.message}</span>`;

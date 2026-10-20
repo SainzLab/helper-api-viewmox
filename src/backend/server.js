@@ -13,7 +13,7 @@ import { getNetworkThresholds, saveNetworkThresholds, getProxmoxThresholds, save
 import { getActiveAlerts, getAlertHistory } from './controllers/mobileAlertController.js';
 import { getTasksLog, getClusterLog, getTaskDetailLog } from './controllers/proxmoxLogController.js';
 import { verifyApiToken } from './middlewares/authMiddleware.js';
-import { getIncidents, joinIncident, resolveIncident } from './controllers/incidentController.js';
+import { getIncidents, joinIncident, resolveIncident, getAnalytics } from './controllers/incidentController.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -95,6 +95,7 @@ app.get('/api/mobile/v1/alerts/active', verifyApiToken, getActiveAlerts);
 
 // Tambahkan di bawah kumpulan rute yang sudah ada
 app.get('/api/incidents', getIncidents);
+app.get('/api/analytics', getAnalytics);
 app.post('/api/incidents/join', joinIncident);
 app.post('/api/incidents/resolve', resolveIncident);
 

@@ -81,24 +81,34 @@ const triggerAlert = async (target, moduleType, severity, actionType, maxCount, 
             const logLevel = severity === 'WARNING' ? 'WARNING' : 'ERROR';
 
             if (existing.length === 0) {
-                await db.query(
-                    `INSERT INTO active_alerts (target_id, target_type, target_name, severity, action_type, message) VALUES (?, ?, ?, ?, ?, ?)`,
-                    [target.id, moduleType, target.name, severity, actionType, message]
+                // Eksekusi pembuatan tiket dan simpan status ASLI (original_severity)
+                const [result] = await db.query(
+                    `INSERT INTO active_alerts (target_id, target_type, target_name, severity, original_severity, action_type, message) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                    [target.id, moduleType, target.name, severity, severity, actionType, message]
                 );
                 
-                const logMsg = `Notifikasi Dibuat: [${moduleType}] ${target.name} - ${severity} (${message})`;
-                console.log(`[ALERT TRIGGERED] ${logMsg}`);
-                await addDaemonLog(logLevel, logMsg); // Simpan ke system_logs
+                // Format ID Tiket agar sama persis dengan yang tampil di Frontend
+                const ticketId = `#INC-${new Date().getFullYear()}-${String(result.insertId).padStart(4, '0')}`;
                 
+                const logMsg = `Tiket ${ticketId} otomatis dibuat: [${moduleType}] ${target.name} berstatus ${severity} (${message})`;
+                console.log(`🚨 [ALERT TRIGGERED] ${logMsg}`);
+                
+                // Simpan rekam jejak ke tabel system_logs
+                await addDaemonLog(logLevel, logMsg); 
+
             } else if (existing[0].severity !== severity) {
+                // Update eskalasi tiket dan timpa original_severity dengan tingkat bahaya yang baru
                 await db.query(
-                    `UPDATE active_alerts SET severity = ?, action_type = ?, message = ? WHERE id = ?`,
-                    [severity, actionType, message, existing[0].id]
+                    `UPDATE active_alerts SET severity = ?, original_severity = ?, action_type = ?, message = ? WHERE id = ?`,
+                    [severity, severity, actionType, message, existing[0].id]
                 );
                 
-                const logMsg = `Notifikasi Dinaikkan: [${moduleType}] ${target.name} menjadi ${severity} (${message})`;
-                console.log(`[ALERT ESCALATED] ${logMsg}`);
-                await addDaemonLog(logLevel, logMsg); // Simpan ke system_logs
+                const ticketId = `#INC-${new Date().getFullYear()}-${String(existing[0].id).padStart(4, '0')}`;
+                const logMsg = `Eskalasi Tiket ${ticketId}: [${moduleType}] ${target.name} naik menjadi ${severity} (${message})`;
+                console.log(`🚨 [ALERT ESCALATED] ${logMsg}`);
+                
+                // Simpan rekam jejak eskalasi ke tabel system_logs
+                await addDaemonLog(logLevel, logMsg); 
             }
             state.isAlerting = true;
         } catch (error) {
@@ -109,7 +119,6 @@ const triggerAlert = async (target, moduleType, severity, actionType, maxCount, 
 
 const resolveAlert = async (target, moduleType) => {
     const stateKey = `${moduleType}_${target.id}`;
-    
     try {
         // Langsung cek database apakah ada tiket yang masih menggantung (is_resolved = 0)
         const [existing] = await db.query(
@@ -268,7 +277,7 @@ export const startMonitoringDaemon = async () => {
                         if (target.status === 'DOWN') {
                             const recMsg = `Koneksi Pulih: ${target.name} kembali ONLINE.`;
                             console.log(`[INFO] ${recMsg}`);
-                            await addDaemonLog('INFO', recMsg); // Ini log bawaan lama
+                            await addDaemonLog('INFO', recMsg); 
                         }
                         currentFails = 0; newStatus = 'UP';
                     } else {
@@ -279,7 +288,7 @@ export const startMonitoringDaemon = async () => {
                             if (target.status !== 'DOWN') {
                                 const errMsg = `Koneksi Terputus: ${target.name} OFFLINE.`;
                                 console.log(`[ERROR] ${errMsg}`);
-                                await addDaemonLog('ERROR', errMsg); // Ini log bawaan lama
+                                await addDaemonLog('ERROR', errMsg); 
                             }
                         }
                     }
