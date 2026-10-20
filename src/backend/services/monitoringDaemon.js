@@ -54,7 +54,7 @@ const checkTcp = (ip, port) => {
 };
 
 // ==========================================
-// MESIN NOTIFIKASI (STATE ENGINE)
+// MESIN NOTIFIKASI (STATE ENGINE) - UPDATE KE SYSTEM_LOGS
 // ==========================================
 const triggerAlert = async (target, moduleType, severity, actionType, maxCount, message) => {
     const stateKey = `${moduleType}_${target.id}`;
@@ -77,18 +77,28 @@ const triggerAlert = async (target, moduleType, severity, actionType, maxCount, 
                 [target.id, moduleType]
             );
 
+            // Tentukan Level Log untuk Database
+            const logLevel = severity === 'WARNING' ? 'WARNING' : 'ERROR';
+
             if (existing.length === 0) {
                 await db.query(
                     `INSERT INTO active_alerts (target_id, target_type, target_name, severity, action_type, message) VALUES (?, ?, ?, ?, ?, ?)`,
                     [target.id, moduleType, target.name, severity, actionType, message]
                 );
-                console.log(`🚨 [ALERT TRIGGERED] Notifikasi Dibuat: ${target.name} - ${severity}`);
+                
+                const logMsg = `Notifikasi Dibuat: [${moduleType}] ${target.name} - ${severity} (${message})`;
+                console.log(`[ALERT TRIGGERED] ${logMsg}`);
+                await addDaemonLog(logLevel, logMsg); // Simpan ke system_logs
+                
             } else if (existing[0].severity !== severity) {
                 await db.query(
                     `UPDATE active_alerts SET severity = ?, action_type = ?, message = ? WHERE id = ?`,
                     [severity, actionType, message, existing[0].id]
                 );
-                console.log(`🚨 [ALERT ESCALATED] Notifikasi Dinaikkan: ${target.name} to ${severity}`);
+                
+                const logMsg = `Notifikasi Dinaikkan: [${moduleType}] ${target.name} menjadi ${severity} (${message})`;
+                console.log(`[ALERT ESCALATED] ${logMsg}`);
+                await addDaemonLog(logLevel, logMsg); // Simpan ke system_logs
             }
             state.isAlerting = true;
         } catch (error) {
@@ -99,17 +109,48 @@ const triggerAlert = async (target, moduleType, severity, actionType, maxCount, 
 
 const resolveAlert = async (target, moduleType) => {
     const stateKey = `${moduleType}_${target.id}`;
-    if (alertStateTracker[stateKey] && alertStateTracker[stateKey].isAlerting) {
-        try {
-            await db.query(
-                `UPDATE active_alerts SET is_resolved = 1, resolved_at = CURRENT_TIMESTAMP WHERE target_id = ? AND target_type = ? AND is_resolved = 0`,
-                [target.id, moduleType]
-            );
-            console.log(`✅ [ALERT RESOLVED] Insiden Selesai: ${target.name} kembali normal.`);
-        } catch (error) {
-            console.error("[ALERT ERROR] Gagal resolve alert:", error);
+    
+    try {
+        // Langsung cek database apakah ada tiket yang masih menggantung (is_resolved = 0)
+        const [existing] = await db.query(
+            'SELECT id, severity FROM active_alerts WHERE target_id = ? AND target_type = ? AND is_resolved = 0',
+            [target.id, moduleType]
+        );
+
+        if (existing.length > 0) {
+            const alertId = existing[0].id;
+            
+            // Cegah spam update jika statusnya sudah diubah jadi RECOVERED sebelumnya
+            if (existing[0].severity === 'RECOVERED') {
+                alertStateTracker[stateKey] = { failCount: 0, isAlerting: false, currentSeverity: null };
+                return;
+            }
+
+            // Cek apakah ada teknisi yang sedang menangani tiket ini
+            const [handlers] = await db.query('SELECT COUNT(id) as count FROM alert_handlers WHERE alert_id = ?', [alertId]);
+
+            if (handlers[0].count > 0) {
+                await db.query(
+                    `UPDATE active_alerts SET severity = 'RECOVERED' WHERE id = ?`,
+                    [alertId]
+                );
+                console.log(`[ALERT RECOVERED] [${moduleType}] ${target.name} pulih. Menunggu validasi Teknisi.`);
+                await addDaemonLog('INFO', `Menunggu Validasi: [${moduleType}] ${target.name} telah pulih.`);
+            } else {
+                // Tidak ada teknisi yang merespon, selesaikan otomatis
+                await db.query(
+                    `UPDATE active_alerts SET is_resolved = 1, resolved_at = CURRENT_TIMESTAMP WHERE id = ?`,
+                    [alertId]
+                );
+                console.log(`✅ [ALERT RESOLVED] [${moduleType}] ${target.name} kembali normal (Otomatis).`);
+                await addDaemonLog('INFO', `Insiden Selesai Otomatis: [${moduleType}] ${target.name} kembali normal.`);
+            }
         }
+    } catch (error) {
+        console.error("[ALERT ERROR] Gagal resolve alert:", error);
     }
+    
+    // Reset state memory
     alertStateTracker[stateKey] = { failCount: 0, isAlerting: false, currentSeverity: null };
 };
 
@@ -227,7 +268,7 @@ export const startMonitoringDaemon = async () => {
                         if (target.status === 'DOWN') {
                             const recMsg = `Koneksi Pulih: ${target.name} kembali ONLINE.`;
                             console.log(`[INFO] ${recMsg}`);
-                            await addDaemonLog('INFO', recMsg);
+                            await addDaemonLog('INFO', recMsg); // Ini log bawaan lama
                         }
                         currentFails = 0; newStatus = 'UP';
                     } else {
@@ -238,7 +279,7 @@ export const startMonitoringDaemon = async () => {
                             if (target.status !== 'DOWN') {
                                 const errMsg = `Koneksi Terputus: ${target.name} OFFLINE.`;
                                 console.log(`[ERROR] ${errMsg}`);
-                                await addDaemonLog('ERROR', errMsg);
+                                await addDaemonLog('ERROR', errMsg); // Ini log bawaan lama
                             }
                         }
                     }

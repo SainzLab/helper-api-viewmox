@@ -10,9 +10,10 @@ import { startMonitoringDaemon } from './services/monitoringDaemon.js';
 import { getProxmoxNodes, createProxmoxNode, updateProxmoxNode, deleteProxmoxNode, testProxmoxConnection, getProxmoxResources, getProxmoxNodeStatus } from './controllers/proxmoxController.js';
 import { getSystemLogs } from './controllers/systemLogController.js';
 import { getNetworkThresholds, saveNetworkThresholds, getProxmoxThresholds, saveProxmoxThresholds, getNetworkCatalog, getProxmoxCatalog } from './controllers/thresholdController.js';
-import { getActiveAlerts } from './controllers/mobileAlertController.js';
+import { getActiveAlerts, getAlertHistory } from './controllers/mobileAlertController.js';
 import { getTasksLog, getClusterLog, getTaskDetailLog } from './controllers/proxmoxLogController.js';
 import { verifyApiToken } from './middlewares/authMiddleware.js';
+import { getIncidents, joinIncident, resolveIncident } from './controllers/incidentController.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -72,6 +73,10 @@ app.get('/api/proxmox/:id/status', getProxmoxNodeStatus);
 // Route API System Log (Internal)
 app.get('/api/logs/system', getSystemLogs);
 
+// Route Notifikasi Gangguan Aktif (untuk dashboard web)
+app.get('/api/alerts/active', getActiveAlerts);
+app.get('/api/alerts/history', getAlertHistory);
+
 // Route Threshold 
 app.get('/api/thresholds/network/catalog', getNetworkCatalog);
 app.get('/api/thresholds/network', getNetworkThresholds);
@@ -87,6 +92,11 @@ app.get('/api/mobile/v1/alerts/active', verifyApiToken, getActiveAlerts);
 app.get('/api/mobile/v1/targets', verifyApiToken, getTargets);
 app.post('/api/mobile/v1/auth/login', mobileLogin);
 app.get('/api/mobile/v1/alerts/active', verifyApiToken, getActiveAlerts);
+
+// Tambahkan di bawah kumpulan rute yang sudah ada
+app.get('/api/incidents', getIncidents);
+app.post('/api/incidents/join', joinIncident);
+app.post('/api/incidents/resolve', resolveIncident);
 
 // Route Utama
 app.get(/^(?!\/api).*/, (req, res) => {

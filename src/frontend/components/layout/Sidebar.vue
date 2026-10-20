@@ -43,7 +43,7 @@
             <router-link to="/rekap-gangguan" 
                 :class="['flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition', 
                           route.name === 'rekap-gangguan' ? 'bg-moxgreen/10 text-moxgreen border border-moxgreen/20 font-medium' : 'text-slate-400 hover:text-white hover:bg-slate-800/50']">
-                <i class="ph ph-ticket text-lg"></i> Rekap Insiden
+                <i class="ph ph-ticket text-lg"></i> Rekap Gangguan
                 <span v-if="downCount > 0" class="ml-auto w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
             </router-link>
           </li>

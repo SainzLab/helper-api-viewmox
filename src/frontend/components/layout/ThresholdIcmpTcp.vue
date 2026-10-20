@@ -33,9 +33,6 @@
         <!-- Target Header -->
         <div class="px-6 py-4 bg-slate-800/40 border-b border-slate-700/80 flex justify-between items-center">
           <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-lg flex items-center justify-center shadow-inner" :class="target.type === 'ICMP' ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30' : 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'">
-              <i class="text-xl" :class="target.type === 'ICMP' ? 'ph-bold ph-wifi-high' : 'ph-bold ph-plug'"></i>
-            </div>
             <div>
               <h3 class="text-white font-bold flex items-center gap-2">
                 {{ target.name }}
