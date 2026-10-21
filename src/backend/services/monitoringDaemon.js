@@ -235,10 +235,27 @@ export const startMonitoringDaemon = async () => {
     console.log(`[INFO] ${startupMsg}`);
     await addDaemonLog('INFO', startupMsg);
 
+    // ==========================================
+    // AUTO-CLEANUP: Tukang Sapu Database Grafik
+    // ==========================================
+    setInterval(async () => {
+        try {
+            // Hapus data riwayat grafik yang umurnya sudah lebih dari 2 jam
+            await db.query(`DELETE FROM target_history WHERE created_at < NOW() - INTERVAL 2 HOUR`);
+            // Opsional: Aktifkan console.log di bawah jika Anda ingin melihat kapan ia menyapu
+            // console.log('[INFO] Pembersihan rutin tabel target_history berhasil.');
+        } catch (err) {
+            console.error('[CLEANUP ERROR] Gagal membersihkan history:', err.message);
+        }
+    }, 1000 * 60 * 5); // Berjalan otomatis setiap 1 jam sekali
+
+
+    // ==========================================
+    // LOOP UTAMA MONITORING
+    // ==========================================
     setInterval(async () => {
         // Jika daemon masih sibuk dengan loop sebelumnya, skip putaran detik ini
         if (isDaemonRunning) return; 
-        
         isDaemonRunning = true; 
 
         try {
@@ -296,14 +313,13 @@ export const startMonitoringDaemon = async () => {
                     if (target.status !== newStatus) {
                         // JIKA STATUS BERUBAH DARI UP MENJADI DOWN -> REKAM KE HISTORY!
                         if (target.status === 'UP' && newStatus === 'DOWN') {
-                            
                             // TAMBAHAN: HANYA REKAM JIKA FITUR ALERT/THRESHOLD DIAKTIFKAN
                             if (target.is_alert_enabled === 1) {
                                 const upSince = target.last_status_change ? new Date(target.last_status_change) : new Date();
                                 const downAt = new Date();
                                 const uptimeSeconds = Math.max(0, Math.floor((downAt - upSince) / 1000));
                                 const reason = result.latency !== null ? `Terputus (Last Ping: ${result.latency}ms)` : 'Koneksi Timeout / Terputus';
-    
+
                                 await db.query(
                                     `INSERT INTO down_history (target_id, target_type, target_name, up_since, down_at, uptime_duration_sec, down_reason) 
                                      VALUES (?, ?, ?, ?, ?, ?, ?)`,
@@ -323,6 +339,15 @@ export const startMonitoringDaemon = async () => {
                             'UPDATE monitoring_targets SET status = ?, last_latency = ?, last_check = NOW() WHERE id = ?', 
                             [newStatus, (result.latency !== null ? `${result.latency} ms` : 'TIMEOUT'), target.id]
                         );
+                    }
+
+                    try {
+                        await db.query(
+                            `INSERT INTO target_history (target_id, status, latency_ms) VALUES (?, ?, ?)`,
+                            [target.id, newStatus, result.latency]
+                        );
+                    } catch (historyErr) {
+                        console.error("[CHART ERROR] Gagal menyimpan data grafik:", historyErr.message);
                     }
                 }
             }
