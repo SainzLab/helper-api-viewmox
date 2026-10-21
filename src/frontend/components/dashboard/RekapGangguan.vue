@@ -9,9 +9,6 @@
         <p class="text-slate-400 text-sm">Pemantauan riwayat insiden dan performa respons teknisi.</p>
       </div>
       <div class="flex gap-3">
-        <button class="px-5 py-2.5 bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 rounded-lg text-sm font-medium transition">
-          Export Laporan
-        </button>
         <button @click="fetchDataAll" class="px-5 py-2.5 bg-moxgreen text-moxdark rounded-lg flex items-center gap-2 hover:bg-emerald-400 text-sm font-bold transition shadow-lg shadow-emerald-500/20">
           <i class="ph-bold ph-arrows-clockwise"></i> Refresh Data
         </button>
@@ -62,20 +59,12 @@
       <div class="flex items-center justify-between mb-4 mt-10">
         <div>
           <h3 class="text-base font-bold text-white flex items-center gap-2">
-            <i class="ph-bold ph-chart-line-up text-moxgreen"></i> Analitik Kinerja Sistem
+            <i class="ph-bold ph-chart-line-up text-moxgreen"></i> Analitik Kinerja Sistem (ITIL)
           </h3>
-          <p class="text-xs text-slate-500 mt-0.5">Dihitung otomatis dari history sistem &bull; {{ filterLabelText }}</p>
+          <p class="text-xs text-slate-500 mt-0.5">Dihitung otomatis dari riwayat sistem &bull; {{ filterLabelText }}</p>
         </div>
         
-        <!-- BAGIAN FILTER -->
         <div class="flex gap-3 items-center">
-          <select v-model="analyticsSeverity" @change="fetchAnalytics" class="bg-slate-900/80 border border-slate-700 text-slate-300 text-xs font-bold rounded-lg px-4 py-2 outline-none focus:border-moxgreen shadow-sm appearance-none pr-9 cursor-pointer transition hover:border-slate-500 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20fill%3D%22%2394a3b8%22%20viewBox%3D%220%200%20256%20256%22%3E%3Cpath%20d%3D%22M213.66%2C101.66l-80%2C80a8%2C8%2C0%2C0%2C1-11.32%2C0l-80-80A8%2C8%2C0%2C0%2C1%2C53.66%2C90.34L128%2C164.69l74.34-74.35a8%2C8%2C0%2C0%2C1%2C11.32%2C11.32Z%22%3E%3C%2Fpath%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:right_0.75rem_center]">
-            <option value="">Semua Gangguan</option>
-            <option value="DOWN">🔥 Khusus DOWN (Mati Total)</option>
-            <option value="CRITICAL">🚨 Khusus CRITICAL</option>
-            <option value="WARNING">⚠️ Khusus WARNING</option>
-          </select>
-          
           <div class="flex bg-slate-900/50 border border-slate-800 rounded-lg p-1">
             <button @click="setAnalyticsFilter('24h')" class="px-4 py-1.5 rounded-md text-xs font-bold transition" :class="analyticsFilter === '24h' ? 'bg-moxgreen text-moxdark' : 'text-slate-400 hover:text-white'">24 Jam</button>
             <button @click="setAnalyticsFilter('7d')" class="px-4 py-1.5 rounded-md text-xs font-bold transition" :class="analyticsFilter === '7d' ? 'bg-moxgreen text-moxdark' : 'text-slate-400 hover:text-white'">7 Hari</button>
@@ -91,7 +80,7 @@
           <div class="absolute -right-4 -top-4 w-16 h-16 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-all"></div>
           <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5 relative z-10"><i class="ph-bold ph-arrow-circle-up text-emerald-400"></i> Total Uptime</p>
           <h3 class="text-2xl font-bold text-white leading-none relative z-10">{{ formatPreciseDuration(analytics.summary.total_uptime_sec) }}</h3>
-          <p class="text-[11px] text-slate-500 mt-2 relative z-10">Waktu sistem hidup bersih</p>
+          <p class="text-[11px] text-slate-500 mt-2 relative z-10">Waktu hidup rata-rata per server</p>
         </div>
         
         <!-- TOTAL DOWNTIME -->
@@ -99,7 +88,7 @@
           <div class="absolute -right-4 -top-4 w-16 h-16 bg-rose-500/10 rounded-full blur-xl group-hover:bg-rose-500/20 transition-all"></div>
           <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5 relative z-10"><i class="ph-bold ph-arrow-circle-down text-rose-400"></i> Total Downtime</p>
           <h3 class="text-2xl font-bold text-white leading-none relative z-10">{{ formatPreciseDuration(analytics.summary.total_downtime_sec) }}</h3>
-          <p class="text-[11px] text-slate-500 mt-2 relative z-10">Akumulasi waktu gangguan</p>
+          <p class="text-[11px] text-slate-500 mt-2 relative z-10">Akumulasi seluruh waktu gangguan</p>
         </div>
 
         <!-- MTTR -->
@@ -107,7 +96,7 @@
           <div class="absolute -right-4 -top-4 w-16 h-16 bg-cyan-500/10 rounded-full blur-xl group-hover:bg-cyan-500/20 transition-all"></div>
           <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5 relative z-10"><i class="ph-bold ph-timer text-cyan-400"></i> MTTR</p>
           <h3 class="text-2xl font-bold text-white leading-none relative z-10">{{ formatPreciseDuration(analytics.summary.mttr_sec) }}</h3>
-          <p class="text-[11px] text-slate-500 mt-2 relative z-10">Rata-rata waktu pemulihan</p>
+          <p class="text-[11px] text-slate-500 mt-2 relative z-10">Rata-rata waktu pemulihan per insiden</p>
         </div>
         
         <!-- AVAILABILITY -->
@@ -310,8 +299,7 @@ const filteredTickets = computed(() => {
 });
 
 // STATE ANALITIK
-const analyticsFilter = ref('30d'); // Default 30 Hari
-const analyticsSeverity = ref('');
+const analyticsFilter = ref('24h');
 const analyticsError = ref('');
 
 const filterLabelText = computed(() => {
@@ -326,24 +314,17 @@ const analytics = ref({
   chartData: []
 });
 
+// Format Waktu & Warna Dasar
 const formatDate = (dateString) => {
     if (!dateString) return '-';
-    
-    // Backend mengirim waktu WIB tanpa info zona ("YYYY-MM-DD HH:mm:ss"), tandai eksplisit +07:00
-    // agar hasilnya tidak bergantung pada zona waktu browser/perangkat.
-    const str = dateString.toString();
-    const hasTz = /(Z|[+-]\d{2}:?\d{2})$/.test(str);
-    const dateObj = new Date(hasTz ? str : str.replace(' ', 'T').split('.')[0] + '+07:00');
-    if (isNaN(dateObj.getTime())) return '-';
-    
+    // Menghindari konversi otomatis browser ke UTC (+7) dengan replace T
+    const safeString = dateString.replace(' ', 'T');
+    const dateObj = new Date(safeString);
     return dateObj.toLocaleDateString('id-ID', { 
-        timeZone: 'Asia/Jakarta',
-        day: 'numeric', 
-        month: 'short', 
-        hour: '2-digit', 
-        minute: '2-digit' 
+        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' 
     }).replace(',', ' -');
 };
+
 const getIndicatorColor = (t) => t.status === 'Selesai' ? 'bg-emerald-500' : t.severity === 'RECOVERED' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' : t.severity === 'DOWN' ? 'bg-rose-600 shadow-[0_0_8px_rgba(225,29,72,0.5)]' : t.severity === 'CRITICAL' ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]' : 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]';
 const getStatusBadge = (s, sv) => s === 'Selesai' ? 'bg-emerald-500/20 text-emerald-500 ring-1 ring-emerald-500/50' : sv === 'RECOVERED' ? 'bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/50' : s === 'Dalam Penanganan' ? 'bg-cyan-500/20 text-cyan-500' : sv === 'DOWN' ? 'bg-rose-600/20 text-rose-500' : sv === 'CRITICAL' ? 'bg-orange-500/20 text-orange-500' : 'bg-amber-400/20 text-amber-400';
 const getTimelineProgress = (s) => s === 'Gangguan Aktif' ? 'bg-rose-500 w-0' : s === 'Dalam Penanganan' ? 'bg-gradient-to-r from-moxgreen to-cyan-500 w-[50%]' : 'bg-emerald-500 w-full';
@@ -382,33 +363,24 @@ const fetchTickets = async () => {
       stats.value.progress = tickets.value.filter(t => t.status === 'Dalam Penanganan').length;
       stats.value.resolved = tickets.value.filter(t => t.is_resolved === 1).length;
     }
-  } catch (e) {
-    console.error(e);
-  } finally {
-    isLoading.value = false;
-  }
+  } catch (e) { console.error(e); } finally { isLoading.value = false; }
 };
 
 const fetchAnalytics = async () => {
   try {
-    let url = `/api/analytics?period=${analyticsFilter.value}`;
-    if (analyticsSeverity.value) {
-      url += `&severity=${analyticsSeverity.value}`;
-    }
-    const response = await fetch(url);
+    const response = await fetch(`/api/analytics?period=${analyticsFilter.value}`);
     const json = await response.json();
     if (!json.success) throw new Error();
 
     const sum = json.summary;
     
-    // PERBAIKAN: Hitung waktu kalender nyata dan normalisasi Uptime agregat
-    const calSec = analyticsFilter.value === '24h' ? 86400 : analyticsFilter.value === '7d' ? 7 * 86400 : 30 * 86400;
-    const devices = Math.max(1, Math.round(sum.total_period_sec / calSec));
-    const humanUptimeSec = sum.total_uptime_sec / devices; 
+    // Normalisasi Uptime Kumulatif dengan membaginya berdasarkan total device
+    const devices = sum.total_devices || 1;
+    const humanUptimeSec = sum.total_uptime_sec / devices;
 
     analytics.value = {
       summary: {
-        total_uptime_sec: humanUptimeSec, // Uptime tidak akan pernah melebihi filter kalender
+        total_uptime_sec: humanUptimeSec,
         total_downtime_sec: sum.total_downtime_sec,
         mttr_sec: sum.mttr_sec,
         availability: parseFloat(sum.availability)
@@ -460,9 +432,7 @@ const availabilityOptions = computed(() => {
   const vals = seriesOf('availability');
   const minVal = vals.length ? Math.max(0, Math.floor(Math.min(...vals)) - 1) : 0;
   return {
-    ...baseChartOptions('area'),
-    colors: ['#10b981'],
-    stroke: { curve: 'smooth', width: 2.5 },
+    ...baseChartOptions('area'), colors: ['#10b981'], stroke: { curve: 'smooth', width: 2.5 },
     fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.02 } },
     yaxis: { min: minVal, max: 100, labels: { style: { colors: '#94a3b8', fontSize: '11px' }, formatter: (v) => `${v.toFixed(1)}%` } },
     tooltip: { y: { formatter: (v) => `${v.toFixed(2)}%` } }
@@ -471,10 +441,7 @@ const availabilityOptions = computed(() => {
 
 // DETAIL WAKTU PADA CHART MTTR
 const CHART_UNITS = [
-  { name: 'Detik', div: 1 },
-  { name: 'Menit', div: 60 },
-  { name: 'Jam', div: 3600 },
-  { name: 'Hari', div: 86400 }
+  { name: 'Detik', div: 1 }, { name: 'Menit', div: 60 }, { name: 'Jam', div: 3600 }, { name: 'Hari', div: 86400 }
 ];
 
 const pickChartUnit = (maxSec) => {
@@ -522,8 +489,7 @@ const durationAxis = (unit) => ({
 
 const mttrSeries = computed(() => [{ name: 'MTTR', data: seriesInUnit('mttr_sec', mttrUnit.value) }]);
 const mttrOptions = computed(() => ({
-  ...baseChartOptions('bar'),
-  colors: ['#06b6d4'],
+  ...baseChartOptions('bar'), colors: ['#06b6d4'],
   plotOptions: { bar: { borderRadius: 4, columnWidth: '55%' } },
   yaxis: durationAxis(mttrUnit.value),
   tooltip: { theme: 'dark', y: { formatter: (v, { dataPointIndex }) => formatFullDuration(analytics.value.chartData[dataPointIndex]?.mttr_sec) } }

@@ -1,36 +1,24 @@
 import db from '../config/database.js';
 
 // ==========================================
-// FUNGSI HELPER: KALKULASI DURASI
+// FUNGSI HELPER: FORMAT DETIK KE TEKS
 // ==========================================
 const formatSec = (totalSeconds) => {
     if (totalSeconds == null) return '-';
+    if (totalSeconds <= 0) return '0d';
+    
     const d = Math.floor(totalSeconds / 86400);
     const h = Math.floor((totalSeconds % 86400) / 3600);
     const m = Math.floor((totalSeconds % 3600) / 60);
     const s = Math.floor(totalSeconds % 60);
-    
-    let parts = [];
-    if (d > 0) parts.push(`${d} hari`);
-    if (h > 0) parts.push(`${h}j`);
-    if (m > 0 || h > 0) parts.push(`${m}m`);
-    parts.push(`${s}d`);
-    return parts.join(' ');
-};
 
-// Ubah Date menjadi string ISO dengan offset WIB eksplisit (contoh: 2026-10-21T15:41:00+07:00)
-// agar tidak dibaca sebagai UTC ('Z') oleh frontend (selisih 7 jam).
-const toWIBString = (value) => {
-    if (!value) return null;
-    const d = new Date(value);
-    if (isNaN(d.getTime())) return null;
-    const p = new Intl.DateTimeFormat('sv-SE', {
-        timeZone: 'Asia/Jakarta',
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', second: '2-digit',
-        hourCycle: 'h23'
-    }).format(d); // "YYYY-MM-DD HH:mm:ss"
-    return `${p.replace(' ', 'T')}+07:00`;
+    let result = [];
+    if (d > 0) result.push(`${d} hari`);
+    if (h > 0) result.push(`${h}j`);
+    if (m > 0 || h > 0) result.push(`${m}m`);
+    result.push(`${s}d`);
+
+    return result.join(' ');
 };
 
 // ==========================================
@@ -38,15 +26,14 @@ const toWIBString = (value) => {
 // ==========================================
 export const getIncidents = async (req, res) => {
     try {
-        // PERBAIKAN: Gunakan DATE_FORMAT agar MySQL mengirim waktu sebagai Teks Murni, bukan Objek Date
+        // PERBAIKAN: Hitung durasi detik langsung di dalam MySQL (TIMESTAMPDIFF).
+        // Ini membasmi bug +7 Jam karena MySQL menghitungnya murni sebelum dikirim ke Javascript.
         const [rows] = await db.query(`
             SELECT 
                 a.id, a.target_type, a.target_name, a.severity, a.message, 
-                DATE_FORMAT(a.created_at, '%Y-%m-%d %H:%i:%s') AS created_at, 
-                DATE_FORMAT(a.resolved_at, '%Y-%m-%d %H:%i:%s') AS resolved_at, 
-                a.is_resolved,
+                a.created_at, a.resolved_at, a.is_resolved,
                 GROUP_CONCAT(h.user_name SEPARATOR ', ') AS technicians,
-                DATE_FORMAT(MIN(h.joined_at), '%Y-%m-%d %H:%i:%s') AS handled_at,
+                MIN(h.joined_at) AS handled_at,
                 COUNT(h.id) AS handler_count,
                 TIMESTAMPDIFF(SECOND, a.created_at, IFNULL(a.resolved_at, CURRENT_TIMESTAMP)) AS downtime_sec,
                 TIMESTAMPDIFF(SECOND, MIN(h.joined_at), IFNULL(a.resolved_at, CURRENT_TIMESTAMP)) AS handling_sec
@@ -61,14 +48,13 @@ export const getIncidents = async (req, res) => {
             if (row.is_resolved === 1) status = 'Selesai';
             else if (row.handler_count > 0) status = 'Dalam Penanganan';
 
-            // String tanggal yang aman bisa langsung diparse
-            const year = new Date(row.created_at.replace(' ', 'T')).getFullYear();
+            const year = new Date(row.created_at).getFullYear();
             const ticketId = `#INC-${year}-${String(row.id).padStart(4, '0')}`;
 
             return {
                 id: ticketId,
                 db_id: row.id,
-                time: row.created_at,
+                time: row.created_at, 
                 title: row.message,
                 target: `${row.target_type} - ${row.target_name}`,
                 status: status,
@@ -82,6 +68,7 @@ export const getIncidents = async (req, res) => {
 
         res.json({ success: true, data: formattedTickets });
     } catch (error) {
+        console.error("Error getIncidents:", error);
         res.status(500).json({ success: false, message: 'Gagal memuat rekap tiket' });
     }
 };
@@ -93,10 +80,8 @@ export const joinIncident = async (req, res) => {
     const { alert_id, user_id, user_name } = req.body;
     try {
         await db.query('INSERT IGNORE INTO alert_handlers (alert_id, user_id, user_name) VALUES (?, ?, ?)', [alert_id, user_id, user_name]);
-        
         await db.query('INSERT INTO system_logs (level, source, message) VALUES (?, ?, ?)', 
             ['INFO', 'TICKET SYSTEM', `Teknisi ${user_name} mengkonfirmasi penanganan tiket #${alert_id}`]);
-        
         res.json({ success: true, message: 'Berhasil bergabung dalam penanganan tiket' });
     } catch (error) {
         console.error("Error joinIncident:", error);
@@ -110,26 +95,22 @@ export const joinIncident = async (req, res) => {
 export const resolveIncident = async (req, res) => {
     const { alert_id, user_name } = req.body;
     try {
-        // Validasi Keamanan: Apakah daemon benar-benar sudah mendeteksi sistem hidup?
         const [alertData] = await db.query('SELECT severity FROM active_alerts WHERE id = ?', [alert_id]);
         
         if (alertData.length === 0) {
             return res.status(404).json({ success: false, message: 'Tiket tidak ditemukan.' });
         }
 
-        // Jika statusnya belum berubah jadi RECOVERED (Pulih), TOLAK PERMINTAAN!
         if (alertData[0].severity !== 'RECOVERED') {
             return res.status(400).json({ 
                 success: false, 
-                message: '❌ Gagal! Sistem masih mendeteksi adanya gangguan. Pastikan perbaikan fisik/jaringan telah selesai dan indikator sistem kembali normal sebelum menutup tiket.' 
+                message: '❌ Gagal! Sistem masih mendeteksi adanya gangguan. Pastikan indikator sistem kembali normal sebelum menutup tiket.' 
             });
         }
 
-        // Jika lolos (Sistem sudah RECOVERED), izinkan tiket ditutup
         await db.query('UPDATE active_alerts SET is_resolved = 1, resolved_at = CURRENT_TIMESTAMP WHERE id = ?', [alert_id]);
-        
         await db.query('INSERT INTO system_logs (level, source, message) VALUES (?, ?, ?)', 
-            ['INFO', 'TICKET SYSTEM', `Tiket #${alert_id} ditutup (Selesai) secara manual oleh teknisi ${user_name}`]);
+            ['INFO', 'TICKET SYSTEM', `Tiket #${alert_id} ditutup secara manual oleh teknisi ${user_name}`]);
 
         res.json({ success: true, message: 'Tiket berhasil ditandai selesai' });
     } catch (error) {
@@ -139,9 +120,8 @@ export const resolveIncident = async (req, res) => {
 };
 
 // ==========================================
-// 4. ANALITIK KEANDALAN SISTEM (DOWN_HISTORY)
+// 4. ANALITIK KINERJA SISTEM (MURNI ITIL SLA)
 // ==========================================
-// Jendela waktu tetap yang didukung
 const PERIODS = {
     '24h': { ms: 24 * 3600 * 1000, bucket: 'hour' },
     '7d':  { ms: 7 * 24 * 3600 * 1000, bucket: 'day' },
@@ -150,37 +130,35 @@ const PERIODS = {
 
 const BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
-// Fungsi Helper untuk perhitungan Analitik Matematika
-const hitungMetrikITIL = (incidents, winStart, winEnd, totalDevices) => {
-    
-    // Hanya hitung bagian insiden yang benar-benar beririsan (terjadi) di dalam jendela waktu yang dipilih
+const hitungMetrikITIL = (incidents, winStart, winEnd) => {
+    // 1. Saring dan potong durasi insiden agar pas di dalam jendela pencarian
     const overlapped = incidents
         .map(i => ({ sec: Math.max(0, (Math.min(i.end, winEnd) - Math.max(i.start, winStart)) / 1000) }))
         .filter(i => i.sec > 0);
 
-    // Total Waktu Periode = Panjang jendela waktu x Jumlah semua alat yang dipantau (detik)
-    const totalPeriodSec = Math.max(1, Math.round(((winEnd - winStart) / 1000) * totalDevices));
+    // 2. Total Waktu Periode = Durasi jendela waktu (dalam detik)
+    const totalPeriodSec = Math.max(1, Math.round((winEnd - winStart) / 1000));
 
-    // 1. Total Downtime = Akumulasi detik dari seluruh insiden terpotong
+    // 3. Total Downtime = Akumulasi seluruh durasi gangguan di periode ini
     const totalDowntimeSec = Math.min(totalPeriodSec, Math.round(overlapped.reduce((sum, i) => sum + i.sec, 0)));
 
-    // 2. Total Uptime = Sisa waktu dari alat yang tidak pernah mati
+    // 4. Total Uptime = Waktu Periode Bersih - Total Downtime
     const totalUptimeSec = totalPeriodSec - totalDowntimeSec;
     const incidentCount = overlapped.length;
 
-    // 3. MTTR (Mean Time To Recovery) = Total Downtime / Jumlah Insiden
+    // 5. MTTR = Rata-rata waktu pemulihan (Total Downtime / Jumlah Insiden)
     const mttrSec = incidentCount > 0 ? Math.round(totalDowntimeSec / incidentCount) : 0;
 
-    // 4. Availability (%) = Persentase keandalan murni (Uptime / Total Waktu)
-    const availability = ((totalPeriodSec - totalDowntimeSec) / totalPeriodSec) * 100;
+    // 6. Availability = Persentase Uptime terhadap Total Waktu Periode
+    const availability = (totalUptimeSec / totalPeriodSec) * 100;
 
     return {
         total_period_sec: totalPeriodSec,
-        total_downtime_sec: totalDowntimeSec,
         total_uptime_sec: totalUptimeSec,
+        total_downtime_sec: totalDowntimeSec,
         incident_count: incidentCount,
         mttr_sec: mttrSec,
-        availability: availability.toFixed(2) // Format %
+        availability: availability.toFixed(2)
     };
 };
 
@@ -189,15 +167,10 @@ export const getAnalytics = async (req, res) => {
         const periodKey = PERIODS[req.query.period] ? req.query.period : '24h';
         const period = PERIODS[periodKey];
 
-        // 1. Dapatkan Total Perangkat yang dipantau agar kalkulasi Uptime akurat
-        const [netTargets] = await db.query('SELECT COUNT(id) as count FROM monitoring_targets WHERE is_active = 1');
-        const [pxTargets] = await db.query('SELECT COUNT(id) as count FROM proxmox_targets WHERE is_alert_enabled = 1');
-        const totalDevices = (netTargets[0].count || 0) + (pxTargets[0].count || 0) || 1;
-
         const winEnd = Date.now();
         const winStart = winEnd - period.ms;
 
-        // 2. Ambil data MURNI dari riwayat downtime Daemon, BUKAN dari resolusi tiket teknisi
+        // Mengambil riwayat uptime/downtime MURNI dari tabel mesin Daemon (bukan dari respon telat teknisi)
         const [rows] = await db.query(`
             SELECT up_since, down_at 
             FROM down_history 
@@ -209,13 +182,11 @@ export const getAnalytics = async (req, res) => {
             end: new Date(r.down_at).getTime()
         }));
 
-        // 3. Kalkulasi Summary Global
         const summary = {
             period: periodKey,
-            ...hitungMetrikITIL(incidents, winStart, winEnd, totalDevices)
+            ...hitungMetrikITIL(incidents, winStart, winEnd)
         };
 
-        // 4. Kalkulasi Data Grafik per Bucket (Jam/Hari)
         const chartData = [];
         const cursor = new Date(winStart);
         if (period.bucket === 'hour') cursor.setMinutes(0, 0, 0);
@@ -232,7 +203,7 @@ export const getAnalytics = async (req, res) => {
             
             chartData.push({
                 label,
-                ...hitungMetrikITIL(incidents, bs, be, totalDevices)
+                ...hitungMetrikITIL(incidents, bs, be)
             });
             cursor.setTime(next.getTime());
         }
@@ -240,6 +211,6 @@ export const getAnalytics = async (req, res) => {
         res.json({ success: true, summary, chartData });
     } catch (error) {
         console.error("Error Analytics:", error);
-        res.status(500).json({ success: false, message: 'Gagal memuat grafik analitik dari history' });
+        res.status(500).json({ success: false, message: 'Gagal memuat grafik analitik' });
     }
 };
