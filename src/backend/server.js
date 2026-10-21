@@ -128,6 +128,9 @@ app.post('/api/incidents/resolve', attachMobileUserIfPresent, resolveIncident);
 // ROUTE API MOBILE V1 (Wajib Bearer Token)
 // ==========================================
 app.post('/api/mobile/v1/auth/login', mobileLogin);
+app.get('/api/mobile/v1/auth/me', verifyApiToken, (req, res) => {
+  res.json({ success: true, data: req.user });
+});
 app.get('/api/mobile/v1/system/status', verifyApiToken, getSystemStatus);
 app.get('/api/mobile/v1/dashboard', verifyApiToken, getDashboardSummary);
 app.get('/api/mobile/v1/alerts/active', verifyApiToken, getActiveAlerts);
@@ -143,6 +146,10 @@ app.get('/api/mobile/v1/targets/:id/history', verifyApiToken, getTargetHistory);
 app.get('/api/mobile/v1/proxmox', verifyApiToken, getProxmoxNodes);
 app.get('/api/mobile/v1/proxmox/:id/status', verifyApiToken, getProxmoxNodeStatus);
 app.get('/api/mobile/v1/proxmox/:id/resources', verifyApiToken, getProxmoxResources);
+app.get('/api/mobile/v1/proxmox/logs/tasks', verifyApiToken, getTasksLog);
+app.get('/api/mobile/v1/proxmox/logs/cluster', verifyApiToken, getClusterLog);
+app.get('/api/mobile/v1/proxmox/logs/task-detail', verifyApiToken, getTaskDetailLog);
+app.get('/api/mobile/v1/logs/system', verifyApiToken, getSystemLogs);
 
 // Route Utama SPA
 app.get(/^(?!\/api).*/, (req, res) => {
