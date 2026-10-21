@@ -1,5 +1,5 @@
 <template>
-  <header class="h-16 bg-moxdark border-b border-slate-800 flex items-center justify-between px-8 sticky top-0 z-10">
+  <header class="h-16 bg-moxdark border-b border-slate-800 flex items-center justify-between px-8 sticky top-0 z-40">
     
     <!-- Breadcrumb & Jam Digital -->
     <div class="text-xs font-medium text-slate-400 flex items-center gap-2 uppercase tracking-wide">
@@ -9,33 +9,24 @@
       </div>
     </div>
     
-    <!-- Aksi Kanan Atas: Pengaturan Cronjob & Notifikasi -->
+    <!-- Aksi Kanan Atas: Notifikasi & Pengaturan Cronjob -->
     <div class="flex items-center gap-2.5">
-      <button @click="toggleDropdown"
-              class="w-9 h-9 flex items-center justify-center bg-slate-800 text-slate-300 rounded-full hover:bg-slate-700 hover:text-white border border-slate-700 transition relative"
-              :class="showDropdown ? 'bg-slate-700 text-white' : ''">
-        <i class="ph ph-bell text-lg" :class="alerts.length > 0 ? 'animate-pulse text-rose-400' : ''"></i>
-         <span v-if="alerts.length > 0"
-               class="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 flex items-center justify-center bg-rose-500 text-white text-[9px] font-bold rounded-full border border-moxdark">
-          {{ alerts.length > 99 ? '99+' : alerts.length }}
-        </span>
-      </button>
-
       <!-- Tombol Notifikasi + Dropdown -->
       <div class="relative" ref="notifWrapper">
-        <!-- Tombol Pengaturan Cronjob Pembersihan Otomatis -->
-        <button
-          @click="openCleanupModal"
-          title="Pengaturan Cronjob Pembersihan Log & Riwayat Gangguan"
-          class="w-9 h-9 flex items-center justify-center bg-slate-800 text-slate-300 rounded-full hover:bg-slate-700 hover:text-moxgreen border border-slate-700 transition relative"
-          :class="showCleanupModal ? 'bg-slate-700 text-moxgreen border-moxgreen/50' : ''"
-        >
-          <i class="ph ph-gear text-lg"></i>
+        <button @click.stop="toggleDropdown"
+                class="w-9 h-9 flex items-center justify-center bg-slate-800 text-slate-300 rounded-full hover:bg-slate-700 hover:text-white border border-slate-700 transition relative"
+                :class="showDropdown ? 'bg-slate-700 text-white' : ''">
+          <i class="ph ph-bell text-lg" :class="alerts.length > 0 ? 'animate-pulse text-rose-400' : ''"></i>
+          <span v-if="alerts.length > 0"
+                class="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 flex items-center justify-center bg-rose-500 text-white text-[9px] font-bold rounded-full border border-moxdark">
+            {{ alerts.length > 99 ? '99+' : alerts.length }}
+          </span>
         </button>
 
         <!-- Dropdown -->
         <div v-if="showDropdown"
-             class="absolute right-0 mt-3 w-96 bg-moxcard border border-slate-700 rounded-xl shadow-2xl overflow-hidden z-20">
+             @click.stop
+             class="absolute right-0 mt-3 w-96 bg-moxcard border border-slate-700 rounded-xl shadow-2xl overflow-hidden z-50">
           <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
             <h4 class="text-sm font-bold text-white flex items-center gap-2">
               <i class="ph-bold ph-bell-ringing text-moxgreen"></i> Notifikasi Gangguan
@@ -75,6 +66,16 @@
           </button>
         </div>
       </div>
+
+      <!-- Tombol Pengaturan Cronjob Pembersihan Otomatis -->
+      <button
+        @click.stop="openCleanupModal"
+        title="Pengaturan Cronjob Pembersihan Log & Riwayat Gangguan"
+        class="w-9 h-9 flex items-center justify-center bg-slate-800 text-slate-300 rounded-full hover:bg-slate-700 hover:text-moxgreen border border-slate-700 transition relative"
+        :class="showCleanupModal ? 'bg-slate-700 text-moxgreen border-moxgreen/50' : ''"
+      >
+        <i class="ph ph-gear text-lg"></i>
+      </button>
     </div>
   </header>
 

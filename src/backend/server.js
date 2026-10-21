@@ -16,6 +16,7 @@ import { getTasksLog, getClusterLog, getTaskDetailLog } from './controllers/prox
 import { verifyApiToken } from './middlewares/authMiddleware.js';
 import { getIncidents, joinIncident, resolveIncident, getAnalytics } from './controllers/incidentController.js';
 import { getCleanupSettings, saveCleanupSettings, runManualCleanup } from './controllers/cleanupController.js';
+import { getDashboardSummary } from './controllers/dashboardController.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -55,8 +56,9 @@ app.delete('/api/targets/:id', deleteTarget);
 app.put('/api/targets/:id/toggle', toggleTargetStatus);
 app.get('/api/targets/:id/history', getTargetHistory);
 
-// Route Status Konektivitas Node
+// Route Status Konektivitas Node & Ringkasan Dashboard
 app.get('/api/system/status', getSystemStatus);
+app.get('/api/dashboard/summary', getDashboardSummary);
 
 // ROUTE API PROXMOX LOGS 
 app.get('/api/proxmox/logs/tasks', getTasksLog);

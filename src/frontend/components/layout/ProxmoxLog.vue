@@ -54,7 +54,7 @@
     <!-- WRAPPER TABEL -->
     <div class="bg-moxcard border border-slate-800 rounded-xl shadow-lg overflow-hidden flex flex-col mb-4">
       
-      <!-- ================= TAB 1: TASKS LOG ================= -->
+      <!-- ================= TAB 1: TASKS LOG (Hanya dirender saat tab tasks dibuka) ================= -->
       <div v-if="activeTab === 'tasks'" class="overflow-x-auto animate-fade-in">
         <table class="w-full text-left border-collapse">
           <thead>
@@ -68,7 +68,7 @@
             </tr>
           </thead>
           <tbody class="text-sm font-sans">
-            <template v-if="isLoading">
+            <template v-if="isLoadingTasks && proxmoxTasks.length === 0">
               <tr class="border-b border-slate-800/50">
                 <td colspan="6" class="px-6 py-12 text-center text-slate-400">
                   <i class="ph-bold ph-spinner animate-spin text-2xl text-emerald-400 mb-2 inline-block"></i>
@@ -85,15 +85,16 @@
               </tr>
             </template>
             <template v-else>
-              <!-- MENGGUNAKAN displayedTasks (Hasil Slice Infinite Scroll) -->
+              <!-- MENGGUNAKAN displayedTasks (Hasil Slice Unlimited Scroll) -->
               <tr v-for="log in displayedTasks" :key="log.upid" @click="openLogDetail(log)" class="border-b border-slate-800/50 hover:bg-slate-800/50 transition cursor-pointer group">
-                <td class="px-6 py-4 text-slate-400 text-xs">{{ log.starttime }}</td>
-                <td class="px-6 py-4 text-slate-300 text-xs group-hover:text-emerald-400 transition">{{ log.endtime }}</td>
+                <td class="px-6 py-4 text-slate-400 text-xs whitespace-nowrap">{{ log.starttime }}</td>
+                <td class="px-6 py-4 text-slate-300 text-xs whitespace-nowrap group-hover:text-emerald-400 transition">{{ log.endtime }}</td>
                 <td class="px-6 py-4 text-slate-300 text-xs font-mono">{{ log.node }}</td>
                 <td class="px-6 py-4 text-slate-400 text-xs">{{ log.user }}</td>
                 <td class="px-6 py-4 text-emerald-400 text-xs font-bold">{{ log.description }}</td>
                 <td class="px-6 py-4 flex items-center justify-between">
                   <span v-if="log.status === 'OK'" class="text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded text-[10px] font-bold uppercase border border-emerald-500/20">OK</span>
+                  <span v-else-if="log.status === 'RUNNING'" class="text-cyan-400 bg-cyan-500/10 px-2 py-1 rounded text-[10px] font-bold uppercase border border-cyan-500/20 animate-pulse">RUNNING</span>
                   <span v-else class="text-rose-400 bg-rose-500/10 px-2 py-1 rounded text-[10px] font-bold uppercase border border-rose-500/20">{{ log.status }}</span>
                   <i class="ph-bold ph-caret-right text-slate-600 group-hover:text-emerald-400 transition transform group-hover:translate-x-1"></i>
                 </td>
@@ -103,7 +104,7 @@
         </table>
       </div>
 
-      <!-- ================= TAB 2: CLUSTER LOG ================= -->
+      <!-- ================= TAB 2: CLUSTER LOG (Hanya dirender saat tab cluster dibuka) ================= -->
       <div v-if="activeTab === 'cluster'" class="overflow-x-auto animate-fade-in">
         <table class="w-full text-left border-collapse">
           <thead>
@@ -118,7 +119,7 @@
             </tr>
           </thead>
           <tbody class="text-sm font-sans">
-            <template v-if="isLoading">
+            <template v-if="isLoadingCluster && proxmoxClusterLogs.length === 0">
               <tr class="border-b border-slate-800/50">
                 <td colspan="7" class="px-6 py-12 text-center text-slate-400">
                   <i class="ph-bold ph-spinner animate-spin text-2xl text-blue-400 mb-2 inline-block"></i>
@@ -135,8 +136,8 @@
               </tr>
             </template>
             <template v-else>
-              <!-- MENGGUNAKAN displayedClusterLogs (Hasil Slice Infinite Scroll) -->
-              <tr v-for="(cLog, idx) in displayedClusterLogs" :key="idx" class="border-b border-slate-800/30 hover:bg-slate-800/50 transition">
+              <!-- MENGGUNAKAN displayedClusterLogs (Hasil Slice Unlimited Scroll) -->
+              <tr v-for="(cLog, idx) in displayedClusterLogs" :key="`${cLog.rawTime}-${cLog.pid}-${idx}`" class="border-b border-slate-800/30 hover:bg-slate-800/50 transition">
                 <td class="px-6 py-2.5 text-slate-400 text-[11px] font-mono whitespace-nowrap">{{ cLog.time }}</td>
                 <td class="px-6 py-2.5 text-slate-300 text-xs">{{ cLog.node }}</td>
                 <td class="px-6 py-2.5 text-slate-400 text-xs">{{ cLog.service }}</td>
@@ -155,15 +156,20 @@
       </div>
     </div>
 
-    <!-- TRIGGER INFINITE SCROLL -->
-    <!-- Elemen transparan ini berada di bawah tabel. Saat terlihat di layar, batas render akan ditambah. -->
-    <div ref="loadMoreTrigger" class="h-10 w-full flex items-center justify-center">
-       <i v-if="(activeTab === 'tasks' && displayedTasks.length < filteredTasks.length) || (activeTab === 'cluster' && displayedClusterLogs.length < filteredClusterLogs.length)" class="ph-bold ph-spinner animate-spin text-slate-500 text-xl"></i>
+    <!-- SENTINEL TRIGGER INFINITE / UNLIMITED SCROLL -->
+    <div ref="loadMoreTrigger" class="h-10 w-full flex items-center justify-center text-xs text-slate-500 gap-2">
+      <template v-if="hasMoreToRender">
+        <i class="ph-bold ph-spinner animate-spin text-emerald-400 text-base"></i>
+        <span>Memuat baris berikutnya ({{ currentDisplayedCount }} / {{ currentTotalFilteredCount }})...</span>
+      </template>
+      <template v-else-if="currentDisplayedCount > 0">
+        <span>Menampilkan seluruh {{ currentDisplayedCount }} baris log.</span>
+      </template>
     </div>
 
-    <!-- MODAL LOG DETAIL -->
+    <!-- MODAL LOG DETAIL (Hanya dirender saat dibuka) -->
     <Teleport to="body">
-      <div v-if="showDetailModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4 animate-fade-in">
+      <div v-if="showDetailModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4 animate-fade-in" @click.self="closeDetailModal">
         <div class="bg-[#111827] border border-slate-700 rounded-xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col h-[80vh]">
           <div class="flex justify-between items-center px-5 py-3 border-b border-slate-800 bg-slate-900">
             <h3 class="font-bold text-slate-200 flex items-center gap-2 text-sm">
@@ -175,13 +181,13 @@
           <div class="px-5 py-3 bg-slate-800/30 border-b border-slate-800 flex flex-wrap gap-x-8 gap-y-2 text-xs">
             <div><span class="text-slate-500 font-bold">Node:</span> <span class="text-slate-300">{{ selectedLog?.node }}</span></div>
             <div><span class="text-slate-500 font-bold">User name:</span> <span class="text-slate-300">{{ selectedLog?.user }}</span></div>
-            <div><span class="text-slate-500 font-bold">Status:</span> <span :class="selectedLog?.status === 'OK' ? 'text-emerald-400' : 'text-rose-400'">{{ selectedLog?.status }}</span></div>
+            <div><span class="text-slate-500 font-bold">Status:</span> <span :class="selectedLog?.status === 'OK' ? 'text-emerald-400' : (selectedLog?.status === 'RUNNING' ? 'text-cyan-400' : 'text-rose-400')">{{ selectedLog?.status }}</span></div>
             <div><span class="text-slate-500 font-bold">Start Time:</span> <span class="text-slate-300">{{ selectedLog?.starttime }}</span></div>
             <div><span class="text-slate-500 font-bold">End Time:</span> <span class="text-slate-300">{{ selectedLog?.endtime }}</span></div>
             <div class="w-full mt-1"><span class="text-slate-500 font-bold">Unique task ID:</span> <span class="font-mono text-[10px] text-slate-400 bg-slate-900/50 px-2 py-0.5 rounded border border-slate-700/50">{{ selectedLog?.upid }}</span></div>
           </div>
           <div class="flex-1 overflow-y-auto p-5 bg-[#0a0f18] font-mono text-xs text-slate-300 whitespace-pre-wrap leading-relaxed no-scrollbar relative">
-            <div v-if="isLoadingDetail" class="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0f18]/80 backdrop-blur-sm z-10 text-slate-400">
+            <div v-if="isLoadingDetail && detailedLogText.length === 0" class="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0f18]/80 backdrop-blur-sm z-10 text-slate-400">
               <i class="ph-bold ph-spinner animate-spin text-3xl mb-3 text-emerald-400"></i>
               <p>Menarik detail log langsung dari daemon pveproxy node {{ selectedLog?.node }}...</p>
             </div>
@@ -200,23 +206,24 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'; // Tambahkan onUnmounted
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue';
 
 defineEmits(['change-view']);
 
-const isLoading = ref(false);
+const BATCH_SIZE = 30;
+const isLoadingTasks = ref(false);
+const isLoadingCluster = ref(false);
 const searchQuery = ref('');
 const activeTab = ref('tasks');
 
-// === INFINITE SCROLL STATE ===
-const displayLimit = ref(50); 
+// === UNLIMITED SCROLL STATE ===
+const displayLimit = ref(BATCH_SIZE);
 const loadMoreTrigger = ref(null);
+let observer = null;
+let logInterval = null;
+let detailInterval = null;
 
-watch([activeTab, searchQuery], () => {
-  displayLimit.value = 50;
-});
-
-// === STATE: TASKS LOG ===
+// === STATE: TASKS & CLUSTER LOG ===
 const showDetailModal = ref(false);
 const selectedLog = ref(null);
 const isLoadingDetail = ref(false);
@@ -259,7 +266,7 @@ const formatTaskDescription = (type, id) => {
   return id ? `${type} ${id}` : type; 
 };
 
-// === FILTER PENCARIAN KESELURUHAN DATA ===
+// === FILTER PENCARIAN ===
 const filteredTasks = computed(() => {
   if (!searchQuery.value) return proxmoxTasks.value;
   const q = searchQuery.value.toLowerCase();
@@ -281,41 +288,68 @@ const filteredClusterLogs = computed(() => {
     (l.message && l.message.toLowerCase().includes(q))
   );
 });
-// === HASIL SLICE UNTUK RENDER (INFINITE SCROLL) ===
+
+// === HASIL SLICE UNTUK RENDER (UNLIMITED SCROLL) ===
 const displayedTasks = computed(() => filteredTasks.value.slice(0, displayLimit.value));
 const displayedClusterLogs = computed(() => filteredClusterLogs.value.slice(0, displayLimit.value));
-// === FETCH & ACTIONS ===
-// Tambahkan parameter isSilent agar loading tidak muncul saat auto-refresh
-const fetchProxmoxData = async (isSilent = false) => {
-  if (!isSilent) isLoading.value = true;
-  
+
+const currentDisplayedCount = computed(() =>
+  activeTab.value === 'tasks' ? displayedTasks.value.length : displayedClusterLogs.value.length
+);
+
+const currentTotalFilteredCount = computed(() =>
+  activeTab.value === 'tasks' ? filteredTasks.value.length : filteredClusterLogs.value.length
+);
+
+const hasMoreToRender = computed(() => currentDisplayedCount.value < currentTotalFilteredCount.value);
+
+// === FETCH HANYA UNTUK TAB YANG SEDANG DIBUKA ===
+const fetchTasksOnly = async (isSilent = false) => {
+  if (isSilent && document.hidden) return;
+  if (!isSilent && proxmoxTasks.value.length === 0) isLoadingTasks.value = true;
   try {
     const resTasks = await fetch('/api/proxmox/logs/tasks');
     const dataTasks = await resTasks.json();
-    if (dataTasks.success) {
+    if (dataTasks.success && Array.isArray(dataTasks.data)) {
       proxmoxTasks.value = dataTasks.data
         .map(t => ({
           upid: t.upid,
-          rawStartTime: t.starttime, 
+          rawStartTime: t.starttime,
           starttime: formatUnixTime(t.starttime),
           endtime: formatUnixTime(t.endtime),
           user: t.user,
           node: t.node,
-          description: formatTaskDescription(t.type, t.id), 
+          description: formatTaskDescription(t.type, t.id),
           status: t.status ? (t.status === 'OK' ? 'OK' : t.status) : 'RUNNING'
         }))
-        .sort((a, b) => b.rawStartTime - a.rawStartTime); 
-    }
+        .sort((a, b) => b.rawStartTime - a.rawStartTime);
 
+      // Update status pada selectedLog jika modal detail sedang dibuka
+      if (showDetailModal.value && selectedLog.value) {
+        const updated = proxmoxTasks.value.find(item => item.upid === selectedLog.value.upid);
+        if (updated) selectedLog.value = updated;
+      }
+    }
+  } catch (error) {
+    console.error("Gagal menarik data Tasks Log dari backend:", error);
+  } finally {
+    if (!isSilent) isLoadingTasks.value = false;
+  }
+};
+
+const fetchClusterOnly = async (isSilent = false) => {
+  if (isSilent && document.hidden) return;
+  if (!isSilent && proxmoxClusterLogs.value.length === 0) isLoadingCluster.value = true;
+  try {
     const resCluster = await fetch('/api/proxmox/logs/cluster');
     const dataCluster = await resCluster.json();
-    if (dataCluster.success) {
+    if (dataCluster.success && Array.isArray(dataCluster.data)) {
       proxmoxClusterLogs.value = dataCluster.data
         .map(l => ({
-          rawTime: l.time, 
+          rawTime: l.time,
           time: formatUnixTime(l.time),
           node: l.node,
-          service: l.tag, 
+          service: l.tag,
           pid: l.pid,
           user: l.user,
           severity: getSeverityLevel(l.pri),
@@ -324,9 +358,44 @@ const fetchProxmoxData = async (isSilent = false) => {
         .sort((a, b) => b.rawTime - a.rawTime);
     }
   } catch (error) {
-    console.error("Gagal menarik data log dari backend:", error);
+    console.error("Gagal menarik data Cluster Log dari backend:", error);
   } finally {
-    if (!isSilent) isLoading.value = false;
+    if (!isSilent) isLoadingCluster.value = false;
+  }
+};
+
+const fetchActiveTabData = async (isSilent = false) => {
+  if (activeTab.value === 'tasks') {
+    await fetchTasksOnly(isSilent);
+  } else {
+    await fetchClusterOnly(isSilent);
+  }
+};
+
+// Reset displayLimit saat ganti sub-tab atau kata kunci pencarian, dan tarik data tab yang baru dibuka
+watch(activeTab, (newTab) => {
+  displayLimit.value = BATCH_SIZE;
+  if (newTab === 'tasks') {
+    fetchTasksOnly(proxmoxTasks.value.length > 0);
+  } else {
+    fetchClusterOnly(proxmoxClusterLogs.value.length > 0);
+  }
+});
+
+watch(searchQuery, () => {
+  displayLimit.value = BATCH_SIZE;
+});
+
+const fetchTaskDetailSilent = async (log) => {
+  if (!log || document.hidden) return;
+  try {
+    const res = await fetch(`/api/proxmox/logs/task-detail?node=${log.node}&upid=${encodeURIComponent(log.upid)}`);
+    const data = await res.json();
+    if (data.success && Array.isArray(data.data)) {
+      detailedLogText.value = data.data.map(line => line.t);
+    }
+  } catch (err) {
+    // Abaikan error saat background refresh detail
   }
 };
 
@@ -350,32 +419,50 @@ const openLogDetail = async (log) => {
   } finally {
     isLoadingDetail.value = false;
   }
+
+  if (detailInterval) clearInterval(detailInterval);
+  detailInterval = setInterval(() => {
+    if (showDetailModal.value && selectedLog.value) {
+      fetchTaskDetailSilent(selectedLog.value);
+    }
+  }, 3000);
 };
 
 const closeDetailModal = () => {
   showDetailModal.value = false;
   selectedLog.value = null;
   detailedLogText.value = [];
+  if (detailInterval) {
+    clearInterval(detailInterval);
+    detailInterval = null;
+  }
 };
 
-// === LIFECYCLE HOOKS ===
-let logInterval = null; // Variabel untuk menyimpan timer auto-refresh
+const handleVisibilityChange = () => {
+  if (!document.hidden) {
+    fetchActiveTabData(true);
+  }
+};
 
 onMounted(() => {
-  fetchProxmoxData(false); // Hit pertama dengan loading spinner
+  // Hanya fetch tab yang sedang dibuka pertama kali ('tasks')
+  fetchActiveTabData(false);
 
-  // Fitur Auto-Refresh: Hit API secara SILENT (tanpa loading) setiap 10 detik
+  // Auto-Refresh Realtime: Hit API secara SILENT setiap 3 detik hanya untuk tab yang sedang aktif
   logInterval = setInterval(() => {
-    fetchProxmoxData(true); 
-  }, 5000);
+    fetchActiveTabData(true);
+  }, 3000);
 
-  // === SETUP OBSERVER UNTUK INFINITE SCROLL ===
-  const observer = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting) {
-      displayLimit.value += 50; 
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+
+  // === SETUP OBSERVER UNTUK UNLIMITED SCROLL ===
+  observer = new IntersectionObserver(async (entries) => {
+    if (entries[0]?.isIntersecting && hasMoreToRender.value) {
+      displayLimit.value += BATCH_SIZE;
+      await nextTick();
     }
   }, {
-    rootMargin: '100px' 
+    rootMargin: '150px'
   });
 
   if (loadMoreTrigger.value) {
@@ -383,9 +470,11 @@ onMounted(() => {
   }
 });
 
-// Hentikan interval polling saat user berpindah halaman agar tidak boros memory/bandwidth
 onUnmounted(() => {
   if (logInterval) clearInterval(logInterval);
+  if (detailInterval) clearInterval(detailInterval);
+  if (observer) observer.disconnect();
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
 });
 </script>
 
