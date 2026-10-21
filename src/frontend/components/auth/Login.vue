@@ -79,7 +79,7 @@
         </form>
 
         <div class="mt-auto pt-8 text-xs text-slate-500 font-medium">
-          &copy; {{ new Date().getFullYear() }} Diskominfo Kabupaten Subang.
+          &copy; {{ new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta', year: 'numeric' }) }} Diskominfo Kabupaten Subang.
         </div>
       </div>
 

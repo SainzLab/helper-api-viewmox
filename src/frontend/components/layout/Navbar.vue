@@ -176,13 +176,12 @@ const currentTime = ref('');
 let timer = null;
 
 const updateClock = () => {
-  const now = new Date();
+  // Selalu pakai zona waktu Asia/Jakarta, tidak bergantung zona waktu perangkat
+  const time = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+  }).format(new Date());
   
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(now.getMinutes()).padStart(2, '0');
-  const seconds = String(now.getSeconds()).padStart(2, '0');
-  
-  currentTime.value = `${hours}:${minutes}:${seconds} WIB`;
+  currentTime.value = `${time} WIB`;
 };
 
 // ==========================================
@@ -257,6 +256,7 @@ const severityStyle = (severity) => {
 const formatTime = (value) => {
   if (!value) return '-';
   return new Date(value).toLocaleString('id-ID', {
+    timeZone: 'Asia/Jakarta',
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit'
   }).replace(/\./g, ':') + ' WIB';

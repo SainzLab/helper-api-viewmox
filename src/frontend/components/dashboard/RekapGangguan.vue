@@ -64,7 +64,7 @@
                     <h3 class="text-base font-bold text-white flex items-center gap-2">
                         <i class="ph-bold ph-chart-line-up text-moxgreen"></i> Analitik Kinerja Sistem
                     </h3>
-                    <p class="text-xs text-slate-500 mt-0.5">Dihitung dari tiket yang sudah selesai &bull; {{ analyticsFilter === 'year' ? 'Tahun ' + new Date().getFullYear() : 'Bulan ' + currentMonthLabel }}</p>
+                    <p class="text-xs text-slate-500 mt-0.5">Dihitung dari tiket yang sudah selesai &bull; {{ analyticsFilter === 'year' ? 'Tahun ' + currentYearLabel : 'Bulan ' + currentMonthLabel }}</p>
                 </div>
                 
                 <!-- BAGIAN FILTER BARU -->
@@ -153,14 +153,15 @@
         <div class="flex gap-4 mb-6">
             <div class="relative flex-1">
                 <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-lg"></i>
-                <input type="text" placeholder="Cari tiket / server / IP / jenis gangguan..." class="w-full bg-slate-900/50 border border-slate-800 text-white text-sm rounded-lg pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-moxgreen/50 focus:border-moxgreen transition shadow-sm" >
+                <input v-model="searchQuery" type="text" placeholder="Cari tiket / server / IP / jenis gangguan..." class="w-full bg-slate-900/50 border border-slate-800 text-white text-sm rounded-lg pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-moxgreen/50 focus:border-moxgreen transition shadow-sm" >
             </div>
-            <select class="bg-slate-900/50 border border-slate-800 text-white text-sm rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-moxgreen/50 focus:border-moxgreen shadow-sm w-48 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2394a3b8%22%20viewBox%3D%220%200%20256%20256%22%3E%3Cpath%20d%3D%22M213.66%2C101.66l-80%2C80a8%2C8%2C0%2C0%2C1-11.32%2C0l-80-80A8%2C8%2C0%2C0%2C1%2C53.66%2C90.34L128%2C164.69l74.34-74.35a8%2C8%2C0%2C0%2C1%2C11.32%2C11.32Z%22%3E%3C%2Fpath%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:right_1rem_center]">
-                <option>Semua Status</option>
-                <option>DOWN</option>
-                <option>CRITICAL</option>
-                <option>WARNING</option>
-                <option>Selesai</option>
+            <select v-model="statusFilter" class="bg-slate-900/50 border border-slate-800 text-white text-sm rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-moxgreen/50 focus:border-moxgreen shadow-sm w-48 appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2216%22%20height%3D%2216%22%20fill%3D%22%2394a3b8%22%20viewBox%3D%220%200%20256%20256%22%3E%3Cpath%20d%3D%22M213.66%2C101.66l-80%2C80a8%2C8%2C0%2C0%2C1-11.32%2C0l-80-80A8%2C8%2C0%2C0%2C1%2C53.66%2C90.34L128%2C164.69l74.34-74.35a8%2C8%2C0%2C0%2C1%2C11.32%2C11.32Z%22%3E%3C%2Fpath%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:right_1rem_center]">
+                <option value="">Semua Status</option>
+                <option value="DOWN">DOWN</option>
+                <option value="CRITICAL">CRITICAL</option>
+                <option value="WARNING">WARNING</option>
+                <option value="PROGRESS">Dalam Penanganan</option>
+                <option value="RESOLVED">Selesai</option>
             </select>
         </div>
 
@@ -168,8 +169,9 @@
         <div class="space-y-4">
             <div v-if="isLoading" class="text-center py-10 text-slate-400">Memuat data tiket...</div>
             <div v-else-if="tickets.length === 0" class="text-center py-10 text-slate-500">Belum ada riwayat gangguan yang tercatat.</div>
+            <div v-else-if="filteredTickets.length === 0" class="text-center py-10 text-slate-500">Tidak ada tiket yang cocok dengan pencarian/filter.</div>
             
-            <div v-else v-for="(ticket, index) in tickets" :key="index" class="bg-moxcard border rounded-xl overflow-hidden shadow-lg transition-colors duration-300" :class="ticket.isExpanded ? 'border-slate-700 ring-1 ring-slate-800' : 'border-slate-800/80'">
+            <div v-else v-for="ticket in filteredTickets" :key="ticket.id" class="bg-moxcard border rounded-xl overflow-hidden shadow-lg transition-colors duration-300" :class="ticket.isExpanded ? 'border-slate-700 ring-1 ring-slate-800' : 'border-slate-800/80'">
                 <!-- Baris Utama Tiket (Header) -->
                 <div class="flex items-center p-5 relative cursor-pointer" :class="ticket.isExpanded ? 'bg-slate-800/30' : 'hover:bg-slate-800/30'" @click="ticket.isExpanded = !ticket.isExpanded">
                     <div class="absolute left-4 top-1/2 -translate-y-1/2 w-2 h-10 rounded-full" :class="getIndicatorColor(ticket)"></div>
@@ -287,8 +289,30 @@ const tickets = ref([]);
 const isLoading = ref(true);
 const stats = ref({ down: 0, critical: 0, warning: 0, progress: 0, resolved: 0 });
 
+// STATE SEARCH & FILTER TIKET
+const searchQuery = ref('');
+const statusFilter = ref('');
+const filteredTickets = computed(() => {
+    const q = searchQuery.value.trim().toLowerCase();
+    return tickets.value.filter(t => {
+        const open = t.status !== 'Selesai';
+        let okStatus = true;
+        switch (statusFilter.value) {
+            case 'DOWN': case 'CRITICAL': case 'WARNING':
+                okStatus = t.severity === statusFilter.value && open; break;
+            case 'PROGRESS': okStatus = t.status === 'Dalam Penanganan'; break;
+            case 'RESOLVED': okStatus = t.status === 'Selesai'; break;
+        }
+        if (!okStatus) return false;
+        if (!q) return true;
+        return [t.id, t.title, t.target, t.severity, t.status, t.technicians]
+            .some(v => v != null && String(v).toLowerCase().includes(q));
+    });
+});
+
 // STATE ANALITIK
-const currentMonthLabel = new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+const currentMonthLabel = new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric', timeZone: 'Asia/Jakarta' });
+const currentYearLabel = new Date().toLocaleDateString('en-US', { year: 'numeric', timeZone: 'Asia/Jakarta' });
 const analyticsFilter = ref('month');
 const analyticsSeverity = ref(''); // STATE BARU UNTUK FILTER SEVERITY (KOSONG = SEMUA)
 const analyticsError = ref('');
@@ -301,7 +325,7 @@ const analytics = ref({
 });
 
 // Format Waktu & Warna Dasar
-const formatDate = (dateString) => new Date(dateString).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).replace(',', ' -');
+const formatDate = (dateString) => new Date(dateString).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta' }).replace(',', ' -');
 const getIndicatorColor = (t) => t.status === 'Selesai' ? 'bg-emerald-500' : t.severity === 'RECOVERED' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' : t.severity === 'DOWN' ? 'bg-rose-600 shadow-[0_0_8px_rgba(225,29,72,0.5)]' : t.severity === 'CRITICAL' ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]' : 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]';
 const getStatusBadge = (s, sv) => s === 'Selesai' ? 'bg-emerald-500/20 text-emerald-500 ring-1 ring-emerald-500/50' : sv === 'RECOVERED' ? 'bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/50' : s === 'Dalam Penanganan' ? 'bg-cyan-500/20 text-cyan-500' : sv === 'DOWN' ? 'bg-rose-600/20 text-rose-500' : sv === 'CRITICAL' ? 'bg-orange-500/20 text-orange-500' : 'bg-amber-400/20 text-amber-400';
 const getTimelineProgress = (s) => s === 'Gangguan Aktif' ? 'bg-rose-500 w-0' : s === 'Dalam Penanganan' ? 'bg-gradient-to-r from-moxgreen to-cyan-500 w-[50%]' : 'bg-emerald-500 w-full';

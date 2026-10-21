@@ -229,7 +229,7 @@ const proxmoxClusterLogs = ref([]);
 const formatUnixTime = (unixTime) => {
   if (!unixTime) return '-';
   const date = new Date(unixTime * 1000);
-  const options = { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+  const options = { month: 'short', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Asia/Jakarta' };
   return date.toLocaleString('en-US', options).replace(/,/g, '');
 };
 

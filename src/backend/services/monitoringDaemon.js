@@ -87,13 +87,10 @@ const triggerAlert = async (target, moduleType, severity, actionType, maxCount, 
                     [target.id, moduleType, target.name, severity, severity, actionType, message]
                 );
                 
-                // Format ID Tiket agar sama persis dengan yang tampil di Frontend
                 const ticketId = `#INC-${new Date().getFullYear()}-${String(result.insertId).padStart(4, '0')}`;
-                
                 const logMsg = `Tiket ${ticketId} otomatis dibuat: [${moduleType}] ${target.name} berstatus ${severity} (${message})`;
                 console.log(`🚨 [ALERT TRIGGERED] ${logMsg}`);
                 
-                // Simpan rekam jejak ke tabel system_logs
                 await addDaemonLog(logLevel, logMsg); 
 
             } else if (existing[0].severity !== severity) {
@@ -107,7 +104,6 @@ const triggerAlert = async (target, moduleType, severity, actionType, maxCount, 
                 const logMsg = `Eskalasi Tiket ${ticketId}: [${moduleType}] ${target.name} naik menjadi ${severity} (${message})`;
                 console.log(`🚨 [ALERT ESCALATED] ${logMsg}`);
                 
-                // Simpan rekam jejak eskalasi ke tabel system_logs
                 await addDaemonLog(logLevel, logMsg); 
             }
             state.isAlerting = true;
@@ -120,7 +116,6 @@ const triggerAlert = async (target, moduleType, severity, actionType, maxCount, 
 const resolveAlert = async (target, moduleType) => {
     const stateKey = `${moduleType}_${target.id}`;
     try {
-        // Langsung cek database apakah ada tiket yang masih menggantung (is_resolved = 0)
         const [existing] = await db.query(
             'SELECT id, severity FROM active_alerts WHERE target_id = ? AND target_type = ? AND is_resolved = 0',
             [target.id, moduleType]
@@ -129,28 +124,19 @@ const resolveAlert = async (target, moduleType) => {
         if (existing.length > 0) {
             const alertId = existing[0].id;
             
-            // Cegah spam update jika statusnya sudah diubah jadi RECOVERED sebelumnya
             if (existing[0].severity === 'RECOVERED') {
                 alertStateTracker[stateKey] = { failCount: 0, isAlerting: false, currentSeverity: null };
                 return;
             }
 
-            // Cek apakah ada teknisi yang sedang menangani tiket ini
             const [handlers] = await db.query('SELECT COUNT(id) as count FROM alert_handlers WHERE alert_id = ?', [alertId]);
 
             if (handlers[0].count > 0) {
-                await db.query(
-                    `UPDATE active_alerts SET severity = 'RECOVERED' WHERE id = ?`,
-                    [alertId]
-                );
+                await db.query(`UPDATE active_alerts SET severity = 'RECOVERED' WHERE id = ?`, [alertId]);
                 console.log(`[ALERT RECOVERED] [${moduleType}] ${target.name} pulih. Menunggu validasi Teknisi.`);
                 await addDaemonLog('INFO', `Menunggu Validasi: [${moduleType}] ${target.name} telah pulih.`);
             } else {
-                // Tidak ada teknisi yang merespon, selesaikan otomatis
-                await db.query(
-                    `UPDATE active_alerts SET is_resolved = 1, resolved_at = CURRENT_TIMESTAMP WHERE id = ?`,
-                    [alertId]
-                );
+                await db.query(`UPDATE active_alerts SET is_resolved = 1, resolved_at = CURRENT_TIMESTAMP WHERE id = ?`, [alertId]);
                 console.log(`✅ [ALERT RESOLVED] [${moduleType}] ${target.name} kembali normal (Otomatis).`);
                 await addDaemonLog('INFO', `Insiden Selesai Otomatis: [${moduleType}] ${target.name} kembali normal.`);
             }
@@ -159,7 +145,6 @@ const resolveAlert = async (target, moduleType) => {
         console.error("[ALERT ERROR] Gagal resolve alert:", error);
     }
     
-    // Reset state memory
     alertStateTracker[stateKey] = { failCount: 0, isAlerting: false, currentSeverity: null };
 };
 
@@ -237,18 +222,25 @@ const fetchLiveProxmoxMetrics = async (pt) => {
             }
         }
     }
-    return { isUp: false }; 
+    return { isUp: false };
 };
 
 // ==========================================
 // FUNGSI UTAMA DAEMON
 // ==========================================
+let isDaemonRunning = false; // Mencegah overlapping execution (bug ping bertumpuk)
+
 export const startMonitoringDaemon = async () => {
     const startupMsg = 'Layanan Monitoring (Daemon) berhasil diaktifkan.';
     console.log(`[INFO] ${startupMsg}`);
     await addDaemonLog('INFO', startupMsg);
 
     setInterval(async () => {
+        // Jika daemon masih sibuk dengan loop sebelumnya, skip putaran detik ini
+        if (isDaemonRunning) return; 
+        
+        isDaemonRunning = true; 
+
         try {
             // =======================================
             // BAGIAN 1: NETWORK (Bawaan)
@@ -257,6 +249,7 @@ export const startMonitoringDaemon = async () => {
 
             for (const target of targets) {
                 const interval = target.check_interval || 10;
+                
                 if (target.elapsed_seconds >= interval) {
                     let result;
                     if (target.protocol === 'ICMP PING') result = await checkIcmp(target.ip_address);
@@ -273,13 +266,15 @@ export const startMonitoringDaemon = async () => {
 
                     let currentFails = failureCounts.get(target.id) || 0;
                     let newStatus = target.status;
+                    
                     if (result.isUp) {
                         if (target.status === 'DOWN') {
                             const recMsg = `Koneksi Pulih: ${target.name} kembali ONLINE.`;
                             console.log(`[INFO] ${recMsg}`);
-                            await addDaemonLog('INFO', recMsg); 
+                            await addDaemonLog('INFO', recMsg);
                         }
-                        currentFails = 0; newStatus = 'UP';
+                        currentFails = 0;
+                        newStatus = 'UP';
                     } else {
                         currentFails++;
                         const limitRTO = target.max_retries || 3;
@@ -288,12 +283,47 @@ export const startMonitoringDaemon = async () => {
                             if (target.status !== 'DOWN') {
                                 const errMsg = `Koneksi Terputus: ${target.name} OFFLINE.`;
                                 console.log(`[ERROR] ${errMsg}`);
-                                await addDaemonLog('ERROR', errMsg); 
+                                await addDaemonLog('ERROR', errMsg);
                             }
                         }
                     }
+                    
                     failureCounts.set(target.id, currentFails);
-                    await db.query('UPDATE monitoring_targets SET status = ?, last_latency = ?, last_check = NOW() WHERE id = ?', [newStatus, (result.latency !== null ? `${result.latency} ms` : 'TIMEOUT'), target.id]);
+
+                    // ==========================================
+                    // UPDATE STATUS & REKAM HISTORY UPTIME
+                    // ==========================================
+                    if (target.status !== newStatus) {
+                        // JIKA STATUS BERUBAH DARI UP MENJADI DOWN -> REKAM KE HISTORY!
+                        if (target.status === 'UP' && newStatus === 'DOWN') {
+                            
+                            // TAMBAHAN: HANYA REKAM JIKA FITUR ALERT/THRESHOLD DIAKTIFKAN
+                            if (target.is_alert_enabled === 1) {
+                                const upSince = target.last_status_change ? new Date(target.last_status_change) : new Date();
+                                const downAt = new Date();
+                                const uptimeSeconds = Math.max(0, Math.floor((downAt - upSince) / 1000));
+                                const reason = result.latency !== null ? `Terputus (Last Ping: ${result.latency}ms)` : 'Koneksi Timeout / Terputus';
+    
+                                await db.query(
+                                    `INSERT INTO down_history (target_id, target_type, target_name, up_since, down_at, uptime_duration_sec, down_reason) 
+                                     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                                    [target.id, 'NETWORK', target.name, upSince, downAt, uptimeSeconds, reason]
+                                ).catch(err => console.error("[HISTORY ERROR] Gagal menyimpan riwayat down:", err));
+                            }
+                        }
+
+                        // Perbarui status terkini dan last_status_change di tabel target
+                        await db.query(
+                            'UPDATE monitoring_targets SET status = ?, last_latency = ?, last_check = NOW(), last_status_change = NOW() WHERE id = ?', 
+                            [newStatus, (result.latency !== null ? `${result.latency} ms` : 'TIMEOUT'), target.id]
+                        );
+                    } else {
+                        // Jika status tetap, perbarui waktu cek saja
+                        await db.query(
+                            'UPDATE monitoring_targets SET status = ?, last_latency = ?, last_check = NOW() WHERE id = ?', 
+                            [newStatus, (result.latency !== null ? `${result.latency} ms` : 'TIMEOUT'), target.id]
+                        );
+                    }
                 }
             }
 
@@ -306,10 +336,13 @@ export const startMonitoringDaemon = async () => {
                 const interval = pt.check_interval || 10;
                 
                 if (pt.elapsed_seconds >= interval) {
+                    // Update waktu cek terakhir
                     await db.query('UPDATE proxmox_targets SET last_check = NOW() WHERE id = ?', [pt.id]);
 
                     const metrics = await fetchLiveProxmoxMetrics(pt);
+                    const newStatus = metrics.isUp ? 'UP' : 'DOWN';
                     
+                    // 1. Logika Alerting (Tiket)
                     if (!metrics.isUp) {
                         await triggerAlert(pt, 'PROXMOX', 'DOWN', pt.notify_down_type || 'Call', pt.notify_down_max || 5, `Mesin Offline atau tidak merespon`);
                     } else {
@@ -318,7 +351,6 @@ export const startMonitoringDaemon = async () => {
                         let maxCount = 1;
                         let msgs = [];
 
-                        // 1. Evaluasi CPU
                         if (metrics.cpu >= pt.cpu_critical) {
                             highestSeverity = 'CRITICAL'; actionType = pt.notify_critical_type; maxCount = pt.notify_critical_max;
                             msgs.push(`CPU Kritis (${metrics.cpu}%)`);
@@ -327,7 +359,6 @@ export const startMonitoringDaemon = async () => {
                             msgs.push(`CPU Tinggi (${metrics.cpu}%)`);
                         }
 
-                        // 2. Evaluasi RAM
                         if (metrics.ram >= pt.ram_critical) {
                             if (highestSeverity !== 'CRITICAL') { highestSeverity = 'CRITICAL'; actionType = pt.notify_critical_type; maxCount = pt.notify_critical_max; }
                             msgs.push(`RAM Kritis (${metrics.ram}%)`);
@@ -336,7 +367,6 @@ export const startMonitoringDaemon = async () => {
                             msgs.push(`RAM Tinggi (${metrics.ram}%)`);
                         }
 
-                        // 3. Evaluasi IO Delay
                         if (pt.type === 'NODE' && metrics.ioDelay !== null) {
                             if (metrics.ioDelay >= pt.io_critical) {
                                 if (highestSeverity !== 'CRITICAL') { highestSeverity = 'CRITICAL'; actionType = pt.notify_critical_type; maxCount = pt.notify_critical_max; }
@@ -353,10 +383,40 @@ export const startMonitoringDaemon = async () => {
                             await resolveAlert(pt, 'PROXMOX');
                         }
                     }
+
+                    // ==========================================
+                    // 2. Logika Perekaman History Uptime Proxmox
+                    // ==========================================
+                    if (pt.status !== newStatus) {
+                        // JIKA MESIN TIBA-TIBA MATI, REKAM KE DOWN_HISTORY
+                        if (pt.status === 'UP' && newStatus === 'DOWN') {
+                            const upSince = pt.last_status_change ? new Date(pt.last_status_change) : new Date();
+                            const downAt = new Date();
+                            const uptimeSeconds = Math.max(0, Math.floor((downAt - upSince) / 1000));
+                            
+                            // Gunakan nama mesin, jika kosong gunakan node ID-nya
+                            const targetName = pt.node + (pt.vmid ? ` (VMID: ${pt.vmid})` : ' (Node Utama)');
+
+                            await db.query(
+                                `INSERT INTO down_history (target_id, target_type, target_name, up_since, down_at, uptime_duration_sec, down_reason) 
+                                 VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                                [pt.id, 'PROXMOX', targetName, upSince, downAt, uptimeSeconds, 'Mesin Proxmox Offline / Tidak merespon API']
+                            ).catch(err => console.error("[HISTORY ERROR] Gagal menyimpan riwayat down Proxmox:", err));
+                        }
+
+                        // Perbarui status dan reset stopwatch (last_status_change)
+                        await db.query(
+                            'UPDATE proxmox_targets SET status = ?, last_status_change = NOW() WHERE id = ?', 
+                            [newStatus, pt.id]
+                        );
+                    }
                 }
             }
         } catch (error) {
             console.error(`[ERROR] Daemon Master Loop Error: ${error.message}`);
+        } finally {
+            // Setelah semua pengecekan tuntas, buka kunci kembali
+            isDaemonRunning = false; 
         }
     }, 1000);
 };

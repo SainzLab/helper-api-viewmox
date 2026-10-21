@@ -1,5 +1,6 @@
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
+import { DB_TZ_OFFSET } from './timezone.js';
 dotenv.config();
 
 const pool = mysql.createPool({
@@ -9,7 +10,13 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  timezone: DB_TZ_OFFSET // konversi Date <-> DATETIME memakai WIB
+});
+
+// Pastikan NOW()/CURRENT_TIMESTAMP/CURRENT_DATE/DATE_FORMAT di MySQL memakai WIB
+pool.pool.on('connection', (conn) => {
+  conn.query(`SET time_zone = '${DB_TZ_OFFSET}'`);
 });
 
 export default pool;

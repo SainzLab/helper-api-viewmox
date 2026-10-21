@@ -540,7 +540,7 @@ const editUser = (user) => {
   
   let formattedDate = '';
   if (user.token_expires_at) {
-    formattedDate = new Date(user.token_expires_at).toISOString().split('T')[0];
+    formattedDate = new Date(user.token_expires_at).toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
   }
   
   form.value = { 
@@ -639,7 +639,7 @@ const getTokenStatus = (user) => {
   if (expDate < today) {
     return { text: 'Kedaluwarsa', color: 'text-rose-500', dot: 'bg-rose-500' };
   }
-  const formattedDate = expDate.toISOString().split('T')[0];
+  const formattedDate = expDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
   return { text: `Aktif (Exp: ${formattedDate})`, color: 'text-blue-400', dot: 'bg-blue-500' };
 };
 
