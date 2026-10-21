@@ -157,7 +157,7 @@
                                         <div class="flex-1 bg-slate-900/50 border border-slate-700/50 rounded-xl p-4 h-[200px] relative">
                                             <div class="flex justify-between items-center mb-2">
                                                 <h4 class="text-xs font-bold text-slate-400 flex items-center gap-2">
-                                                    <i class="ph-fill ph-chart-line-up text-moxgreen"></i> Riwayat Latency
+                                                    <i class="ph-fill ph-chart-line-up text-moxgreen"></i> Riwayat Latency (20 Pengecekan Terakhir)
                                                 </h4>
                                                 <button @click="fetchHistory(target.id, false)" class="text-slate-500 hover:text-moxgreen transition text-xs flex items-center gap-1">
                                                     <i class="ph-bold ph-arrows-clockwise" :class="{'animate-spin text-moxgreen': isLoadingHistory}"></i> Segarkan
