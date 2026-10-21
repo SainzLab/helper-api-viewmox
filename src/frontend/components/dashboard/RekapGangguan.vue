@@ -326,14 +326,18 @@ const analytics = ref({
   chartData: []
 });
 
-// Format Waktu & Warna Dasar
 const formatDate = (dateString) => {
     if (!dateString) return '-';
-
-    const cleanString = dateString.toString().replace('T', ' ').replace('Z', '').split('.')[0].replace(/-/g, '/');
-    const dateObj = new Date(cleanString);
+    
+    // Backend mengirim waktu WIB tanpa info zona ("YYYY-MM-DD HH:mm:ss"), tandai eksplisit +07:00
+    // agar hasilnya tidak bergantung pada zona waktu browser/perangkat.
+    const str = dateString.toString();
+    const hasTz = /(Z|[+-]\d{2}:?\d{2})$/.test(str);
+    const dateObj = new Date(hasTz ? str : str.replace(' ', 'T').split('.')[0] + '+07:00');
+    if (isNaN(dateObj.getTime())) return '-';
     
     return dateObj.toLocaleDateString('id-ID', { 
+        timeZone: 'Asia/Jakarta',
         day: 'numeric', 
         month: 'short', 
         hour: '2-digit', 

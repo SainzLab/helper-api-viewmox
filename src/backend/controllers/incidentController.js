@@ -18,17 +18,35 @@ const formatSec = (totalSeconds) => {
     return parts.join(' ');
 };
 
+// Ubah Date menjadi string ISO dengan offset WIB eksplisit (contoh: 2026-10-21T15:41:00+07:00)
+// agar tidak dibaca sebagai UTC ('Z') oleh frontend (selisih 7 jam).
+const toWIBString = (value) => {
+    if (!value) return null;
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return null;
+    const p = new Intl.DateTimeFormat('sv-SE', {
+        timeZone: 'Asia/Jakarta',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hourCycle: 'h23'
+    }).format(d); // "YYYY-MM-DD HH:mm:ss"
+    return `${p.replace(' ', 'T')}+07:00`;
+};
+
 // ==========================================
 // 1. AMBIL SEMUA TIKET (DASHBOARD)
 // ==========================================
 export const getIncidents = async (req, res) => {
     try {
-        // PERBAIKAN: Hitung selisih detik (downtime & handling) murni dari mesin Database MySQL
+        // PERBAIKAN: Gunakan DATE_FORMAT agar MySQL mengirim waktu sebagai Teks Murni, bukan Objek Date
         const [rows] = await db.query(`
             SELECT 
-                a.id, a.target_type, a.target_name, a.severity, a.message, a.created_at, a.resolved_at, a.is_resolved,
+                a.id, a.target_type, a.target_name, a.severity, a.message, 
+                DATE_FORMAT(a.created_at, '%Y-%m-%d %H:%i:%s') AS created_at, 
+                DATE_FORMAT(a.resolved_at, '%Y-%m-%d %H:%i:%s') AS resolved_at, 
+                a.is_resolved,
                 GROUP_CONCAT(h.user_name SEPARATOR ', ') AS technicians,
-                MIN(h.joined_at) AS handled_at,
+                DATE_FORMAT(MIN(h.joined_at), '%Y-%m-%d %H:%i:%s') AS handled_at,
                 COUNT(h.id) AS handler_count,
                 TIMESTAMPDIFF(SECOND, a.created_at, IFNULL(a.resolved_at, CURRENT_TIMESTAMP)) AS downtime_sec,
                 TIMESTAMPDIFF(SECOND, MIN(h.joined_at), IFNULL(a.resolved_at, CURRENT_TIMESTAMP)) AS handling_sec
@@ -43,7 +61,8 @@ export const getIncidents = async (req, res) => {
             if (row.is_resolved === 1) status = 'Selesai';
             else if (row.handler_count > 0) status = 'Dalam Penanganan';
 
-            const year = new Date(row.created_at).getFullYear();
+            // String tanggal yang aman bisa langsung diparse
+            const year = new Date(row.created_at.replace(' ', 'T')).getFullYear();
             const ticketId = `#INC-${year}-${String(row.id).padStart(4, '0')}`;
 
             return {
