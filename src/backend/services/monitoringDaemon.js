@@ -4,6 +4,7 @@ import net from 'net';
 import axios from 'axios';
 import https from 'https';
 import { getWibYear, WIB_OFFSET_MS } from '../config/timezone.js';
+import { executeScheduledCleanupIfDue, ensureCleanupSettingsTable } from '../controllers/cleanupController.js';
 
 // Tracker berurutan untuk kegagalan ping/TCP (RTO Tolerance)
 const failureCounts = new Map();
@@ -443,6 +444,10 @@ export const startMonitoringDaemon = async () => {
     // Jalankan pembersihan awal target_history saat startup, lalu jadwalkan cronjob tiap 15 menit
     await cleanupTargetHistory();
     setInterval(cleanupTargetHistory, HISTORY_CLEANUP_INTERVAL_MS);
+
+    // Inisialisasi tabel pengaturan cronjob pembersihan Log Sistem & Riwayat Gangguan, lalu cek jadwal setiap 10 detik
+    await ensureCleanupSettingsTable();
+    setInterval(executeScheduledCleanupIfDue, 10000);
 
     setInterval(async () => {
         if (isDaemonRunning) return;

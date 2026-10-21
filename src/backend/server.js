@@ -15,6 +15,7 @@ import { getActiveAlerts, getAlertHistory } from './controllers/mobileAlertContr
 import { getTasksLog, getClusterLog, getTaskDetailLog } from './controllers/proxmoxLogController.js';
 import { verifyApiToken } from './middlewares/authMiddleware.js';
 import { getIncidents, joinIncident, resolveIncident, getAnalytics } from './controllers/incidentController.js';
+import { getCleanupSettings, saveCleanupSettings, runManualCleanup } from './controllers/cleanupController.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -77,6 +78,11 @@ app.get('/api/logs/system', getSystemLogs);
 // Route Notifikasi Gangguan Aktif (untuk dashboard web)
 app.get('/api/alerts/active', getActiveAlerts);
 app.get('/api/alerts/history', getAlertHistory);
+
+// Route Pengaturan Cronjob Pembersihan Otomatis (Log & Riwayat Gangguan)
+app.get('/api/settings/cleanup', getCleanupSettings);
+app.put('/api/settings/cleanup', saveCleanupSettings);
+app.post('/api/settings/cleanup/run', runManualCleanup);
 
 // Route Threshold 
 app.get('/api/thresholds/network/catalog', getNetworkCatalog);
