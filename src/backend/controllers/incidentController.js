@@ -124,131 +124,97 @@ export const resolveIncident = async (req, res) => {
 };
 
 // ==========================================
-// 4. API BARU: ANALITIK KINERJA SISTEM (Update Acuan Tanggal & Filter)
+// 4. ANALITIK KEANDALAN SISTEM (ITIL TIME-WINDOW)
 // ==========================================
+// Jendela waktu tetap yang didukung (parameter ?period=)
+const PERIODS = {
+    '24h': { ms: 24 * 3600 * 1000, bucket: 'hour' },
+    '7d':  { ms: 7 * 24 * 3600 * 1000, bucket: 'day' },
+    '30d': { ms: 30 * 24 * 3600 * 1000, bucket: 'day' }
+};
+const BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+// Rumus ITIL untuk satu jendela waktu [winStart, winEnd] (epoch ms)
+// incidents: [{ start: ms, end: ms }] (hanya tiket yang sudah resolved)
+const hitungMetrikITIL = (incidents, winStart, winEnd, totalDevices) => {
+    // Hanya hitung bagian insiden yang beririsan dengan jendela waktu
+    const overlapped = incidents
+        .map(i => ({ sec: Math.max(0, (Math.min(i.end, winEnd) - Math.max(i.start, winStart)) / 1000) }))
+        .filter(i => i.sec > 0);
+
+    // Total Waktu Periode (detik) = panjang jendela x jumlah perangkat yang dipantau
+    const totalPeriodSec = Math.max(1, Math.round(((winEnd - winStart) / 1000) * totalDevices));
+    // 1. Total Downtime = akumulasi (resolved_at - created_at)
+    const totalDowntimeSec = Math.min(totalPeriodSec, Math.round(overlapped.reduce((sum, i) => sum + i.sec, 0)));
+    // 2. Total Uptime = Total Waktu Periode - Total Downtime
+    const totalUptimeSec = totalPeriodSec - totalDowntimeSec;
+    const incidentCount = overlapped.length;
+    // 3. MTTR = Total Downtime / Jumlah Insiden (0 jika tidak ada insiden, hindari division by zero)
+    const mttrSec = incidentCount > 0 ? Math.round(totalDowntimeSec / incidentCount) : 0;
+    // 4. Availability (%) = ((Total Waktu Periode - Total Downtime) / Total Waktu Periode) * 100
+    const availability = ((totalPeriodSec - totalDowntimeSec) / totalPeriodSec) * 100;
+
+    return {
+        total_period_sec: totalPeriodSec,
+        total_downtime_sec: totalDowntimeSec,
+        total_uptime_sec: totalUptimeSec,
+        incident_count: incidentCount,
+        mttr_sec: mttrSec,
+        availability: availability.toFixed(2)
+    };
+};
+
 export const getAnalytics = async (req, res) => {
     try {
-        // Tambahkan pengambilan parameter severity dari query URL
-        const { filter, severity } = req.query; 
+        const { severity } = req.query;
+        // Filter lama (month/year) dipetakan ke 30 hari; default 24 jam
+        const legacy = req.query.filter ? '30d' : '24h';
+        const periodKey = PERIODS[req.query.period] ? req.query.period : legacy;
+        const period = PERIODS[periodKey];
 
         const [netTargets] = await db.query('SELECT COUNT(id) as count FROM monitoring_targets WHERE is_active = 1');
         const [pxTargets] = await db.query('SELECT COUNT(id) as count FROM proxmox_targets WHERE is_alert_enabled = 1');
         const totalDevices = (netTargets[0].count || 0) + (pxTargets[0].count || 0) || 1;
 
-        // Cari tanggal mulai dari tabel active_alerts
-        const [sysStart] = await db.query('SELECT MIN(created_at) as start_date FROM active_alerts');
-        
-        // Jika belum ada tiket sama sekali, jadikan hari ini sebagai titik nol
-        const systemStartDate = sysStart[0].start_date ? new Date(sysStart[0].start_date) : new Date();
-        
-        const now = new Date();
-        const currentYear = now.getFullYear();
-        const currentMonth = now.getMonth() + 1;
-        const startYear = systemStartDate.getFullYear();
-        const startMonth = systemStartDate.getMonth() + 1;
-        const startDate = systemStartDate.getDate();
+        const winEnd = Date.now();
+        const winStart = winEnd - period.ms;
 
+        // Ambil tiket resolved yang beririsan dengan jendela waktu
         let query = `
-            SELECT 
-                TIMESTAMPDIFF(SECOND, created_at, resolved_at) as downtime_seconds,
-                MONTH(created_at) as month,
-                DAY(created_at) as day
-            FROM active_alerts 
-            WHERE is_resolved = 1 
+            SELECT created_at, resolved_at
+            FROM active_alerts
+            WHERE is_resolved = 1 AND resolved_at IS NOT NULL
+              AND resolved_at > ? AND created_at < ?
         `;
-
-        // Terapkan Filter Khusus original_severity (misal: ?severity=DOWN)
+        const params = [new Date(winStart), new Date(winEnd)];
         if (severity) {
-            query += ` AND original_severity = '${severity}'`;
+            query += ' AND original_severity = ?';
+            params.push(severity);
         }
+        const [rows] = await db.query(query, params);
+        const incidents = rows.map(r => ({ start: new Date(r.created_at).getTime(), end: new Date(r.resolved_at).getTime() }));
 
-        if (filter === 'year') {
-            query += ` AND YEAR(created_at) = YEAR(CURRENT_DATE)`;
-        } else {
-            query += ` AND MONTH(created_at) = MONTH(CURRENT_DATE) AND YEAR(created_at) = YEAR(CURRENT_DATE)`;
-        }
+        const summary = { period: periodKey, ...hitungMetrikITIL(incidents, winStart, winEnd, totalDevices) };
 
-        const [alerts] = await db.query(query);
+        // Bucket grafik: per jam (24 jam) atau per hari (7/30 hari), mengikuti kalender WIB
+        const chartData = [];
+        const cursor = new Date(winStart);
+        if (period.bucket === 'hour') cursor.setMinutes(0, 0, 0);
+        else cursor.setHours(0, 0, 0, 0);
 
-        // Format waktu dinamis (Menit/Jam)
-        const formatWaktu = (totalSeconds) => {
-            if (totalSeconds < 3600) return { val: Math.max(0, Math.floor(totalSeconds / 60)), unit: 'Menit' };
-            return { val: (totalSeconds / 3600).toFixed(1), unit: 'Jam' };
-        };
+        while (cursor.getTime() < winEnd) {
+            const bs = Math.max(cursor.getTime(), winStart);
+            const next = new Date(cursor);
+            if (period.bucket === 'hour') next.setHours(next.getHours() + 1);
+            else next.setDate(next.getDate() + 1);
+            const be = Math.min(next.getTime(), winEnd);
 
-        const hitungMetrik = (dataTiket, daysOperational) => {
-            const numFailures = dataTiket.length;
-            const totalDowntimeSec = dataTiket.reduce((sum, t) => sum + t.downtime_seconds, 0);
-            
-            const totalTimeSec = totalDevices * daysOperational * 24 * 3600;
-            const totalUptimeSec = Math.max(0, totalTimeSec - totalDowntimeSec);
+            const label = period.bucket === 'hour'
+                ? `${String(cursor.getHours()).padStart(2, '0')}:00`
+                : `${cursor.getDate()} ${BULAN[cursor.getMonth()]}`;
 
-            if (numFailures === 0) {
-                // Memaksa nilai MTBF dan MTTF menjadi 0 jika tidak ada riwayat kerusakan
-                return { 
-                    mttr: 0, mtbf: 0, mttf: 0, availability: 100.00,
-                    mttr_sec: 0, mtbf_sec: 0, mttf_sec: 0,
-                    mttr_val: 0, mttr_unit: 'Menit', mtbf_val: 0, mtbf_unit: 'Jam', mttf_val: 0, mttf_unit: 'Jam'
-                };
-            }
-
-            const mttrSec = totalDowntimeSec / numFailures; 
-            const mtbfSec = totalUptimeSec / numFailures; 
-            const availability = (mtbfSec / (mtbfSec + mttrSec)) * 100;
-
-            const mttrFmt = formatWaktu(mttrSec);
-            const mtbfFmt = formatWaktu(mtbfSec);
-
-            return {
-                mttr: (mttrSec / 3600).toFixed(2),
-                mtbf: (mtbfSec / 3600).toFixed(2), 
-                mttf: (mtbfSec / 3600).toFixed(2), 
-                availability: availability.toFixed(2),
-                // Detik utuh (tanpa pembulatan jam) agar frontend bisa menampilkan hingga hitungan detik
-                mttr_sec: Math.round(mttrSec), 
-                mtbf_sec: Math.round(mtbfSec), 
-                mttf_sec: Math.round(mtbfSec),
-                mttr_val: mttrFmt.val, mttr_unit: mttrFmt.unit, 
-                mtbf_val: mtbfFmt.val, mtbf_unit: mtbfFmt.unit,
-                mttf_val: mtbfFmt.val, mttf_unit: mtbfFmt.unit
-            };
-        };
-
-        let chartData = [];
-        let summary = {};
-        const namaBulan = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-
-        if (filter === 'year') {
-            const startM = (startYear === currentYear) ? startMonth : 1; 
-            const daysInYearOperational = Math.max(1, Math.ceil((now - systemStartDate) / (1000 * 3600 * 24)));
-            
-            summary = hitungMetrik(alerts, daysInYearOperational);
-            
-            for (let m = startM; m <= currentMonth; m++) {
-                const bulanan = alerts.filter(a => a.month === m);
-                let daysInThisMonth = new Date(now.getFullYear(), m, 0).getDate();
-                
-                if (m === startMonth && startYear === currentYear) daysInThisMonth = daysInThisMonth - startDate + 1;
-                if (m === currentMonth) daysInThisMonth = now.getDate() - (m === startMonth ? startDate - 1 : 0);
-                
-                chartData.push({ label: namaBulan[m-1], ...hitungMetrik(bulanan, Math.max(1, daysInThisMonth)) });
-            }
-        } else {
-            let startD = 1;
-            // Jika filter di bulan awal rilis, mulai grafik dari tanggal rilis (Misal: 19)
-            if (currentMonth === startMonth && currentYear === startYear) {
-                startD = startDate;
-            }
-            
-            const currentDay = now.getDate();
-            const daysOperationalMonth = Math.max(1, currentDay - startD + 1);
-
-            summary = hitungMetrik(alerts, daysOperationalMonth);
-
-            for (let d = startD; d <= currentDay; d++) {
-                const harian = alerts.filter(a => a.day === d);
-                chartData.push({ label: `Tgl ${d}`, ...hitungMetrik(harian, 1) });
-            }
+            chartData.push({ label, ...hitungMetrikITIL(incidents, bs, be, totalDevices) });
+            cursor.setTime(next.getTime());
         }
 
         res.json({ success: true, summary, chartData });

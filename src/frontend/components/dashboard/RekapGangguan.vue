@@ -62,7 +62,7 @@
             <div class="flex items-center justify-between mb-4 mt-10">
                 <div>
                     <h3 class="text-base font-bold text-white flex items-center gap-2">
-                        <i class="ph-bold ph-chart-line-up text-moxgreen"></i> Analitik Kinerja Sistem
+                        Analitik Kinerja Sistem
                     </h3>
                     <p class="text-xs text-slate-500 mt-0.5">Dihitung dari tiket yang sudah selesai &bull; {{ analyticsFilter === 'year' ? 'Tahun ' + currentYearLabel : 'Bulan ' + currentMonthLabel }}</p>
                 </div>
