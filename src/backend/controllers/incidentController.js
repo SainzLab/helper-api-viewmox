@@ -27,11 +27,10 @@ const formatSec = (totalSeconds) => {
 // ==========================================
 export const getIncidents = async (req, res) => {
     try {
-        // PERBAIKAN: Hitung durasi detik langsung di dalam MySQL (TIMESTAMPDIFF).
-        // Ini membasmi bug +7 Jam karena MySQL menghitungnya murni sebelum dikirim ke Javascript.
+        // Hitung durasi detik langsung di dalam MySQL (TIMESTAMPDIFF).
         const [rows] = await db.query(`
             SELECT 
-                a.id, a.target_type, a.target_name, a.severity, a.message, 
+                a.id, a.target_type, a.target_name, a.severity, a.original_severity, a.message, 
                 a.created_at, a.resolved_at, a.is_resolved,
                 GROUP_CONCAT(h.user_name SEPARATOR ', ') AS technicians,
                 MIN(h.joined_at) AS handled_at,
@@ -60,6 +59,7 @@ export const getIncidents = async (req, res) => {
                 target: `${row.target_type} - ${row.target_name}`,
                 status: status,
                 severity: row.severity,
+                original_severity: row.original_severity || row.severity,
                 technicians: row.technicians || null,
                 is_resolved: row.is_resolved,
                 downtime_duration: formatSec(row.downtime_sec),
@@ -140,18 +140,18 @@ const hitungMetrikITIL = (incidents, winStart, winEnd) => {
     // 2. Total Waktu Periode = Durasi jendela waktu (dalam detik)
     const totalPeriodSec = Math.max(1, Math.round((winEnd - winStart) / 1000));
 
-    // 3. Total Downtime = Akumulasi seluruh durasi gangguan di periode ini
+    // 3. Total Downtime = SUM durasi downtime dari active_alerts (dibatasi max total_period_sec)
     const totalDowntimeSec = Math.min(totalPeriodSec, Math.round(overlapped.reduce((sum, i) => sum + i.sec, 0)));
 
-    // 4. Total Uptime = Waktu Periode Bersih - Total Downtime
+    // 4. Total Uptime = total_period_sec - total_downtime_sec
     const totalUptimeSec = totalPeriodSec - totalDowntimeSec;
     const incidentCount = overlapped.length;
 
-    // 5. MTTR = Rata-rata waktu pemulihan (Total Downtime / Jumlah Insiden)
+    // 5. MTTR = round(total_downtime_sec / incident_count) (aman terhadap division by zero)
     const mttrSec = incidentCount > 0 ? Math.round(totalDowntimeSec / incidentCount) : 0;
 
-    // 6. Availability = Persentase Uptime terhadap Total Waktu Periode
-    const availability = (totalUptimeSec / totalPeriodSec) * 100;
+    // 6. Availability = ((total_uptime_sec / total_period_sec) * 100).toFixed(2)
+    const availability = ((totalUptimeSec / totalPeriodSec) * 100).toFixed(2);
 
     return {
         total_period_sec: totalPeriodSec,
@@ -159,7 +159,7 @@ const hitungMetrikITIL = (incidents, winStart, winEnd) => {
         total_downtime_sec: totalDowntimeSec,
         incident_count: incidentCount,
         mttr_sec: mttrSec,
-        availability: availability.toFixed(2)
+        availability
     };
 };
 
@@ -171,30 +171,36 @@ export const getAnalytics = async (req, res) => {
         const winEnd = Date.now();
         const winStart = winEnd - period.ms;
 
-        // Mengambil riwayat uptime/downtime MURNI dari tabel mesin Daemon (bukan dari respon telat teknisi)
+        // Batasi titik awal jendela dengan waktu data pertama di active_alerts
+        // agar opsi 7d/30d hanya menampilkan hari-hari sejak sistem mulai memiliki riwayat
+        const [[firstRow]] = await db.query('SELECT MIN(created_at) AS first_at FROM active_alerts');
+        const firstDataMs = firstRow && firstRow.first_at ? new Date(firstRow.first_at).getTime() : winEnd;
+        const effectiveStart = Math.min(winEnd, Math.max(winStart, firstDataMs));
+
+        // Ambil riwayat durasi gangguan dari active_alerts di dalam jendela waktu
         const [rows] = await db.query(`
-            SELECT up_since, down_at 
-            FROM down_history 
-            WHERE down_at > ? AND up_since < ?
-        `, [new Date(winStart), new Date(winEnd)]);
+            SELECT created_at, resolved_at 
+            FROM active_alerts 
+            WHERE IFNULL(resolved_at, CURRENT_TIMESTAMP) > ? AND created_at < ?
+        `, [new Date(effectiveStart), new Date(winEnd)]);
 
         const incidents = rows.map(r => ({
-            start: new Date(r.up_since).getTime(),
-            end: new Date(r.down_at).getTime()
+            start: new Date(r.created_at).getTime(),
+            end: r.resolved_at ? new Date(r.resolved_at).getTime() : winEnd
         }));
 
         const summary = {
             period: periodKey,
-            ...hitungMetrikITIL(incidents, winStart, winEnd)
+            ...hitungMetrikITIL(incidents, effectiveStart, winEnd)
         };
 
         const chartData = [];
         // Batas jam/hari bucket mengikuti WIB (server berjalan UTC, WIB = UTC+7 tanpa DST)
         const stepMs = period.bucket === 'hour' ? 3600 * 1000 : 24 * 3600 * 1000;
-        let cursorMs = Math.floor((winStart + WIB_OFFSET_MS) / stepMs) * stepMs - WIB_OFFSET_MS;
+        let cursorMs = Math.floor((effectiveStart + WIB_OFFSET_MS) / stepMs) * stepMs - WIB_OFFSET_MS;
 
         while (cursorMs < winEnd) {
-            const bs = Math.max(cursorMs, winStart);
+            const bs = Math.max(cursorMs, effectiveStart);
             const nextMs = cursorMs + stepMs;
             const be = Math.min(nextMs, winEnd);
 
