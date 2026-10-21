@@ -105,7 +105,7 @@ export const resolveIncident = async (req, res) => {
         if (alertData[0].severity !== 'RECOVERED') {
             return res.status(400).json({ 
                 success: false, 
-                message: '❌ Gagal! Sistem masih mendeteksi adanya gangguan. Pastikan indikator sistem kembali normal sebelum menutup tiket.' 
+                message: 'Gagal! Sistem masih mendeteksi adanya gangguan. Pastikan indikator sistem kembali normal sebelum menutup tiket.' 
             });
         }
 

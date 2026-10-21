@@ -230,6 +230,25 @@ export const getProxmoxNodeStatus = async (req, res) => {
     const results = [];
 
     for (const pNode of physicalNodes) {
+      // Jika node fisik sudah ditandai offline oleh cluster, jangan panggil /status (agar tidak timeout 10 detik)
+      if (pNode.status && String(pNode.status).toLowerCase() === 'offline') {
+        results.push({
+          node_name: pNode.node,
+          status: 'offline',
+          cpu_usage: '0.0 %',
+          cpu_cores: pNode.maxcpu || 0,
+          cpu_model: '-',
+          ram_used: '0 B',
+          ram_total: formatBytes(pNode.maxmem || 0),
+          ram_percentage: '0.0 %',
+          io_delay: '0.00 %',
+          load_average: '-',
+          uptime: '0h 0j 0m',
+          network_traffic: { rx_in: '0 B/s', tx_out: '0 B/s' }
+        });
+        continue;
+      }
+
       try {
         const statusRes = await api.get(`/api2/json/nodes/${pNode.node}/status`);
         const stats = statusRes.data.data;
@@ -237,7 +256,6 @@ export const getProxmoxNodeStatus = async (req, res) => {
         let rxTotal = 0;
         let txTotal = 0;
         try {
-          // Tarik data RRD 1 jam terakhir seperti pada hasil curl Anda
           const rrdRes = await api.get(`/api2/json/nodes/${pNode.node}/rrddata?timeframe=hour`);
           const rrdArray = rrdRes.data.data;
           
@@ -256,6 +274,7 @@ export const getProxmoxNodeStatus = async (req, res) => {
 
         results.push({
           node_name: pNode.node,
+          status: pNode.status || 'online',
           cpu_usage: (stats.cpu * 100).toFixed(1) + ' %',
           cpu_cores: stats.cpuinfo.cpus,
           cpu_model: stats.cpuinfo.model,
@@ -266,14 +285,26 @@ export const getProxmoxNodeStatus = async (req, res) => {
           load_average: stats.loadavg.join(', '), 
           uptime: formatUptime(stats.uptime),
           network_traffic: {
-            // rx_in: formatBytes(rxTotal),   
-            // tx_out: formatBytes(txTotal)  
             rx_in: formatBytes(rxTotal) + '/s',   
             tx_out: formatBytes(txTotal) + '/s'
           }
         });
       } catch (err) {
         console.error(`Gagal menarik status untuk node ${pNode.node}:`, err.message);
+        results.push({
+          node_name: pNode.node,
+          status: 'offline',
+          cpu_usage: '0.0 %',
+          cpu_cores: pNode.maxcpu || 0,
+          cpu_model: '-',
+          ram_used: '0 B',
+          ram_total: formatBytes(pNode.maxmem || 0),
+          ram_percentage: '0.0 %',
+          io_delay: '0.00 %',
+          load_average: '-',
+          uptime: '0h 0j 0m',
+          network_traffic: { rx_in: '0 B/s', tx_out: '0 B/s' }
+        });
       }
     }
 

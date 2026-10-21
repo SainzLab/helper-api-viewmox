@@ -1,4 +1,5 @@
 import db from '../config/database.js';
+import { resetTargetAlertState } from '../services/monitoringDaemon.js';
 
 // ==========================================
 // HELPER: Fungsi untuk mencatat Log ke database
@@ -57,10 +58,13 @@ export const updateTarget = async (req, res) => {
   try {
     const targetPort = protocol === 'TCP SOCKET' ? port : null;
 
+    // Reset last_check = NULL agar Daemon segera melakukan pengecekan ulang di detik berikutnya
     await db.query(
-      `UPDATE monitoring_targets SET name=?, description=?, protocol=?, ip_address=?, port=?, check_interval=?, max_retries=? WHERE id=?`,
+      `UPDATE monitoring_targets SET name=?, description=?, protocol=?, ip_address=?, port=?, check_interval=?, max_retries=?, last_check=NULL WHERE id=?`,
       [name, description, protocol, ip_address, targetPort, check_interval, max_retries, id]
     );
+
+    resetTargetAlertState('NETWORK', id);
     
     // CATAT LOG: Edit Target
     await addSystemLog('INFO', 'TARGET MONITORING', `Konfigurasi target diperbarui: ${name} (${ip_address})`);
@@ -82,6 +86,13 @@ export const deleteTarget = async (req, res) => {
     const [rows] = await db.query('SELECT name, ip_address FROM monitoring_targets WHERE id = ?', [id]);
     const targetName = rows.length > 0 ? rows[0].name : `ID ${id}`;
     const targetIp = rows.length > 0 ? rows[0].ip_address : '';
+
+    // Tutup tiket aktif yang terkait sebelum target dihapus
+    await db.query(
+      `UPDATE active_alerts SET is_resolved = 1, resolved_at = CURRENT_TIMESTAMP WHERE target_id = ? AND target_type = 'NETWORK' AND is_resolved = 0`,
+      [id]
+    );
+    resetTargetAlertState('NETWORK', id);
 
     // Data akan terhapus beserta riwayatnya (karena ON DELETE CASCADE)
     await db.query('DELETE FROM monitoring_targets WHERE id = ?', [id]);
@@ -107,7 +118,8 @@ export const toggleTargetStatus = async (req, res) => {
     const [rows] = await db.query('SELECT name FROM monitoring_targets WHERE id = ?', [id]);
     const targetName = rows.length > 0 ? rows[0].name : `ID ${id}`;
 
-    await db.query('UPDATE monitoring_targets SET is_active = ? WHERE id = ?', [is_active, id]);
+    await db.query('UPDATE monitoring_targets SET is_active = ?, last_check = NULL WHERE id = ?', [is_active, id]);
+    resetTargetAlertState('NETWORK', id);
     
     // CATAT LOG: Pause / Start
     const actionName = is_active ? 'Mulai (Start)' : 'Jeda (Pause)';
@@ -121,13 +133,21 @@ export const toggleTargetStatus = async (req, res) => {
 };
 
 // ==========================================
-// 6. AMBIL RIWAYAT GRAFIK LATENCY
+// 6. AMBIL RIWAYAT GRAFIK LATENCY (20 DATA TERAKHIR)
 // ==========================================
 export const getTargetHistory = async (req, res) => {
   const { id } = req.params;
   try {
     const [rows] = await db.query(
-      'SELECT latency_ms, status, DATE_FORMAT(created_at, "%Y-%m-%dT%H:%i:%sZ") as time FROM target_history WHERE target_id = ? ORDER BY id ASC',
+      `SELECT latency_ms, status, DATE_FORMAT(created_at, "%Y-%m-%dT%H:%i:%sZ") as time 
+       FROM (
+         SELECT id, latency_ms, status, created_at 
+         FROM target_history 
+         WHERE target_id = ? 
+         ORDER BY id DESC 
+         LIMIT 20
+       ) AS latest 
+       ORDER BY id ASC`,
       [id]
     );
     res.status(200).json({ success: true, data: rows });

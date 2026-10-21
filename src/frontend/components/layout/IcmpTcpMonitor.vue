@@ -441,8 +441,9 @@ const fetchHistory = async (targetId, isSilent) => {
         const res = await fetch(`/api/targets/${targetId}/history`);
         const data = await res.json();
         if (data.success && data.data.length > 0) {
-            const labels = data.data.map(d => formatWibTime(d.time));
-            const dataPoints = data.data.map(d => d.status === 'DOWN' ? 0 : (d.latency_ms || 0));
+            const recent = data.data.slice(-20);
+            const labels = recent.map(d => formatWibTime(d.time));
+            const dataPoints = recent.map(d => d.status === 'DOWN' ? 0 : (d.latency_ms || 0));
             chartData.value = { labels: labels, datasets: [{ data: dataPoints, backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true }] };
         } else {
             chartData.value = null;
