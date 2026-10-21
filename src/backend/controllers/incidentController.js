@@ -3,26 +3,19 @@ import db from '../config/database.js';
 // ==========================================
 // FUNGSI HELPER: KALKULASI DURASI
 // ==========================================
-const formatDuration = (startTime, endTime) => {
-    if (!startTime) return '-';
+const formatSec = (totalSeconds) => {
+    if (totalSeconds == null) return '-';
+    const d = Math.floor(totalSeconds / 86400);
+    const h = Math.floor((totalSeconds % 86400) / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = Math.floor(totalSeconds % 60);
     
-    const start = new Date(startTime);
-    const end = endTime ? new Date(endTime) : new Date();
-    
-    const diffMs = end - start;
-    if (diffMs <= 0) return '0d';
-
-    const totalSeconds = Math.floor(diffMs / 1000);
-    const hours = Math.floor(totalSeconds / 3600);
-    const mins = Math.floor((totalSeconds % 3600) / 60);
-    const secs = totalSeconds % 60;
-
-    let result = [];
-    if (hours > 0) result.push(`${hours}j`);
-    if (mins > 0 || hours > 0) result.push(`${mins}m`);
-    result.push(`${secs}d`);
-
-    return result.join(' ');
+    let parts = [];
+    if (d > 0) parts.push(`${d} hari`);
+    if (h > 0) parts.push(`${h}j`);
+    if (m > 0 || h > 0) parts.push(`${m}m`);
+    parts.push(`${s}d`);
+    return parts.join(' ');
 };
 
 // ==========================================
@@ -30,12 +23,15 @@ const formatDuration = (startTime, endTime) => {
 // ==========================================
 export const getIncidents = async (req, res) => {
     try {
+        // PERBAIKAN: Hitung selisih detik (downtime & handling) murni dari mesin Database MySQL
         const [rows] = await db.query(`
             SELECT 
                 a.id, a.target_type, a.target_name, a.severity, a.message, a.created_at, a.resolved_at, a.is_resolved,
                 GROUP_CONCAT(h.user_name SEPARATOR ', ') AS technicians,
                 MIN(h.joined_at) AS handled_at,
-                COUNT(h.id) AS handler_count
+                COUNT(h.id) AS handler_count,
+                TIMESTAMPDIFF(SECOND, a.created_at, IFNULL(a.resolved_at, CURRENT_TIMESTAMP)) AS downtime_sec,
+                TIMESTAMPDIFF(SECOND, MIN(h.joined_at), IFNULL(a.resolved_at, CURRENT_TIMESTAMP)) AS handling_sec
             FROM active_alerts a
             LEFT JOIN alert_handlers h ON a.id = h.alert_id
             GROUP BY a.id
@@ -60,8 +56,8 @@ export const getIncidents = async (req, res) => {
                 severity: row.severity,
                 technicians: row.technicians || null,
                 is_resolved: row.is_resolved,
-                downtime_duration: formatDuration(row.created_at, row.resolved_at),
-                handling_duration: row.handled_at ? formatDuration(row.handled_at, row.resolved_at) : '-'
+                downtime_duration: formatSec(row.downtime_sec),
+                handling_duration: row.handled_at ? formatSec(row.handling_sec) : '-'
             };
         });
 
@@ -124,34 +120,39 @@ export const resolveIncident = async (req, res) => {
 };
 
 // ==========================================
-// 4. ANALITIK KEANDALAN SISTEM (ITIL TIME-WINDOW)
+// 4. ANALITIK KEANDALAN SISTEM (DOWN_HISTORY)
 // ==========================================
-// Jendela waktu tetap yang didukung (parameter ?period=)
+// Jendela waktu tetap yang didukung
 const PERIODS = {
     '24h': { ms: 24 * 3600 * 1000, bucket: 'hour' },
     '7d':  { ms: 7 * 24 * 3600 * 1000, bucket: 'day' },
     '30d': { ms: 30 * 24 * 3600 * 1000, bucket: 'day' }
 };
+
 const BULAN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
-// Rumus ITIL untuk satu jendela waktu [winStart, winEnd] (epoch ms)
-// incidents: [{ start: ms, end: ms }] (hanya tiket yang sudah resolved)
+// Fungsi Helper untuk perhitungan Analitik Matematika
 const hitungMetrikITIL = (incidents, winStart, winEnd, totalDevices) => {
-    // Hanya hitung bagian insiden yang beririsan dengan jendela waktu
+    
+    // Hanya hitung bagian insiden yang benar-benar beririsan (terjadi) di dalam jendela waktu yang dipilih
     const overlapped = incidents
         .map(i => ({ sec: Math.max(0, (Math.min(i.end, winEnd) - Math.max(i.start, winStart)) / 1000) }))
         .filter(i => i.sec > 0);
 
-    // Total Waktu Periode (detik) = panjang jendela x jumlah perangkat yang dipantau
+    // Total Waktu Periode = Panjang jendela waktu x Jumlah semua alat yang dipantau (detik)
     const totalPeriodSec = Math.max(1, Math.round(((winEnd - winStart) / 1000) * totalDevices));
-    // 1. Total Downtime = akumulasi (resolved_at - created_at)
+
+    // 1. Total Downtime = Akumulasi detik dari seluruh insiden terpotong
     const totalDowntimeSec = Math.min(totalPeriodSec, Math.round(overlapped.reduce((sum, i) => sum + i.sec, 0)));
-    // 2. Total Uptime = Total Waktu Periode - Total Downtime
+
+    // 2. Total Uptime = Sisa waktu dari alat yang tidak pernah mati
     const totalUptimeSec = totalPeriodSec - totalDowntimeSec;
     const incidentCount = overlapped.length;
-    // 3. MTTR = Total Downtime / Jumlah Insiden (0 jika tidak ada insiden, hindari division by zero)
+
+    // 3. MTTR (Mean Time To Recovery) = Total Downtime / Jumlah Insiden
     const mttrSec = incidentCount > 0 ? Math.round(totalDowntimeSec / incidentCount) : 0;
-    // 4. Availability (%) = ((Total Waktu Periode - Total Downtime) / Total Waktu Periode) * 100
+
+    // 4. Availability (%) = Persentase keandalan murni (Uptime / Total Waktu)
     const availability = ((totalPeriodSec - totalDowntimeSec) / totalPeriodSec) * 100;
 
     return {
@@ -160,18 +161,16 @@ const hitungMetrikITIL = (incidents, winStart, winEnd, totalDevices) => {
         total_uptime_sec: totalUptimeSec,
         incident_count: incidentCount,
         mttr_sec: mttrSec,
-        availability: availability.toFixed(2)
+        availability: availability.toFixed(2) // Format %
     };
 };
 
 export const getAnalytics = async (req, res) => {
     try {
-        const { severity } = req.query;
-        // Filter lama (month/year) dipetakan ke 30 hari; default 24 jam
-        const legacy = req.query.filter ? '30d' : '24h';
-        const periodKey = PERIODS[req.query.period] ? req.query.period : legacy;
+        const periodKey = PERIODS[req.query.period] ? req.query.period : '24h';
         const period = PERIODS[periodKey];
 
+        // 1. Dapatkan Total Perangkat yang dipantau agar kalkulasi Uptime akurat
         const [netTargets] = await db.query('SELECT COUNT(id) as count FROM monitoring_targets WHERE is_active = 1');
         const [pxTargets] = await db.query('SELECT COUNT(id) as count FROM proxmox_targets WHERE is_alert_enabled = 1');
         const totalDevices = (netTargets[0].count || 0) + (pxTargets[0].count || 0) || 1;
@@ -179,24 +178,25 @@ export const getAnalytics = async (req, res) => {
         const winEnd = Date.now();
         const winStart = winEnd - period.ms;
 
-        // Ambil tiket resolved yang beririsan dengan jendela waktu
-        let query = `
-            SELECT created_at, resolved_at
-            FROM active_alerts
-            WHERE is_resolved = 1 AND resolved_at IS NOT NULL
-              AND resolved_at > ? AND created_at < ?
-        `;
-        const params = [new Date(winStart), new Date(winEnd)];
-        if (severity) {
-            query += ' AND original_severity = ?';
-            params.push(severity);
-        }
-        const [rows] = await db.query(query, params);
-        const incidents = rows.map(r => ({ start: new Date(r.created_at).getTime(), end: new Date(r.resolved_at).getTime() }));
+        // 2. Ambil data MURNI dari riwayat downtime Daemon, BUKAN dari resolusi tiket teknisi
+        const [rows] = await db.query(`
+            SELECT up_since, down_at 
+            FROM down_history 
+            WHERE down_at > ? AND up_since < ?
+        `, [new Date(winStart), new Date(winEnd)]);
 
-        const summary = { period: periodKey, ...hitungMetrikITIL(incidents, winStart, winEnd, totalDevices) };
+        const incidents = rows.map(r => ({
+            start: new Date(r.up_since).getTime(),
+            end: new Date(r.down_at).getTime()
+        }));
 
-        // Bucket grafik: per jam (24 jam) atau per hari (7/30 hari), mengikuti kalender WIB
+        // 3. Kalkulasi Summary Global
+        const summary = {
+            period: periodKey,
+            ...hitungMetrikITIL(incidents, winStart, winEnd, totalDevices)
+        };
+
+        // 4. Kalkulasi Data Grafik per Bucket (Jam/Hari)
         const chartData = [];
         const cursor = new Date(winStart);
         if (period.bucket === 'hour') cursor.setMinutes(0, 0, 0);
@@ -207,19 +207,20 @@ export const getAnalytics = async (req, res) => {
             const next = new Date(cursor);
             if (period.bucket === 'hour') next.setHours(next.getHours() + 1);
             else next.setDate(next.getDate() + 1);
+            
             const be = Math.min(next.getTime(), winEnd);
-
-            const label = period.bucket === 'hour'
-                ? `${String(cursor.getHours()).padStart(2, '0')}:00`
-                : `${cursor.getDate()} ${BULAN[cursor.getMonth()]}`;
-
-            chartData.push({ label, ...hitungMetrikITIL(incidents, bs, be, totalDevices) });
+            const label = period.bucket === 'hour' ? `${String(cursor.getHours()).padStart(2, '0')}:00` : `${cursor.getDate()} ${BULAN[cursor.getMonth()]}`;
+            
+            chartData.push({
+                label,
+                ...hitungMetrikITIL(incidents, bs, be, totalDevices)
+            });
             cursor.setTime(next.getTime());
         }
 
         res.json({ success: true, summary, chartData });
     } catch (error) {
         console.error("Error Analytics:", error);
-        res.status(500).json({ success: false, message: 'Gagal memuat grafik analitik' });
+        res.status(500).json({ success: false, message: 'Gagal memuat grafik analitik dari history' });
     }
 };
