@@ -26,6 +26,14 @@ const getClientInfo = (req) => {
     return `[IP: ${ip} | OS/Browser: ${agent}]`;
 };
 
+const isHttpsRequest = (req) => {
+    return Boolean(
+        req.secure ||
+        req.headers['x-forwarded-proto'] === 'https' ||
+        process.env.COOKIE_SECURE === 'true'
+    );
+};
+
 // ==========================================
 // 1. LOGIN (WEB)
 // ==========================================
@@ -66,11 +74,11 @@ export const login = async (req, res) => {
         const payload = { id: user.id, username: user.username, role: user.role };
         const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '12h' });
 
-        // 6. Set token ke HTTP-Only Cookie
+        // 6. Set token ke HTTP-Only Cookie (aman untuk HTTP staging maupun HTTPS production)
         res.cookie('mox_token', token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
+            secure: isHttpsRequest(req),
+            sameSite: 'lax',
             maxAge: 12 * 60 * 60 * 1000 // 12 Jam
         });
 
@@ -99,8 +107,8 @@ export const logout = async (req, res) => {
         const username = req.user ? req.user.username : 'Seorang pengguna';
         res.clearCookie('mox_token', {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict'
+            secure: isHttpsRequest(req),
+            sameSite: 'lax'
         });
         await addSystemLog('INFO', 'AUTENTIFIKASI', `Logout berhasil: ${username} telah keluar dari sistem. ${clientInfo}`);
         return res.status(200).json({ success: true, message: 'Logout berhasil.' });

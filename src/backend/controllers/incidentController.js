@@ -79,11 +79,34 @@ export const getIncidents = async (req, res) => {
 // 2. TEKNISI KONFIRMASI (JOIN TIKET)
 // ==========================================
 export const joinIncident = async (req, res) => {
-    const { alert_id, user_id, user_name } = req.body;
+    const alert_id = req.body.alert_id || req.body.id;
+    const user_id = req.body.user_id || req.user?.id;
+    const user_name = req.body.user_name || req.user?.name || req.user?.username;
+
+    if (!alert_id || !user_id || !user_name) {
+        return res.status(400).json({
+            success: false,
+            message: 'Parameter alert_id serta identitas teknisi (user_id, user_name atau Bearer Token) wajib disertakan.'
+        });
+    }
+
     try {
-        await db.query('INSERT IGNORE INTO alert_handlers (alert_id, user_id, user_name) VALUES (?, ?, ?)', [alert_id, user_id, user_name]);
-        await db.query('INSERT INTO system_logs (level, source, message) VALUES (?, ?, ?)', 
-            ['INFO', 'TICKET SYSTEM', `Teknisi ${user_name} mengkonfirmasi penanganan tiket #${alert_id}`]);
+        const [alertRows] = await db.query('SELECT id, is_resolved FROM active_alerts WHERE id = ?', [alert_id]);
+        if (alertRows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Tiket gangguan tidak ditemukan.' });
+        }
+        if (alertRows[0].is_resolved === 1) {
+            return res.status(400).json({ success: false, message: 'Tiket gangguan ini sudah diselesaikan.' });
+        }
+
+        await db.query(
+            'INSERT IGNORE INTO alert_handlers (alert_id, user_id, user_name) VALUES (?, ?, ?)',
+            [alert_id, user_id, user_name]
+        );
+        await db.query(
+            'INSERT INTO system_logs (level, source, message) VALUES (?, ?, ?)', 
+            ['INFO', 'TICKET SYSTEM', `Teknisi ${user_name} mengkonfirmasi penanganan tiket #${alert_id}`]
+        );
         res.json({ success: true, message: 'Berhasil bergabung dalam penanganan tiket' });
     } catch (error) {
         console.error("Error joinIncident:", error);
@@ -95,12 +118,22 @@ export const joinIncident = async (req, res) => {
 // 3. TEKNISI TANDAI SELESAI (RESOLVE)
 // ==========================================
 export const resolveIncident = async (req, res) => {
-    const { alert_id, user_name } = req.body;
+    const alert_id = req.body.alert_id || req.body.id;
+    const user_name = req.body.user_name || req.user?.name || req.user?.username || 'Teknisi';
+
+    if (!alert_id) {
+        return res.status(400).json({ success: false, message: 'Parameter alert_id wajib disertakan.' });
+    }
+
     try {
-        const [alertData] = await db.query('SELECT severity FROM active_alerts WHERE id = ?', [alert_id]);
+        const [alertData] = await db.query('SELECT severity, is_resolved FROM active_alerts WHERE id = ?', [alert_id]);
         
         if (alertData.length === 0) {
             return res.status(404).json({ success: false, message: 'Tiket tidak ditemukan.' });
+        }
+
+        if (alertData[0].is_resolved === 1) {
+            return res.json({ success: true, message: 'Tiket sudah berstatus selesai.' });
         }
 
         if (alertData[0].severity !== 'RECOVERED') {

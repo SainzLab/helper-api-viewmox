@@ -15,9 +15,9 @@ export const verifyApiToken = async (req, res, next) => {
     const token = authHeader.split(' ')[1];
 
     try {
-        // Ambil data user, status aktif, dan batas waktu token
+        // Ambil data lengkap user (termasuk name), status aktif, dan batas waktu token
         const [users] = await db.query(
-            'SELECT id, username, role, is_active, token_expires_at FROM users WHERE api_token = ?', 
+            'SELECT id, name, username, role, is_active, token_expires_at FROM users WHERE api_token = ?', 
             [token]
         );
         
@@ -59,4 +59,14 @@ export const verifyApiToken = async (req, res, next) => {
         console.error("Error verifyApiToken:", error);
         res.status(500).json({ success: false, message: 'Server error saat memverifikasi token.' });
     }
+};
+
+// Middleware Hybrid: Jika request menyertakan Bearer Token (misal dari aplikasi Mobile ke endpoint umum),
+// validasi token tersebut dan isi req.user. Jika tidak ada header Bearer, lanjutkan (untuk Web).
+export const attachMobileUserIfPresent = async (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        return verifyApiToken(req, res, next);
+    }
+    next();
 };

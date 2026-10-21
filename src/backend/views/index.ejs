@@ -27,6 +27,12 @@
     
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <% if (isProd && typeof viteAssets !== 'undefined' && viteAssets.css) { %>
+        <% viteAssets.css.forEach(function(cssFile) { %>
+            <link rel="stylesheet" href="/dist/<%= cssFile %>">
+        <% }); %>
+    <% } %>
 </head>
 <body class="bg-moxdark text-white font-sans antialiased">
     <!-- Vue Root Element -->
@@ -34,8 +40,11 @@
 
     <!-- Script Injection (Development vs Production) -->
     <% if (isProd) { %>
-        <!-- Di mode production, load dari hasil build Vite (butuh helper parsing manifest.json, untuk sekarang abaikan jika fokus dev) -->
-        <script type="module" src="/dist/main.js"></script>
+        <% if (typeof viteAssets !== 'undefined' && viteAssets.js) { %>
+            <script type="module" src="/dist/<%= viteAssets.js %>"></script>
+        <% } else { %>
+            <script type="module" src="/dist/main.js"></script>
+        <% } %>
     <% } else { %>
         <!-- Di mode development, connect ke Vite dev server -->
         <script type="module" src="http://localhost:5173/@vite/client"></script>
