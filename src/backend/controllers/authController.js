@@ -1,4 +1,5 @@
 import db from '../config/database.js';
+import { getTokenExpiryMs } from '../config/timezone.js';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
@@ -163,10 +164,10 @@ export const mobileLogin = async (req, res) => {
 
         // 4. Cek masa berlaku token (Kadaluarsa)
         if (user.token_expires_at) {
-            const now = new Date();
-            const expiresAt = new Date(user.token_expires_at);
+            // Token berlaku sampai akhir hari kedaluwarsa menurut WIB
+            const expiresAtMs = getTokenExpiryMs(user.token_expires_at);
 
-            if (expiresAt < now) {
+            if (expiresAtMs !== null && Date.now() >= expiresAtMs) {
                 await addSystemLog('WARNING', 'MOBILE_AUTH', `Percobaan login ditolak: Token untuk '${username}' sudah kadaluarsa. ${clientInfo}`);
                 return res.status(401).json({
                     success: false,

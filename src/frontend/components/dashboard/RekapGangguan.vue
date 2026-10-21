@@ -59,7 +59,7 @@
       <div class="flex items-center justify-between mb-4 mt-10">
         <div>
           <h3 class="text-base font-bold text-white flex items-center gap-2">
-            <i class="ph-bold ph-chart-line-up text-moxgreen"></i> Analitik Kinerja Sistem (ITIL)
+             Analitik Kinerja Sistem
           </h3>
           <p class="text-xs text-slate-500 mt-0.5">Dihitung otomatis dari riwayat sistem &bull; {{ filterLabelText }}</p>
         </div>
@@ -262,6 +262,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import VueApexCharts from 'vue3-apexcharts';
+import { formatWibShort } from '../../utils/datetime.js';
 
 const apexchart = VueApexCharts;
 
@@ -315,15 +316,7 @@ const analytics = ref({
 });
 
 // Format Waktu & Warna Dasar
-const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    // Menghindari konversi otomatis browser ke UTC (+7) dengan replace T
-    const safeString = dateString.replace(' ', 'T');
-    const dateObj = new Date(safeString);
-    return dateObj.toLocaleDateString('id-ID', { 
-        day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' 
-    }).replace(',', ' -');
-};
+const formatDate = (dateString) => formatWibShort(dateString);
 
 const getIndicatorColor = (t) => t.status === 'Selesai' ? 'bg-emerald-500' : t.severity === 'RECOVERED' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' : t.severity === 'DOWN' ? 'bg-rose-600 shadow-[0_0_8px_rgba(225,29,72,0.5)]' : t.severity === 'CRITICAL' ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]' : 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]';
 const getStatusBadge = (s, sv) => s === 'Selesai' ? 'bg-emerald-500/20 text-emerald-500 ring-1 ring-emerald-500/50' : sv === 'RECOVERED' ? 'bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/50' : s === 'Dalam Penanganan' ? 'bg-cyan-500/20 text-cyan-500' : sv === 'DOWN' ? 'bg-rose-600/20 text-rose-500' : sv === 'CRITICAL' ? 'bg-orange-500/20 text-orange-500' : 'bg-amber-400/20 text-amber-400';

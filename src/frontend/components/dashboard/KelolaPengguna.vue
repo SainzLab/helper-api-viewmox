@@ -349,6 +349,7 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
+import { toWibDateInput, isTokenExpired } from '../../utils/datetime.js';
 
 const users = ref([]);
 const isLoading = ref(true);
@@ -540,7 +541,7 @@ const editUser = (user) => {
   
   let formattedDate = '';
   if (user.token_expires_at) {
-    formattedDate = new Date(user.token_expires_at).toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+    formattedDate = toWibDateInput(user.token_expires_at);
   }
   
   form.value = { 
@@ -634,12 +635,11 @@ const getTokenStatus = (user) => {
   if (user.role === 'Admin') return { text: 'Akses Web Penuh', color: 'text-slate-400', dot: 'hidden' };
   if (!user.token_expires_at) return { text: 'Token Tidak Aktif', color: 'text-slate-500', dot: 'bg-slate-500' };
   
-  const expDate = new Date(user.token_expires_at);
-  const today = new Date();
-  if (expDate < today) {
+  // Token berlaku sampai akhir hari kedaluwarsa (WIB)
+  if (isTokenExpired(user.token_expires_at)) {
     return { text: 'Kedaluwarsa', color: 'text-rose-500', dot: 'bg-rose-500' };
   }
-  const formattedDate = expDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+  const formattedDate = toWibDateInput(user.token_expires_at);
   return { text: `Aktif (Exp: ${formattedDate})`, color: 'text-blue-400', dot: 'bg-blue-500' };
 };
 

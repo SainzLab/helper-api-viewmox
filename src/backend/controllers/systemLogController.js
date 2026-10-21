@@ -9,7 +9,7 @@ export const getSystemLogs = async (req, res) => {
                 level, 
                 source, 
                 message, 
-                DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') as timestamp 
+                DATE_FORMAT(created_at, '%Y-%m-%dT%H:%i:%sZ') as timestamp 
             FROM system_logs 
             ORDER BY created_at DESC 
             LIMIT 500

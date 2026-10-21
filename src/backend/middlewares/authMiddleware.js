@@ -1,4 +1,5 @@
 import db from '../config/database.js';
+import { getTokenExpiryMs } from '../config/timezone.js';
 
 export const verifyApiToken = async (req, res, next) => {
     const authHeader = req.headers.authorization;
@@ -40,10 +41,10 @@ export const verifyApiToken = async (req, res, next) => {
 
         // 3. Cek apakah masa berlaku token sudah habis (Kadaluarsa)
         if (user.token_expires_at) {
-            const now = new Date();
-            const expiresAt = new Date(user.token_expires_at);
-            
-            if (expiresAt < now) {
+            // Token berlaku sampai akhir hari kedaluwarsa menurut WIB
+            const expiresAtMs = getTokenExpiryMs(user.token_expires_at);
+
+            if (expiresAtMs !== null && Date.now() >= expiresAtMs) {
                 return res.status(401).json({ 
                     success: false, 
                     message: 'Sesi token Anda telah kadaluarsa. Silakan login kembali dari aplikasi.' 

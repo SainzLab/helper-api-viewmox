@@ -11,10 +11,10 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  timezone: DB_TZ_OFFSET // konversi Date <-> DATETIME memakai WIB
+  timezone: DB_TZ_OFFSET // konversi Date <-> DATETIME memakai UTC
 });
 
-// Pastikan NOW()/CURRENT_TIMESTAMP/CURRENT_DATE/DATE_FORMAT di MySQL memakai WIB
+// Pastikan NOW()/CURRENT_TIMESTAMP/CURRENT_DATE/DATE_FORMAT di MySQL memakai UTC
 pool.pool.on('connection', (conn) => {
   conn.query(`SET time_zone = '${DB_TZ_OFFSET}'`);
 });

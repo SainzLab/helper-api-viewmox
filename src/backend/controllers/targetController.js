@@ -127,7 +127,7 @@ export const getTargetHistory = async (req, res) => {
   const { id } = req.params;
   try {
     const [rows] = await db.query(
-      'SELECT latency_ms, status, DATE_FORMAT(created_at, "%H:%i:%s") as time FROM target_history WHERE target_id = ? ORDER BY id ASC',
+      'SELECT latency_ms, status, DATE_FORMAT(created_at, "%Y-%m-%dT%H:%i:%sZ") as time FROM target_history WHERE target_id = ? ORDER BY id ASC',
       [id]
     );
     res.status(200).json({ success: true, data: rows });

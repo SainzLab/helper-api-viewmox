@@ -171,6 +171,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
+import { parseUtcDate, formatWibDateTime } from '../../utils/datetime.js';
 
 const currentTime = ref('');
 let timer = null;
@@ -234,7 +235,7 @@ const openAllModal = () => {
 
 const formatDuration = (start, end) => {
   if (!start || !end) return '-';
-  const diffMin = Math.max(0, Math.round((new Date(end) - new Date(start)) / 60000));
+  const diffMin = Math.max(0, Math.round((parseUtcDate(end) - parseUtcDate(start)) / 60000));
   if (diffMin < 1) return '< 1 menit';
   const d = Math.floor(diffMin / 1440);
   const h = Math.floor((diffMin % 1440) / 60);
@@ -255,11 +256,7 @@ const severityStyle = (severity) => {
 
 const formatTime = (value) => {
   if (!value) return '-';
-  return new Date(value).toLocaleString('id-ID', {
-    timeZone: 'Asia/Jakarta',
-    day: '2-digit', month: 'short', year: 'numeric',
-    hour: '2-digit', minute: '2-digit'
-  }).replace(/\./g, ':') + ' WIB';
+  return formatWibDateTime(value, false) + ' WIB';
 };
 
 // Tutup dropdown saat klik di luar

@@ -332,6 +332,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler } from 'chart.js';
 import { Line } from 'vue-chartjs';
+import { parseUtcDate, formatWibTime } from '../../utils/datetime.js';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler);
 
 defineEmits(['change-view']);
@@ -440,7 +441,7 @@ const fetchHistory = async (targetId, isSilent) => {
         const res = await fetch(`/api/targets/${targetId}/history`);
         const data = await res.json();
         if (data.success && data.data.length > 0) {
-            const labels = data.data.map(d => d.time);
+            const labels = data.data.map(d => formatWibTime(d.time));
             const dataPoints = data.data.map(d => d.status === 'DOWN' ? 0 : (d.latency_ms || 0));
             chartData.value = { labels: labels, datasets: [{ data: dataPoints, backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true }] };
         } else {
@@ -508,20 +509,8 @@ const closeModal = () => { showModal.value = false; };
 // PERBAIKAN: Fungsi Waktu Tahan Banting
 // =====================================
 
-const parseMySQLDate = (timestamp) => {
-    if (!timestamp) return null;
-    
-    // Jika datanya sudah berupa objek Date atau string ISO (mengandung 'T' atau 'Z')
-    // Langsung lemparkan ke Date parser bawaan browser.
-    if (timestamp instanceof Date || timestamp.includes('T')) {
-        return new Date(timestamp);
-    }
-    
-    // Jika datanya berupa string MySQL mentah tanpa zona waktu (contoh: "2026-10-21 09:00:00")
-    // Paksa browser membacanya sebagai UTC dengan menambahkan 'Z'
-    const isoString = timestamp.trim().replace(' ', 'T') + 'Z';
-    return new Date(isoString);
-};
+// Timestamp dari API/database selalu UTC; string tanpa zona dianggap UTC
+const parseMySQLDate = (timestamp) => parseUtcDate(timestamp);
 
 const formatTimeAgo = (timestamp) => {
     if (!timestamp) return 'Belum dicek';

@@ -1,4 +1,5 @@
 import db from '../config/database.js';
+import { WIB_OFFSET_MS, getWibYear } from '../config/timezone.js';
 
 // ==========================================
 // FUNGSI HELPER: FORMAT DETIK KE TEKS
@@ -48,7 +49,7 @@ export const getIncidents = async (req, res) => {
             if (row.is_resolved === 1) status = 'Selesai';
             else if (row.handler_count > 0) status = 'Dalam Penanganan';
 
-            const year = new Date(row.created_at).getFullYear();
+            const year = getWibYear(row.created_at);
             const ticketId = `#INC-${year}-${String(row.id).padStart(4, '0')}`;
 
             return {
@@ -188,24 +189,26 @@ export const getAnalytics = async (req, res) => {
         };
 
         const chartData = [];
-        const cursor = new Date(winStart);
-        if (period.bucket === 'hour') cursor.setMinutes(0, 0, 0);
-        else cursor.setHours(0, 0, 0, 0);
+        // Batas jam/hari bucket mengikuti WIB (server berjalan UTC, WIB = UTC+7 tanpa DST)
+        const stepMs = period.bucket === 'hour' ? 3600 * 1000 : 24 * 3600 * 1000;
+        let cursorMs = Math.floor((winStart + WIB_OFFSET_MS) / stepMs) * stepMs - WIB_OFFSET_MS;
 
-        while (cursor.getTime() < winEnd) {
-            const bs = Math.max(cursor.getTime(), winStart);
-            const next = new Date(cursor);
-            if (period.bucket === 'hour') next.setHours(next.getHours() + 1);
-            else next.setDate(next.getDate() + 1);
-            
-            const be = Math.min(next.getTime(), winEnd);
-            const label = period.bucket === 'hour' ? `${String(cursor.getHours()).padStart(2, '0')}:00` : `${cursor.getDate()} ${BULAN[cursor.getMonth()]}`;
-            
+        while (cursorMs < winEnd) {
+            const bs = Math.max(cursorMs, winStart);
+            const nextMs = cursorMs + stepMs;
+            const be = Math.min(nextMs, winEnd);
+
+            // Geser +7 jam lalu baca komponen UTC = komponen waktu WIB
+            const wib = new Date(cursorMs + WIB_OFFSET_MS);
+            const label = period.bucket === 'hour'
+                ? `${String(wib.getUTCHours()).padStart(2, '0')}:00`
+                : `${wib.getUTCDate()} ${BULAN[wib.getUTCMonth()]}`;
+
             chartData.push({
                 label,
                 ...hitungMetrikITIL(incidents, bs, be)
             });
-            cursor.setTime(next.getTime());
+            cursorMs = nextMs;
         }
 
         res.json({ success: true, summary, chartData });

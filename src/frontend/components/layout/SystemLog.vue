@@ -85,7 +85,7 @@
             <template v-else>
               <!-- UBAH DARI "log in logs" MENJADI "log in filteredLogs" -->
               <tr v-for="log in filteredLogs" :key="log.id" class="border-b border-slate-800/50 hover:bg-slate-800/30 transition">
-                <td class="px-6 py-3 text-slate-400 text-xs">{{ log.timestamp }}</td>
+                <td class="px-6 py-3 text-slate-400 text-xs">{{ formatWibDateTime(log.timestamp) }}</td>
                 <td class="px-6 py-3">
                   <span :class="{
                     'text-emerald-400 bg-emerald-500/10 border-emerald-500/20': log.level === 'INFO',
@@ -108,6 +108,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { formatWibDateTime } from '../../utils/datetime.js';
 
 defineEmits(['change-view']);
 

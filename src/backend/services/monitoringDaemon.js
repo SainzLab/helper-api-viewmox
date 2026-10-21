@@ -2,6 +2,7 @@ import db from '../config/database.js';
 import ping from 'ping';
 import net from 'net';
 import jwt from 'jsonwebtoken';
+import { getWibYear } from '../config/timezone.js';
 
 // Tracker bawaan untuk UP/DOWN standar (Dashboard)
 const failureCounts = new Map();
@@ -87,7 +88,7 @@ const triggerAlert = async (target, moduleType, severity, actionType, maxCount, 
                     [target.id, moduleType, target.name, severity, severity, actionType, message]
                 );
                 
-                const ticketId = `#INC-${new Date().getFullYear()}-${String(result.insertId).padStart(4, '0')}`;
+                const ticketId = `#INC-${getWibYear()}-${String(result.insertId).padStart(4, '0')}`;
                 const logMsg = `Tiket ${ticketId} otomatis dibuat: [${moduleType}] ${target.name} berstatus ${severity} (${message})`;
                 console.log(`🚨 [ALERT TRIGGERED] ${logMsg}`);
                 
@@ -100,7 +101,7 @@ const triggerAlert = async (target, moduleType, severity, actionType, maxCount, 
                     [severity, severity, actionType, message, existing[0].id]
                 );
                 
-                const ticketId = `#INC-${new Date().getFullYear()}-${String(existing[0].id).padStart(4, '0')}`;
+                const ticketId = `#INC-${getWibYear()}-${String(existing[0].id).padStart(4, '0')}`;
                 const logMsg = `Eskalasi Tiket ${ticketId}: [${moduleType}] ${target.name} naik menjadi ${severity} (${message})`;
                 console.log(`🚨 [ALERT ESCALATED] ${logMsg}`);
                 
