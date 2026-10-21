@@ -1,17 +1,55 @@
 <template>
-  <main class="p-8 pb-12 overflow-x-hidden">
+  <main class="p-8 pb-12 overflow-x-hidden" @click="closeExportMenu">
     <!-- Header Halaman -->
     <div class="flex justify-between items-end mb-6">
       <div>
-        <h2 class="text-2xl font-bold text-white mb-1">
+        <h2 class="text-2xl font-bold text-white mb-1 flex items-center gap-2.5">
           <i class="ph-bold ph-ticket text-moxgreen"></i> Rekap & Pelacakan Status Gangguan
         </h2>
-        <p class="text-slate-400 text-sm">Pemantauan riwayat insiden dan performa respons teknisi.</p>
+        <p class="text-slate-400 text-sm">Pemantauan riwayat insiden dan performa respons teknisi secara otomatis.</p>
       </div>
-      <div class="flex gap-3">
-        <button @click="fetchDataAll" class="px-5 py-2.5 bg-moxgreen text-moxdark rounded-lg flex items-center gap-2 hover:bg-emerald-400 text-sm font-bold transition shadow-lg shadow-emerald-500/20">
-          <i class="ph-bold ph-arrows-clockwise"></i> Refresh Data
+      <div class="flex gap-3 relative" @click.stop>
+        <button
+          @click="showExportMenu = !showExportMenu"
+          :disabled="isExporting"
+          class="px-5 py-2.5 bg-moxgreen text-moxdark rounded-lg flex items-center gap-2 hover:bg-emerald-400 disabled:opacity-50 text-sm font-bold transition shadow-lg shadow-emerald-500/20"
+        >
+          <i class="ph-bold" :class="isExporting ? 'ph-spinner animate-spin' : 'ph-file-pdf'"></i>
+          <span>{{ isExporting ? 'Menyiapkan PDF...' : 'Export PDF' }}</span>
+          <i class="ph-bold ph-caret-down text-xs ml-0.5 transition-transform duration-200" :class="showExportMenu ? 'rotate-180' : ''"></i>
         </button>
+
+        <!-- Dropdown Opsi Periode Export PDF -->
+        <div
+          v-if="showExportMenu"
+          class="absolute right-0 top-full mt-2 w-56 bg-moxcard border border-slate-700 rounded-xl shadow-2xl py-1.5 z-50 overflow-hidden"
+        >
+          <div class="px-3.5 py-2 border-b border-slate-800">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pilih Rentang Laporan</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">Filter Level: <span class="text-moxgreen font-semibold">{{ analyticsSeverity === 'ALL' ? 'Semua Level' : analyticsSeverity }}</span></p>
+          </div>
+          <button
+            @click="exportToPdf('24h')"
+            class="w-full px-4 py-2.5 text-left text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-moxgreen flex items-center justify-between transition"
+          >
+            <span class="flex items-center gap-2"><i class="ph-bold ph-clock text-moxgreen"></i> 24 Jam Terakhir</span>
+            <span class="text-[10px] text-slate-500 font-normal">Per Jam</span>
+          </button>
+          <button
+            @click="exportToPdf('7d')"
+            class="w-full px-4 py-2.5 text-left text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-moxgreen flex items-center justify-between transition"
+          >
+            <span class="flex items-center gap-2"><i class="ph-bold ph-calendar-blank text-cyan-400"></i> 7 Hari Terakhir</span>
+            <span class="text-[10px] text-slate-500 font-normal">Per Hari</span>
+          </button>
+          <button
+            @click="exportToPdf('30d')"
+            class="w-full px-4 py-2.5 text-left text-xs font-bold text-slate-200 hover:bg-slate-800 hover:text-moxgreen flex items-center justify-between transition"
+          >
+            <span class="flex items-center gap-2"><i class="ph-bold ph-calendar text-amber-400"></i> 30 Hari Terakhir</span>
+            <span class="text-[10px] text-slate-500 font-normal">Per Hari</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -64,7 +102,15 @@
           <p class="text-xs text-slate-500 mt-0.5">Dihitung otomatis dari riwayat sistem &bull; {{ filterLabelText }}</p>
         </div>
         
-        <div class="flex gap-3 items-center">
+        <div class="flex flex-wrap gap-3 items-center">
+          <!-- Filter Level Severity Analitik -->
+          <div class="flex bg-slate-900/50 border border-slate-800 rounded-lg p-1">
+            <button @click="setAnalyticsSeverity('ALL')" class="px-3.5 py-1.5 rounded-md text-xs font-bold transition" :class="analyticsSeverity === 'ALL' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'">Semua</button>
+            <button @click="setAnalyticsSeverity('DOWN')" class="px-3.5 py-1.5 rounded-md text-xs font-bold transition" :class="analyticsSeverity === 'DOWN' ? 'bg-rose-600 text-white shadow' : 'text-slate-400 hover:text-rose-400'">Down</button>
+            <button @click="setAnalyticsSeverity('CRITICAL')" class="px-3.5 py-1.5 rounded-md text-xs font-bold transition" :class="analyticsSeverity === 'CRITICAL' ? 'bg-orange-500 text-white shadow' : 'text-slate-400 hover:text-orange-400'">Critical</button>
+            <button @click="setAnalyticsSeverity('WARNING')" class="px-3.5 py-1.5 rounded-md text-xs font-bold transition" :class="analyticsSeverity === 'WARNING' ? 'bg-amber-400 text-moxdark shadow' : 'text-slate-400 hover:text-amber-400'">Warning</button>
+          </div>
+          <!-- Filter Rentang Periode Analitik -->
           <div class="flex bg-slate-900/50 border border-slate-800 rounded-lg p-1">
             <button @click="setAnalyticsFilter('24h')" class="px-4 py-1.5 rounded-md text-xs font-bold transition" :class="analyticsFilter === '24h' ? 'bg-moxgreen text-moxdark' : 'text-slate-400 hover:text-white'">24 Jam</button>
             <button @click="setAnalyticsFilter('7d')" class="px-4 py-1.5 rounded-md text-xs font-bold transition" :class="analyticsFilter === '7d' ? 'bg-moxgreen text-moxdark' : 'text-slate-400 hover:text-white'">7 Hari</button>
@@ -80,7 +126,7 @@
           <div class="absolute -right-4 -top-4 w-16 h-16 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-all"></div>
           <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5 relative z-10"><i class="ph-bold ph-arrow-circle-up text-emerald-400"></i> Total Uptime</p>
           <h3 class="text-2xl font-bold text-white leading-none relative z-10">{{ formatPreciseDuration(analytics.summary.total_uptime_sec) }}</h3>
-          <p class="text-[11px] text-slate-500 mt-2 relative z-10">Waktu hidup rata-rata per server</p>
+          <p class="text-[11px] text-slate-500 mt-2 relative z-10">Waktu sistem beroperasi normal</p>
         </div>
         
         <!-- TOTAL DOWNTIME -->
@@ -160,7 +206,7 @@
       
       <div v-else v-for="ticket in filteredTickets" :key="ticket.id" class="bg-moxcard border rounded-xl overflow-hidden shadow-lg transition-colors duration-300" :class="ticket.isExpanded ? 'border-slate-700 ring-1 ring-slate-800' : 'border-slate-800/80'">
         <!-- Baris Utama Tiket (Header) -->
-        <div class="flex items-center p-5 relative cursor-pointer" :class="ticket.isExpanded ? 'bg-slate-800/30' : 'hover:bg-slate-800/30'" @click="ticket.isExpanded = !ticket.isExpanded">
+        <div class="flex items-center p-5 relative cursor-pointer" :class="ticket.isExpanded ? 'bg-slate-800/30' : 'hover:bg-slate-800/30'" @click="toggleTicketExpand(ticket)">
           <div class="absolute left-4 top-1/2 -translate-y-1/2 w-2 h-10 rounded-full" :class="getIndicatorColor(ticket)"></div>
           <div class="pl-6 flex-1">
             <div class="text-[11px] font-bold text-slate-400 mb-1 flex items-center gap-2">
@@ -262,14 +308,30 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import VueApexCharts from 'vue3-apexcharts';
-import { formatWibShort } from '../../utils/datetime.js';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { formatWibShort, formatWibDateTime, parseUtcDate } from '../../utils/datetime.js';
 
 const apexchart = VueApexCharts;
 
 // STATE UMUM
 const tickets = ref([]);
+const expandedMap = ref({});
+const hasInitializedExpand = ref(false);
 const isLoading = ref(true);
 const stats = ref({ down: 0, critical: 0, warning: 0, progress: 0, resolved: 0 });
+
+// STATE EXPORT PDF
+const showExportMenu = ref(false);
+const isExporting = ref(false);
+const closeExportMenu = () => {
+  showExportMenu.value = false;
+};
+
+const toggleTicketExpand = (ticket) => {
+  ticket.isExpanded = !ticket.isExpanded;
+  expandedMap.value[ticket.id] = ticket.isExpanded;
+};
 
 // STATE SEARCH & FILTER TIKET
 const searchQuery = ref('');
@@ -301,17 +363,18 @@ const filteredTickets = computed(() => {
 
 // STATE ANALITIK
 const analyticsFilter = ref('24h');
+const analyticsSeverity = ref('ALL');
 const analyticsError = ref('');
 
 const filterLabelText = computed(() => {
-  if (analyticsFilter.value === '24h') return '24 Jam Terakhir';
-  if (analyticsFilter.value === '7d') return '7 Hari Terakhir';
-  return '30 Hari Terakhir';
+  const periodTxt = analyticsFilter.value === '24h' ? '24 Jam Terakhir' : (analyticsFilter.value === '7d' ? '7 Hari Terakhir' : '30 Hari Terakhir');
+  const sevTxt = analyticsSeverity.value === 'ALL' ? 'Semua Level (Warning, Critical, Down)' : `Level ${analyticsSeverity.value}`;
+  return `${periodTxt} - ${sevTxt}`;
 });
 
 // Hanya menampung 4 Metrik Utama
 const analytics = ref({
-  summary: { total_uptime_sec: 0, total_downtime_sec: 0, mttr_sec: 0, availability: 100 },
+  summary: { total_uptime_sec: 0, total_downtime_sec: 0, mttr_sec: 0, availability: 100, incident_count: 0 },
   chartData: []
 });
 
@@ -337,37 +400,49 @@ const formatPreciseDuration = (totalSeconds) => {
   return parts.join(' ');
 };
 
-// PANGGILAN DATA API
-const fetchDataAll = async () => {
-  fetchTickets();
+// PANGGILAN DATA API (REALTIME POLLING)
+const fetchDataAll = async (silent = false) => {
+  fetchTickets(silent);
   fetchAnalytics();
 };
 
-const fetchTickets = async () => {
-  isLoading.value = true;
+const fetchTickets = async (silent = false) => {
+  if (!silent && tickets.value.length === 0) {
+    isLoading.value = true;
+  }
   try {
     const response = await fetch('/api/incidents');
     const json = await response.json();
     if (json.success) {
-      tickets.value = json.data.map((t, i) => ({ ...t, isExpanded: i === 0 && t.status !== 'Selesai' }));
+      tickets.value = json.data.map((t, i) => {
+        let expanded = expandedMap.value[t.id];
+        if (expanded === undefined) {
+          expanded = !hasInitializedExpand.value && i === 0 && t.status !== 'Selesai';
+          expandedMap.value[t.id] = expanded;
+        }
+        return { ...t, isExpanded: expanded };
+      });
+      hasInitializedExpand.value = true;
       stats.value.down = tickets.value.filter(t => t.severity === 'DOWN' && t.is_resolved === 0).length;
       stats.value.critical = tickets.value.filter(t => t.severity === 'CRITICAL' && t.is_resolved === 0).length;
       stats.value.warning = tickets.value.filter(t => t.severity === 'WARNING' && t.is_resolved === 0).length;
       stats.value.progress = tickets.value.filter(t => t.status === 'Dalam Penanganan').length;
       stats.value.resolved = tickets.value.filter(t => t.is_resolved === 1).length;
     }
-  } catch (e) { console.error(e); } finally { isLoading.value = false; }
+  } catch (e) {
+    console.error(e);
+  } finally {
+    isLoading.value = false;
+  }
 };
 
 const fetchAnalytics = async () => {
   try {
-    const response = await fetch(`/api/analytics?period=${analyticsFilter.value}`);
+    const response = await fetch(`/api/analytics?period=${analyticsFilter.value}&severity=${analyticsSeverity.value}`);
     const json = await response.json();
     if (!json.success) throw new Error();
 
     const sum = json.summary;
-    
-    // Normalisasi Uptime Kumulatif dengan membaginya berdasarkan total device
     const devices = sum.total_devices || 1;
     const humanUptimeSec = sum.total_uptime_sec / devices;
 
@@ -376,10 +451,14 @@ const fetchAnalytics = async () => {
         total_uptime_sec: humanUptimeSec,
         total_downtime_sec: sum.total_downtime_sec,
         mttr_sec: sum.mttr_sec,
-        availability: parseFloat(sum.availability)
+        availability: parseFloat(sum.availability),
+        incident_count: sum.incident_count || 0
       },
       chartData: json.chartData.map(d => ({
         label: d.label,
+        total_uptime_sec: d.total_uptime_sec,
+        total_downtime_sec: d.total_downtime_sec,
+        incident_count: d.incident_count || 0,
         mttr_sec: d.mttr_sec,
         availability: parseFloat(d.availability)
       }))
@@ -390,9 +469,187 @@ const fetchAnalytics = async () => {
   }
 };
 
+// FUNGSI EXPORT PDF (24 Jam, 7 Hari, 30 Hari)
+const PERIOD_CONFIG = {
+  '24h': { label: '24 Jam Terakhir', ms: 24 * 3600 * 1000 },
+  '7d':  { label: '7 Hari Terakhir', ms: 7 * 24 * 3600 * 1000 },
+  '30d': { label: '30 Hari Terakhir', ms: 30 * 24 * 3600 * 1000 }
+};
+
+const exportToPdf = async (periodKey) => {
+  showExportMenu.value = false;
+  if (isExporting.value) return;
+  isExporting.value = true;
+
+  try {
+    const periodCfg = PERIOD_CONFIG[periodKey] || PERIOD_CONFIG['24h'];
+    const sevFilter = analyticsSeverity.value;
+    const sevLabel = sevFilter === 'ALL' ? 'Semua Level (Warning, Critical, Down)' : `Level ${sevFilter}`;
+
+    // Ambil data analitik dan tiket terbaru sesuai periode yang dipilih
+    const [analyticsRes, incidentsRes] = await Promise.all([
+      fetch(`/api/analytics?period=${periodKey}&severity=${sevFilter}`),
+      fetch('/api/incidents')
+    ]);
+    const analyticsJson = await analyticsRes.json();
+    const incidentsJson = await incidentsRes.json();
+
+    if (!analyticsJson.success || !incidentsJson.success) {
+      throw new Error('Gagal mengambil data laporan dari server.');
+    }
+
+    const sum = analyticsJson.summary;
+    const chartRows = analyticsJson.chartData || [];
+    const nowMs = Date.now();
+    const winStartMs = nowMs - periodCfg.ms;
+
+    // Filter daftar tiket yang berada dalam rentang waktu periode & level severity
+    const periodTickets = (incidentsJson.data || []).filter(t => {
+      const startDate = parseUtcDate(t.time);
+      const endDate = t.resolved_at ? parseUtcDate(t.resolved_at) : new Date(nowMs);
+      const startMs = startDate ? startDate.getTime() : 0;
+      const endMs = endDate ? endDate.getTime() : nowMs;
+      const inWindow = endMs > winStartMs && startMs < nowMs;
+      if (!inWindow) return false;
+      if (sevFilter !== 'ALL') {
+        const origSev = String(t.original_severity || t.severity || '').toUpperCase();
+        return origSev === sevFilter;
+      }
+      return true;
+    });
+
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+    // Header Laporan
+    doc.setFillColor(15, 23, 42);
+    doc.rect(0, 0, 297, 32, 'F');
+    doc.setTextColor(16, 185, 129);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(15);
+    doc.text('VIEWMOX - LAPORAN REKAPITULASI GANGGUAN & ANALITIK SLA', 14, 13);
+
+    doc.setTextColor(226, 232, 240);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.5);
+    doc.text(`Periode Laporan: ${periodCfg.label}   |   Filter Level: ${sevLabel}`, 14, 20);
+    doc.text(`Waktu Cetak: ${formatWibDateTime(new Date())} WIB`, 14, 26);
+
+    // 1. Tabel Ringkasan Metrik Kinerja Sistem (ITIL SLA)
+    doc.setTextColor(15, 23, 42);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('1. Ringkasan Metrik Kinerja Sistem (SLA)', 14, 40);
+
+    autoTable(doc, {
+      startY: 43,
+      head: [['Total Uptime', 'Total Downtime', 'MTTR (Rata-rata Pemulihan)', 'Availability (%)', 'Total Insiden']],
+      body: [[
+        formatPreciseDuration(sum.total_uptime_sec),
+        formatPreciseDuration(sum.total_downtime_sec),
+        formatPreciseDuration(sum.mttr_sec),
+        `${sum.availability}%`,
+        `${sum.incident_count || 0} Tiket`
+      ]],
+      theme: 'grid',
+      headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center', fontSize: 9 },
+      bodyStyles: { halign: 'center', fontSize: 9.5, fontStyle: 'bold', textColor: [30, 41, 59] },
+      margin: { left: 14, right: 14 }
+    });
+
+    // 2. Tabel Rincian Analitik per Periode Bucket
+    let nextY = doc.lastAutoTable.finalY + 8;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text(`2. Rincian Analitik per ${periodKey === '24h' ? 'Jam' : 'Hari'}`, 14, nextY);
+
+    autoTable(doc, {
+      startY: nextY + 3,
+      head: [['Periode Waktu (WIB)', 'Total Uptime', 'Total Downtime', 'Jumlah Insiden', 'MTTR', 'Availability']],
+      body: chartRows.map(r => [
+        r.label,
+        formatPreciseDuration(r.total_uptime_sec),
+        formatPreciseDuration(r.total_downtime_sec),
+        `${r.incident_count || 0}`,
+        formatPreciseDuration(r.mttr_sec),
+        `${r.availability}%`
+      ]),
+      theme: 'striped',
+      headStyles: { fillColor: [30, 41, 59], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8.5 },
+      bodyStyles: { fontSize: 8, textColor: [30, 41, 59] },
+      columnStyles: {
+        0: { fontStyle: 'bold' },
+        3: { halign: 'center' },
+        5: { halign: 'right', fontStyle: 'bold' }
+      },
+      margin: { left: 14, right: 14 }
+    });
+
+    // 3. Tabel Daftar Riwayat Tiket Gangguan
+    nextY = doc.lastAutoTable.finalY + 8;
+    if (nextY > 175) {
+      doc.addPage();
+      nextY = 16;
+    }
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text(`3. Daftar Riwayat Tiket Gangguan (${periodTickets.length} Tiket)`, 14, nextY);
+
+    const ticketBody = periodTickets.length > 0
+      ? periodTickets.map((t, idx) => [
+          idx + 1,
+          t.id,
+          formatWibDateTime(t.time),
+          t.target,
+          t.original_severity || t.severity,
+          t.title,
+          t.status,
+          t.technicians || 'Auto-Recover / Belum Ada',
+          t.downtime_duration || '-',
+          t.handling_duration || '-'
+        ])
+      : [['-', '-', '-', '-', '-', 'Tidak ada riwayat tiket gangguan pada rentang periode dan level ini.', '-', '-', '-', '-']];
+
+    autoTable(doc, {
+      startY: nextY + 3,
+      head: [['No', 'ID Tiket', 'Waktu Kejadian (WIB)', 'Target', 'Level', 'Deskripsi Gangguan', 'Status', 'Teknisi', 'Downtime', 'Penanganan']],
+      body: ticketBody,
+      theme: 'grid',
+      headStyles: { fillColor: [16, 185, 129], textColor: [15, 23, 42], fontStyle: 'bold', fontSize: 8 },
+      bodyStyles: { fontSize: 7.5, textColor: [30, 41, 59], valign: 'middle' },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 9 },
+        1: { fontStyle: 'bold', cellWidth: 25 },
+        2: { cellWidth: 32 },
+        3: { cellWidth: 34 },
+        4: { halign: 'center', fontStyle: 'bold', cellWidth: 18 },
+        5: { cellWidth: 68 },
+        6: { halign: 'center', cellWidth: 24 },
+        7: { cellWidth: 27 },
+        8: { halign: 'center', cellWidth: 16 },
+        9: { halign: 'center', cellWidth: 16 }
+      },
+      margin: { left: 14, right: 14 }
+    });
+
+    const stamp = new Date().toISOString().slice(0, 10);
+    doc.save(`Laporan_Rekap_Gangguan_${periodKey}_${sevFilter}_${stamp}.pdf`);
+  } catch (err) {
+    console.error('Error exportToPdf:', err);
+    alert('Gagal mengekspor laporan PDF.');
+  } finally {
+    isExporting.value = false;
+  }
+};
+
 const setAnalyticsFilter = (filter) => {
   if (analyticsFilter.value === filter) return;
   analyticsFilter.value = filter;
+  fetchAnalytics();
+};
+
+const setAnalyticsSeverity = (severity) => {
+  if (analyticsSeverity.value === severity) return;
+  analyticsSeverity.value = severity;
   fetchAnalytics();
 };
 
@@ -491,7 +748,8 @@ const mttrOptions = computed(() => ({
 let refreshTimer = null;
 onUnmounted(() => { if (refreshTimer) clearInterval(refreshTimer); });
 onMounted(() => {
-  fetchDataAll();
-  refreshTimer = setInterval(fetchDataAll, 30000);
+  fetchDataAll(false);
+  // Polling realtime setiap 3 detik tanpa me-reset status expand tiket
+  refreshTimer = setInterval(() => fetchDataAll(true), 3000);
 });
 </script>

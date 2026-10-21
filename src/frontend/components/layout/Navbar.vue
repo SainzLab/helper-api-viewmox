@@ -14,7 +14,7 @@
       <button @click="toggleDropdown"
               class="w-9 h-9 flex items-center justify-center bg-slate-800 text-slate-300 rounded-full hover:bg-slate-700 hover:text-white border border-slate-700 transition relative"
               :class="showDropdown ? 'bg-slate-700 text-white' : ''">
-        <i class="ph ph-bell text-lg"></i>
+        <i class="ph ph-bell text-lg" :class="alerts.length > 0 ? 'animate-pulse text-rose-400' : ''"></i>
         <span v-if="alerts.length > 0"
               class="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 flex items-center justify-center bg-rose-500 text-white text-[9px] font-bold rounded-full border border-moxdark">
           {{ alerts.length > 99 ? '99+' : alerts.length }}
@@ -27,6 +27,7 @@
         <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
           <h4 class="text-sm font-bold text-white flex items-center gap-2">
             <i class="ph-bold ph-bell-ringing text-moxgreen"></i> Notifikasi Gangguan
+            <span class="w-1.5 h-1.5 rounded-full bg-moxgreen animate-ping" title="Realtime Sync"></span>
           </h4>
           <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ alerts.length }} aktif</span>
         </div>
@@ -138,8 +139,8 @@
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2 mb-1">
                 <p class="text-sm font-bold text-white truncate">{{ item.target_name }}</p>
-                <span class="text-[9px] font-bold px-2 py-0.5 rounded border uppercase" :class="severityStyle(item.severity).badge">
-                  {{ item.severity }}
+                <span class="text-[9px] font-bold px-2 py-0.5 rounded border uppercase" :class="severityStyle(item.original_severity || item.severity).badge">
+                  {{ item.original_severity || item.severity }}
                 </span>
                 <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400 uppercase">{{ item.target_type }}</span>
                 <span class="text-[9px] font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 uppercase">Selesai</span>
@@ -186,7 +187,7 @@ const updateClock = () => {
 };
 
 // ==========================================
-// NOTIFIKASI GANGGUAN
+// NOTIFIKASI GANGGUAN (REALTIME AUTO-REFRESH)
 // ==========================================
 const alerts = ref([]);
 const history = ref([]);
@@ -197,8 +198,8 @@ const showModal = ref(false);
 const notifWrapper = ref(null);
 let alertTimer = null;
 
-const fetchAlerts = async () => {
-  isLoading.value = true;
+const fetchAlerts = async (silent = false) => {
+  if (!silent) isLoading.value = true;
   try {
     const res = await fetch('/api/alerts/active');
     const json = await res.json();
@@ -206,7 +207,7 @@ const fetchAlerts = async () => {
   } catch (err) {
     console.error('Gagal memuat notifikasi:', err);
   } finally {
-    isLoading.value = false;
+    if (!silent) isLoading.value = false;
   }
 };
 
@@ -220,16 +221,23 @@ const fetchHistory = async () => {
   }
 };
 
+const pollRealtimeNotifications = () => {
+  fetchAlerts(true);
+  if (showModal.value) {
+    fetchHistory();
+  }
+};
+
 const toggleDropdown = () => {
   showDropdown.value = !showDropdown.value;
-  if (showDropdown.value) fetchAlerts();
+  if (showDropdown.value) fetchAlerts(true);
 };
 
 const openAllModal = () => {
   showDropdown.value = false;
   showModal.value = true;
   activeTab.value = 'active';
-  fetchAlerts();
+  fetchAlerts(true);
   fetchHistory();
 };
 
@@ -249,6 +257,8 @@ const severityStyle = (severity) => {
       return { icon: 'bg-rose-500/15 text-rose-500', iconClass: 'ph-warning-octagon', badge: 'bg-rose-500/10 text-rose-500 border-rose-500/30' };
     case 'CRITICAL':
       return { icon: 'bg-orange-500/15 text-orange-500', iconClass: 'ph-warning', badge: 'bg-orange-500/10 text-orange-500 border-orange-500/30' };
+    case 'RECOVERED':
+      return { icon: 'bg-blue-500/15 text-blue-400', iconClass: 'ph-arrows-clockwise', badge: 'bg-blue-500/10 text-blue-400 border-blue-500/30' };
     default:
       return { icon: 'bg-amber-500/15 text-amber-500', iconClass: 'ph-warning-circle', badge: 'bg-amber-500/10 text-amber-500 border-amber-500/30' };
   }
@@ -270,8 +280,8 @@ onMounted(() => {
   updateClock(); // Set waktu pertama kali agar tidak kosong sesaat
   timer = setInterval(updateClock, 1000); // Jalankan fungsi update setiap 1000ms (1 detik)
 
-  fetchAlerts();
-  alertTimer = setInterval(fetchAlerts, 30000); // Refresh notifikasi tiap 30 detik
+  fetchAlerts(false);
+  alertTimer = setInterval(pollRealtimeNotifications, 3000); // Realtime polling tiap 3 detik
   document.addEventListener('click', handleClickOutside);
 });
 

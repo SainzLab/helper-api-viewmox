@@ -23,6 +23,8 @@
     "ejs": "^7.0.1",
     "express": "^5.3.0",
     "jsonwebtoken": "^9.0.3",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.9",
     "mysql2": "^3.24.5",
     "ping": "^1.0.0",
     "vue": "^3.5.43",

@@ -54,7 +54,8 @@ export const getIncidents = async (req, res) => {
             return {
                 id: ticketId,
                 db_id: row.id,
-                time: row.created_at, 
+                time: row.created_at,
+                resolved_at: row.resolved_at,
                 title: row.message,
                 target: `${row.target_type} - ${row.target_name}`,
                 status: status,
@@ -163,10 +164,14 @@ const hitungMetrikITIL = (incidents, winStart, winEnd) => {
     };
 };
 
+const VALID_SEVERITIES = ['ALL', 'DOWN', 'CRITICAL', 'WARNING'];
+
 export const getAnalytics = async (req, res) => {
     try {
         const periodKey = PERIODS[req.query.period] ? req.query.period : '24h';
         const period = PERIODS[periodKey];
+        const rawSev = String(req.query.severity || 'ALL').toUpperCase();
+        const severityFilter = VALID_SEVERITIES.includes(rawSev) ? rawSev : 'ALL';
 
         const winEnd = Date.now();
         const winStart = winEnd - period.ms;
@@ -178,11 +183,20 @@ export const getAnalytics = async (req, res) => {
         const effectiveStart = Math.min(winEnd, Math.max(winStart, firstDataMs));
 
         // Ambil riwayat durasi gangguan dari active_alerts di dalam jendela waktu
-        const [rows] = await db.query(`
+        // Gunakan IFNULL(original_severity, severity) karena tiket yang diselesaikan teknisi memiliki severity = 'RECOVERED'
+        let query = `
             SELECT created_at, resolved_at 
             FROM active_alerts 
             WHERE IFNULL(resolved_at, CURRENT_TIMESTAMP) > ? AND created_at < ?
-        `, [new Date(effectiveStart), new Date(winEnd)]);
+        `;
+        const params = [new Date(effectiveStart), new Date(winEnd)];
+
+        if (severityFilter !== 'ALL') {
+            query += ` AND IFNULL(original_severity, severity) = ?`;
+            params.push(severityFilter);
+        }
+
+        const [rows] = await db.query(query, params);
 
         const incidents = rows.map(r => ({
             start: new Date(r.created_at).getTime(),
@@ -191,6 +205,7 @@ export const getAnalytics = async (req, res) => {
 
         const summary = {
             period: periodKey,
+            severity: severityFilter,
             ...hitungMetrikITIL(incidents, effectiveStart, winEnd)
         };
 
