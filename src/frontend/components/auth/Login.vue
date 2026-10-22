@@ -1,6 +1,17 @@
 <template>
   <div class="min-h-screen bg-[#f8f9fa] flex items-center justify-center p-6 relative overflow-hidden font-sans">
     
+    <!-- Tombol Toggle Mode Gelap / Terang (Pojok Kanan Atas) -->
+    <button 
+      type="button"
+      @click="toggleTheme" 
+      :title="isDark ? 'Ubah ke Mode Terang' : 'Ubah ke Mode Gelap'"
+      class="fixed top-6 right-6 z-30 w-10 h-10 flex items-center justify-center bg-white text-slate-600 rounded-full hover:bg-slate-50 hover:text-slate-900 border border-slate-200 transition shadow-sm"
+    >
+      <i v-if="isDark" class="ph-fill ph-sun text-lg text-amber-400"></i>
+      <i v-else class="ph ph-moon text-lg"></i>
+    </button>
+
     <!-- Efek Latar Belakang Ambien (Sangat Halus untuk Light Theme) -->
     <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none"></div>
     <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-500/5 blur-[120px] rounded-full pointer-events-none"></div>
@@ -152,8 +163,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router'; // 1. Import useRouter
+import { isDark, toggleTheme } from '../../utils/theme.js';
 
 const router = useRouter(); // 2. Inisialisasi router
 
@@ -185,9 +197,9 @@ const generateCaptcha = () => {
   const width = captchaCanvas.value.width;
   const height = captchaCanvas.value.height;
 
-  // Latar belakang canvas sedikit off-white agar nyaman di mata
+  // Latar belakang canvas menyesuaikan tema terang / gelap
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = '#f8fafc';
+  ctx.fillStyle = isDark.value ? '#0f172a' : '#f8fafc';
   ctx.fillRect(0, 0, width, height);
 
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -209,8 +221,8 @@ const generateCaptcha = () => {
     ctx.save();
     ctx.translate(xOffset, yOffset);
     ctx.rotate(angle);
-    // Warna teks gelap Slate-800
-    ctx.fillStyle = '#1e293b';
+    // Warna teks menyesuaikan mode gelap / terang
+    ctx.fillStyle = isDark.value ? '#f8fafc' : '#1e293b';
     ctx.fillText(code[i], 0, 0);
     ctx.restore();
   }
@@ -272,6 +284,10 @@ const handleLogin = async () => {
     isLoggingIn.value = false;
   }
 };
+
+watch(isDark, () => {
+  generateCaptcha();
+});
 
 onMounted(() => {
   generateCaptcha();

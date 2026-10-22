@@ -406,6 +406,7 @@ import VueApexCharts from 'vue3-apexcharts';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatWibShort, formatWibDateTime, parseUtcDate } from '../../utils/datetime.js';
+import { isDark } from '../../utils/theme.js';
 
 const apexchart = VueApexCharts;
 
@@ -770,25 +771,34 @@ const availabilityBar = computed(() => {
 const chartLabels = computed(() => analytics.value.chartData.map(d => d.label));
 const seriesOf = (key) => analytics.value.chartData.map(d => d[key]);
 
-const baseChartOptions = (type) => ({
-  chart: { type, background: 'transparent', toolbar: { show: false }, zoom: { enabled: false }, fontFamily: 'inherit' },
-  theme: { mode: 'light' },
-  grid: { borderColor: '#f1f5f9', strokeDashArray: 4 },
-  dataLabels: { enabled: false },
-  xaxis: { categories: chartLabels.value, labels: { style: { colors: '#64748b', fontSize: '11px' } }, axisBorder: { color: '#e2e8f0' }, axisTicks: { color: '#e2e8f0' } },
-  tooltip: { theme: 'light' },
-  legend: { labels: { colors: '#475569' }, fontSize: '11px' }
-});
+const baseChartOptions = (type) => {
+  const dark = isDark.value;
+  return {
+    chart: { type, background: 'transparent', toolbar: { show: false }, zoom: { enabled: false }, fontFamily: 'inherit' },
+    theme: { mode: dark ? 'dark' : 'light' },
+    grid: { borderColor: dark ? '#334155' : '#f1f5f9', strokeDashArray: 4 },
+    dataLabels: { enabled: false },
+    xaxis: {
+      categories: chartLabels.value,
+      labels: { style: { colors: dark ? '#94a3b8' : '#64748b', fontSize: '11px' } },
+      axisBorder: { color: dark ? '#334155' : '#e2e8f0' },
+      axisTicks: { color: dark ? '#334155' : '#e2e8f0' }
+    },
+    tooltip: { theme: dark ? 'dark' : 'light' },
+    legend: { labels: { colors: dark ? '#cbd5e1' : '#475569' }, fontSize: '11px' }
+  };
+};
 
 const availabilitySeries = computed(() => [{ name: 'Availability', data: seriesOf('availability') }]);
 const availabilityOptions = computed(() => {
   const vals = seriesOf('availability');
   const minVal = vals.length ? Math.max(0, Math.floor(Math.min(...vals)) - 1) : 0;
+  const dark = isDark.value;
   return {
     ...baseChartOptions('area'), colors: ['#10b981'], stroke: { curve: 'smooth', width: 2.5 },
     fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.25, opacityTo: 0.02 } },
-    yaxis: { min: minVal, max: 100, labels: { style: { colors: '#64748b', fontSize: '11px' }, formatter: (v) => `${v.toFixed(1)}%` } },
-    tooltip: { theme: 'light', y: { formatter: (v) => `${v.toFixed(2)}%` } }
+    yaxis: { min: minVal, max: 100, labels: { style: { colors: dark ? '#94a3b8' : '#64748b', fontSize: '11px' }, formatter: (v) => `${v.toFixed(1)}%` } },
+    tooltip: { theme: dark ? 'dark' : 'light', y: { formatter: (v) => `${v.toFixed(2)}%` } }
   };
 });
 
@@ -834,18 +844,21 @@ const describeSeries = (key) => {
 
 const mttrInfo = computed(() => describeSeries('mttr_sec'));
 
-const durationAxis = (unit) => ({
-  min: 0,
-  title: { text: `${unit.name} (label: hari/jam/menit/detik)`, style: { color: '#64748b', fontSize: '10px', fontWeight: 600 } },
-  labels: { style: { colors: '#64748b', fontSize: '11px' }, formatter: (v) => formatPreciseDuration(Math.round(v * unit.div)) }
-});
+const durationAxis = (unit) => {
+  const labelColor = isDark.value ? '#94a3b8' : '#64748b';
+  return {
+    min: 0,
+    title: { text: `${unit.name} (label: hari/jam/menit/detik)`, style: { color: labelColor, fontSize: '10px', fontWeight: 600 } },
+    labels: { style: { colors: labelColor, fontSize: '11px' }, formatter: (v) => formatPreciseDuration(Math.round(v * unit.div)) }
+  };
+};
 
 const mttrSeries = computed(() => [{ name: 'MTTR', data: seriesInUnit('mttr_sec', mttrUnit.value) }]);
 const mttrOptions = computed(() => ({
   ...baseChartOptions('bar'), colors: ['#06b6d4'],
   plotOptions: { bar: { borderRadius: 4, columnWidth: '55%' } },
   yaxis: durationAxis(mttrUnit.value),
-  tooltip: { theme: 'light', y: { formatter: (v, { dataPointIndex }) => formatFullDuration(analytics.value.chartData[dataPointIndex]?.mttr_sec) } }
+  tooltip: { theme: isDark.value ? 'dark' : 'light', y: { formatter: (v, { dataPointIndex }) => formatFullDuration(analytics.value.chartData[dataPointIndex]?.mttr_sec) } }
 }));
 
 let refreshTimer = null;

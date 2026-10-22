@@ -10,7 +10,11 @@
   
   <!-- Tailwind Config untuk menyamakan warna dengan referensi desain -->
   <script>
+    if (localStorage.getItem('proxview_theme') === 'dark') {
+      document.documentElement.classList.add('dark');
+    }
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {

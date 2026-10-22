@@ -339,6 +339,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler } from 'chart.js';
 import { Line } from 'vue-chartjs';
 import { parseUtcDate, formatWibTime } from '../../utils/datetime.js';
+import { isDark } from '../../utils/theme.js';
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler);
 
 defineEmits(['change-view']);
@@ -349,19 +350,22 @@ const isLoadingHistory = ref(false);
 const chartData = ref(null);
 let pollTimerICMP = null;
 
-const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { color: '#64748b', font: { size: 10 } } },
-        x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 }, maxRotation: 0 } }
-    },
-    elements: {
-        line: { tension: 0.3, borderWidth: 2, borderColor: '#10b981' },
-        point: { radius: 2, backgroundColor: '#10b981' }
-    }
-};
+const chartOptions = computed(() => {
+    const dark = isDark.value;
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+            y: { beginAtZero: true, grid: { color: dark ? '#334155' : '#f1f5f9' }, ticks: { color: dark ? '#94a3b8' : '#64748b', font: { size: 10 } } },
+            x: { grid: { display: false }, ticks: { color: dark ? '#94a3b8' : '#64748b', font: { size: 10 }, maxRotation: 0 } }
+        },
+        elements: {
+            line: { tension: 0.3, borderWidth: 2, borderColor: '#10b981' },
+            point: { radius: 2, backgroundColor: '#10b981' }
+        }
+    };
+});
 
 const filterStatus = ref('ALL');
 const searchQuery = ref('');

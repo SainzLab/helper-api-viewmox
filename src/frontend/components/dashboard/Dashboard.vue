@@ -331,11 +331,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import VueApexCharts from 'vue3-apexcharts';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatWibDateTime } from '../../utils/datetime.js';
+import { isDark } from '../../utils/theme.js';
 
 const apexchart = VueApexCharts;
 
@@ -444,28 +445,33 @@ const slaDurationSeries = computed(() => {
 
 const slaDurationChartOptions = computed(() => {
   const unit = slaDurationUnit.value;
+  const dark = isDark.value;
+  const gridColor = dark ? '#334155' : '#f1f5f9';
+  const axisColor = dark ? '#334155' : '#e2e8f0';
+  const labelColor = dark ? '#94a3b8' : '#64748b';
+  const legendColor = dark ? '#cbd5e1' : '#475569';
   return {
     chart: { type: 'bar', background: 'transparent', toolbar: { show: false }, zoom: { enabled: false }, fontFamily: 'inherit' },
-    theme: { mode: 'light' },
+    theme: { mode: dark ? 'dark' : 'light' },
     colors: ['#10b981', '#f43f5e', '#06b6d4'],
     plotOptions: { bar: { borderRadius: 3, columnWidth: '65%' } },
-    grid: { borderColor: '#f1f5f9', strokeDashArray: 4 },
+    grid: { borderColor: gridColor, strokeDashArray: 4 },
     dataLabels: { enabled: false },
     xaxis: {
       categories: slaLabels.value,
-      labels: { style: { colors: '#64748b', fontSize: '10px' } },
-      axisBorder: { color: '#e2e8f0' },
-      axisTicks: { color: '#e2e8f0' }
+      labels: { style: { colors: labelColor, fontSize: '10px' } },
+      axisBorder: { color: axisColor },
+      axisTicks: { color: axisColor }
     },
     yaxis: {
       min: 0,
       labels: {
-        style: { colors: '#64748b', fontSize: '10px' },
+        style: { colors: labelColor, fontSize: '10px' },
         formatter: (v) => formatPreciseDuration(Math.round(v * unit.div))
       }
     },
     tooltip: {
-      theme: 'light',
+      theme: dark ? 'dark' : 'light',
       y: {
         formatter: (v, { seriesIndex, dataPointIndex }) => {
           const row = slaAnalytics.value.chartData[dataPointIndex];
@@ -477,7 +483,7 @@ const slaDurationChartOptions = computed(() => {
         }
       }
     },
-    legend: { labels: { colors: '#475569' }, fontSize: '11px', position: 'top' }
+    legend: { labels: { colors: legendColor }, fontSize: '11px', position: 'top' }
   };
 });
 
@@ -491,35 +497,40 @@ const slaAvailabilitySeries = computed(() => [
 const slaAvailabilityChartOptions = computed(() => {
   const vals = slaAnalytics.value.chartData.map(d => d.availability);
   const minVal = vals.length ? Math.max(0, Math.floor(Math.min(...vals)) - 1) : 0;
+  const dark = isDark.value;
+  const gridColor = dark ? '#334155' : '#f1f5f9';
+  const axisColor = dark ? '#334155' : '#e2e8f0';
+  const labelColor = dark ? '#94a3b8' : '#64748b';
+  const legendColor = dark ? '#cbd5e1' : '#475569';
   return {
     chart: { type: 'area', background: 'transparent', toolbar: { show: false }, zoom: { enabled: false }, fontFamily: 'inherit' },
-    theme: { mode: 'light' },
+    theme: { mode: dark ? 'dark' : 'light' },
     colors: ['#10b981'],
     stroke: { curve: 'smooth', width: 2.5 },
     fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.25, opacityTo: 0.02 } },
-    grid: { borderColor: '#f1f5f9', strokeDashArray: 4 },
+    grid: { borderColor: gridColor, strokeDashArray: 4 },
     dataLabels: { enabled: false },
     xaxis: {
       categories: slaLabels.value,
-      labels: { style: { colors: '#64748b', fontSize: '10px' } },
-      axisBorder: { color: '#e2e8f0' },
-      axisTicks: { color: '#e2e8f0' }
+      labels: { style: { colors: labelColor, fontSize: '10px' } },
+      axisBorder: { color: axisColor },
+      axisTicks: { color: axisColor }
     },
     yaxis: {
       min: minVal,
       max: 100,
       labels: {
-        style: { colors: '#64748b', fontSize: '10px' },
+        style: { colors: labelColor, fontSize: '10px' },
         formatter: (v) => `${v.toFixed(1)}%`
       }
     },
     tooltip: {
-      theme: 'light',
+      theme: dark ? 'dark' : 'light',
       y: {
         formatter: (v) => `${Number(v).toFixed(2)}%`
       }
     },
-    legend: { labels: { colors: '#475569' }, fontSize: '11px', position: 'top' }
+    legend: { labels: { colors: legendColor }, fontSize: '11px', position: 'top' }
   };
 });
 
@@ -595,11 +606,23 @@ const initOrUpdateChart = () => {
   const ramData = summary.value.proxmox.chart.ram || [];
   const ioData = summary.value.proxmox.chart.io || [];
 
+  const dark = isDark.value;
+  const gridColor = dark ? '#334155' : '#f1f5f9';
+  const tickColor = dark ? '#94a3b8' : '#64748b';
+  const ptBgColor = dark ? '#1e293b' : '#ffffff';
+
   if (chartInstance) {
     chartInstance.data.labels = labels;
     chartInstance.data.datasets[0].data = cpuData;
+    chartInstance.data.datasets[0].pointBackgroundColor = ptBgColor;
     chartInstance.data.datasets[1].data = ramData;
+    chartInstance.data.datasets[1].pointBackgroundColor = ptBgColor;
     chartInstance.data.datasets[2].data = ioData;
+    chartInstance.data.datasets[2].pointBackgroundColor = ptBgColor;
+    chartInstance.options.scales.x.grid.color = gridColor;
+    chartInstance.options.scales.x.ticks.color = tickColor;
+    chartInstance.options.scales.y.grid.color = gridColor;
+    chartInstance.options.scales.y.ticks.color = tickColor;
     chartInstance.update('none');
     return;
   }
@@ -620,7 +643,7 @@ const initOrUpdateChart = () => {
           borderColor: '#10b981',
           backgroundColor: gradientCPU,
           borderWidth: 2,
-          pointBackgroundColor: '#ffffff',
+          pointBackgroundColor: ptBgColor,
           pointBorderColor: '#10b981',
           pointBorderWidth: 2,
           pointRadius: 3,
@@ -632,7 +655,7 @@ const initOrUpdateChart = () => {
           data: ramData,
           borderColor: '#3b82f6',
           borderWidth: 2,
-          pointBackgroundColor: '#ffffff',
+          pointBackgroundColor: ptBgColor,
           pointBorderColor: '#3b82f6',
           pointBorderWidth: 2,
           pointRadius: 3,
@@ -644,7 +667,7 @@ const initOrUpdateChart = () => {
           data: ioData,
           borderColor: '#f59e0b',
           borderWidth: 2,
-          pointBackgroundColor: '#ffffff',
+          pointBackgroundColor: ptBgColor,
           pointBorderColor: '#f59e0b',
           pointBorderWidth: 2,
           pointRadius: 3,
@@ -663,21 +686,21 @@ const initOrUpdateChart = () => {
       scales: {
         x: {
           grid: {
-            color: '#f1f5f9',
+            color: gridColor,
             drawBorder: false
           },
           ticks: {
-            color: '#64748b',
+            color: tickColor,
             font: { size: 10 }
           }
         },
         y: {
           grid: {
-            color: '#f1f5f9',
+            color: gridColor,
             drawBorder: false
           },
           ticks: {
-            color: '#64748b',
+            color: tickColor,
             font: { size: 10 },
             callback: function (value) { return value + '%'; },
             stepSize: 10
@@ -693,6 +716,10 @@ const initOrUpdateChart = () => {
     }
   });
 };
+
+watch(isDark, () => {
+  initOrUpdateChart();
+});
 
 const fetchSlaAnalytics = async () => {
   try {

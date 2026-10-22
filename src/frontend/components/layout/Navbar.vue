@@ -10,9 +10,19 @@
       </div>
     </div>
 
-    <!-- Aksi Kanan Atas: Notifikasi & Pengaturan Cronjob -->
+    <!-- Aksi Kanan Atas: Toggle Tema, Notifikasi & Pengaturan Cronjob -->
     <div class="flex items-center gap-2.5">
       
+      <!-- Tombol Toggle Mode Gelap / Terang -->
+      <button 
+        @click="toggleTheme" 
+        :title="isDark ? 'Ubah ke Mode Terang' : 'Ubah ke Mode Gelap'"
+        class="w-9 h-9 flex items-center justify-center bg-white text-slate-600 rounded-full hover:bg-slate-50 hover:text-slate-900 border border-slate-200 transition relative shadow-sm"
+      >
+        <i v-if="isDark" class="ph-fill ph-sun text-lg text-amber-400"></i>
+        <i v-else class="ph ph-moon text-lg"></i>
+      </button>
+
       <!-- Tombol Notifikasi + Dropdown -->
       <div class="relative" ref="notifWrapper">
         <button 
@@ -392,6 +402,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import { parseUtcDate, formatWibDateTime } from '../../utils/datetime.js';
+import { isDark, toggleTheme } from '../../utils/theme.js';
 
 const currentTime = ref('');
 let timer = null;
