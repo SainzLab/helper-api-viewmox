@@ -60,15 +60,6 @@
               <p class="text-[11px] text-slate-500 font-mono tracking-tight mt-0.5 font-medium">{{ cluster.hostUrl }}</p>
             </div>
           </div>
-          <div class="text-right flex flex-col items-end">
-            <!-- Badge Pastel -->
-            <span v-if="cluster.status === 'TERHUBUNG'" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/60 text-emerald-700 text-[10px] font-bold tracking-wider">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> UP
-            </span>
-            <span v-else class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200/60 text-rose-700 text-[10px] font-bold tracking-wider">
-              <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> DOWN
-            </span>
-          </div>
         </div>
 
         <!-- Body Metrik -->

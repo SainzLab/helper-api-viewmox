@@ -293,12 +293,13 @@
           </div>
           
           <div class="relative px-4 mb-10 mt-6">
-            <div class="absolute top-4 left-16 right-16 h-[2px] bg-slate-200 z-0"></div>
-            <!-- getTimelineProgress me-return warna class untuk bar proges, misal 'bg-emerald-500' -->
-            <div class="absolute top-4 left-16 h-[2px] z-0 transition-all duration-1000" :class="getTimelineProgress(ticket.status)"></div>
+            <!-- Wrapper utama garis (Track) yang menentukan batas kiri dan kanan -->
+            <div class="absolute top-4 left-16 right-16 h-[2px] bg-slate-200 z-0 overflow-hidden">
+              <!-- Garis progres diubah menjadi child elemen agar w-full tidak menembus batas -->
+              <div class="h-full z-0 transition-all duration-1000" :class="getTimelineProgress(ticket.status)"></div>
+            </div>
             
             <div class="relative z-10 flex justify-between items-start">
-              
               <!-- Tahap 1: Deteksi -->
               <div class="flex flex-col items-center gap-3 w-24">
                 <div class="w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-white" :class="ticket.is_resolved ? 'bg-emerald-500' : 'bg-slate-700'">
@@ -309,26 +310,24 @@
               
               <!-- Tahap 2: Perbaikan -->
               <div class="flex flex-col items-center gap-3 w-24">
-                <!-- Gunakan warna pastel / solid yang clean untuk step aktif -->
                 <div class="w-8 h-8 shrink-0 rounded-full border flex items-center justify-center transition-colors duration-500" 
                   :class="ticket.status === 'Gangguan Aktif' ? 'bg-white text-slate-400 border-slate-200' : 
-                         (ticket.status === 'Selesai' ? 'bg-emerald-500 text-white border-emerald-500' : 
-                         (ticket.severity === 'RECOVERED' ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-cyan-50 text-cyan-600 border-cyan-200'))">
+                        (ticket.status === 'Selesai' ? 'bg-emerald-500 text-white border-emerald-500' : 
+                        (ticket.severity === 'RECOVERED' ? 'bg-blue-50 text-blue-600 border-blue-200' : 'bg-cyan-50 text-cyan-600 border-cyan-200'))">
                   <i v-if="ticket.status === 'Selesai'" class="ph-bold ph-check text-lg"></i>
                   <i v-else class="ph-fill ph-wrench text-lg"></i>
                 </div>
                 <span class="text-xs font-bold text-center leading-tight" 
                   :class="ticket.status === 'Gangguan Aktif' ? 'text-slate-400' : 
-                         (ticket.status === 'Selesai' ? 'text-emerald-600' : 
-                         (ticket.severity === 'RECOVERED' ? 'text-blue-600' : 'text-cyan-600'))">
-                  Perbaikan Mobile
+                        (ticket.status === 'Selesai' ? 'text-emerald-600' : 
+                        (ticket.severity === 'RECOVERED' ? 'text-blue-600' : 'text-cyan-600'))">
+                  Perbaikan
                 </span>
               </div>
               
               <!-- Tahap 3: Selesai -->
               <div class="flex flex-col items-center gap-3 w-24">
-                <div class="w-8 h-8 shrink-0 rounded-full border flex items-center justify-center transition-colors duration-500" 
-                  :class="ticket.status === 'Selesai' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-slate-400 border-slate-200'">
+                <div class="w-8 h-8 shrink-0 rounded-full border flex items-center justify-center transition-colors duration-500" :class="ticket.status === 'Selesai' ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-slate-400 border-slate-200'">
                   <i v-if="ticket.status === 'Selesai'" class="ph-bold ph-check text-lg"></i>
                   <span v-else class="font-bold text-sm">3</span>
                 </div>
@@ -345,7 +344,7 @@
                 <div class="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center text-rose-600 border border-rose-100"><i class="ph-bold ph-bell-ringing"></i></div>
                 <div>
                   <p class="text-xs font-bold text-slate-900">Menunggu Penanganan</p>
-                  <p class="text-[11px] font-medium">Sistem sedang menunggu respons dari teknisi via Aplikasi Mobile.</p>
+                  <p class="text-[11px] font-medium">Sistem sedang menunggu respons dari teknisi.</p>
                 </div>
               </div>
               <span class="px-3 py-1 bg-rose-50 text-rose-700 border border-rose-200/60 rounded-md text-[10px] font-bold tracking-wider">TERDETEKSI</span>
@@ -356,7 +355,7 @@
                 <div class="w-8 h-8 rounded-full bg-cyan-50 flex items-center justify-center text-cyan-600 border border-cyan-100"><i class="ph-bold ph-users-three"></i></div>
                 <div class="flex flex-col gap-0.5">
                   <p class="text-xs font-medium">Penanggung Jawab: <span class="font-bold text-cyan-700">{{ ticket.technicians }}</span></p>
-                  <p v-if="ticket.severity === 'RECOVERED'" class="text-[11px] font-bold text-blue-600 flex items-center gap-1.5"><i class="ph-bold ph-info"></i> Indikator telah pulih. Menunggu teknisi menutup tiket via Mobile.</p>
+                  <p v-if="ticket.severity === 'RECOVERED'" class="text-[11px] font-bold text-blue-600 flex items-center gap-1.5"><i class="ph-bold ph-info"></i> Indikator telah pulih. Menunggu teknisi menutup tiket.</p>
                   <p v-else class="text-[11px] font-semibold text-amber-600 flex items-center gap-1.5"><i class="ph-bold ph-wrench"></i> Sedang dikerjakan / perbaikan fisik lapangan.</p>
                 </div>
               </div>
