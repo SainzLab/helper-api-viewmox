@@ -30,7 +30,7 @@
         </button>
 
         <!-- Dropdown -->
-        <div v-if="showDropdown" @click.stop class="absolute right-0 mt-3 w-96 bg-white border border-slate-200/80 rounded-xl shadow-lg overflow-hidden z-50">
+        <div v-if="showDropdown" @click.stop class="absolute right-0 mt-3 w-96 bg-white border border-slate-200/80 rounded-xl shadow-lg overflow-hidden z-50 animate-fade-in">
           <div class="px-4 py-3 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
             <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2">
               <i class="ph-bold ph-bell-ringing text-slate-500"></i> Notifikasi Gangguan
@@ -41,14 +41,15 @@
           
           <!-- Maksimal 4 item terlihat, sisanya bisa di-scroll (4 x 72px) -->
           <div class="max-h-[288px] overflow-y-auto divide-y divide-slate-100">
-            <div v-if="isLoading && alerts.length === 0" class="p-6 text-center text-xs text-slate-500">
-              <i class="ph ph-spinner animate-spin text-lg block mb-1"></i> Memuat notifikasi...
+            <div v-if="isLoading && alerts.length === 0" class="p-8 text-center text-slate-500">
+              <i class="ph-bold ph-spinner animate-spin text-2xl text-slate-400 mb-2 inline-block"></i>
+              <p class="text-xs font-medium">Memuat notifikasi...</p>
             </div>
-            <div v-else-if="alerts.length === 0" class="p-6 text-center text-xs text-slate-500">
+            <div v-else-if="alerts.length === 0" class="p-6 text-center text-xs text-slate-500 font-medium">
               <i class="ph ph-check-circle text-2xl text-emerald-500 block mb-1"></i> Tidak ada gangguan aktif
             </div>
             <div v-else v-for="alert in alerts" :key="alert.id" class="h-[72px] px-4 flex items-center gap-3 hover:bg-slate-50 transition">
-              <div class="w-8 h-8 shrink-0 rounded-full flex items-center justify-center" :class="severityStyle(alert.severity).icon">
+              <div class="w-8 h-8 shrink-0 rounded-full flex items-center justify-center border" :class="severityStyle(alert.severity).icon">
                 <i class="ph-bold text-base" :class="severityStyle(alert.severity).iconClass"></i>
               </div>
               <div class="min-w-0 flex-1">
@@ -56,7 +57,6 @@
                 <p class="text-[11px] text-slate-500 font-medium truncate">{{ alert.message }}</p>
                 <p class="text-[10px] text-slate-400 font-mono tracking-tight mt-0.5">{{ formatTime(alert.created_at) }}</p>
               </div>
-              <!-- Pastikan severityStyle(..).badge direfaktor mereturn class pastel spt 'bg-rose-50 text-rose-700 border-rose-200' -->
               <span class="shrink-0 text-[9px] font-bold px-2 py-0.5 rounded-md border uppercase tracking-wider" :class="severityStyle(alert.severity).badge">
                 {{ alert.severity }}
               </span>
@@ -83,7 +83,7 @@
 
   <!-- Popup Pengaturan Cronjob Pembersihan Otomatis -->
   <Teleport to="body">
-    <div v-if="showCleanupModal" class="fixed inset-0 z-[85] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 font-sans" @click.self="showCleanupModal = false">
+    <div v-if="showCleanupModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans" @click.self="showCleanupModal = false">
       <div class="bg-white border border-slate-200/80 rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] flex flex-col">
         
         <!-- Modal Header -->
@@ -92,10 +92,10 @@
             <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
               <i class="ph-bold ph-gear text-slate-500"></i> Pengaturan Cronjob Pembersihan Otomatis
             </h3>
-            <p class="text-xs text-slate-500 mt-0.5">Konfigurasi interval penghapusan otomatis secara terpisah untuk Log Sistem dan Riwayat Gangguan.</p>
+            <p class="text-xs text-slate-500 font-medium mt-0.5">Konfigurasi interval penghapusan otomatis secara terpisah untuk Log Sistem dan Riwayat Gangguan.</p>
           </div>
           <button @click="showCleanupModal = false" class="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">
-            <i class="ph-bold ph-x"></i>
+            <i class="ph-bold ph-x text-lg"></i>
           </button>
         </div>
 
@@ -137,7 +137,7 @@
 
                 <!-- Pilihan Cepat Interval Log -->
                 <div class="mb-3">
-                  <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Preset Interval Cepat</label>
+                  <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Preset Interval Cepat</label>
                   <div class="grid grid-cols-4 gap-1.5">
                     <button type="button" @click="applyPreset('system_logs', 1, 'HOURS')" class="px-2 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-[11px] font-semibold text-slate-600 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">1 Jam</button>
                     <button type="button" @click="applyPreset('system_logs', 24, 'HOURS')" class="px-2 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-[11px] font-semibold text-slate-600 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">24 Jam</button>
@@ -148,7 +148,7 @@
 
                 <!-- Input Interval Kustom Log -->
                 <div class="mb-3">
-                  <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Interval Penghapusan Otomatis</label>
+                  <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Interval Penghapusan Otomatis</label>
                   <div class="flex gap-2">
                     <input v-model.number="cleanupForm.system_logs.interval_value" type="number" min="1" class="w-24 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 font-bold font-mono focus:outline-none focus:border-slate-400 shadow-[0_1px_2px_rgba(0,0,0,0.02)]" />
                     <select v-model="cleanupForm.system_logs.interval_unit" class="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 font-semibold focus:outline-none focus:border-slate-400 shadow-[0_1px_2px_rgba(0,0,0,0.02)] cursor-pointer">
@@ -161,7 +161,7 @@
 
                 <!-- Mode Cakupan Penghapusan Log -->
                 <div class="mb-4">
-                  <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Metode Pembersihan Saat Cron Jalan</label>
+                  <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Metode Pembersihan Saat Cron Jalan</label>
                   <select v-model="cleanupForm.system_logs.retention_mode" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 font-medium focus:outline-none focus:border-slate-400 shadow-[0_1px_2px_rgba(0,0,0,0.02)] cursor-pointer">
                     <option value="OLDER_THAN">Hapus log yang lebih lama dari interval</option>
                     <option value="ALL">Hapus seluruh log setiap interval tercapai</option>
@@ -210,7 +210,7 @@
 
                 <!-- Pilihan Cepat Interval Riwayat -->
                 <div class="mb-3">
-                  <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Preset Interval Cepat</label>
+                  <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Preset Interval Cepat</label>
                   <div class="grid grid-cols-4 gap-1.5">
                     <button type="button" @click="applyPreset('incident_history', 1, 'HOURS')" class="px-2 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-[11px] font-semibold text-slate-600 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">1 Jam</button>
                     <button type="button" @click="applyPreset('incident_history', 24, 'HOURS')" class="px-2 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-[11px] font-semibold text-slate-600 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">24 Jam</button>
@@ -221,7 +221,7 @@
 
                 <!-- Input Interval Kustom Riwayat -->
                 <div class="mb-3">
-                  <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Interval Penghapusan Otomatis</label>
+                  <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Interval Penghapusan Otomatis</label>
                   <div class="flex gap-2">
                     <input v-model.number="cleanupForm.incident_history.interval_value" type="number" min="1" class="w-24 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 font-bold font-mono focus:outline-none focus:border-slate-400 shadow-[0_1px_2px_rgba(0,0,0,0.02)]" />
                     <select v-model="cleanupForm.incident_history.interval_unit" class="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 font-semibold focus:outline-none focus:border-slate-400 shadow-[0_1px_2px_rgba(0,0,0,0.02)] cursor-pointer">
@@ -234,7 +234,7 @@
 
                 <!-- Mode Cakupan Penghapusan Riwayat -->
                 <div class="mb-4">
-                  <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Metode Pembersihan Saat Cron Jalan</label>
+                  <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Metode Pembersihan Saat Cron Jalan</label>
                   <select v-model="cleanupForm.incident_history.retention_mode" class="w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 font-medium focus:outline-none focus:border-slate-400 shadow-[0_1px_2px_rgba(0,0,0,0.02)] cursor-pointer">
                     <option value="OLDER_THAN">Hapus riwayat selesai yang lebih lama dari interval</option>
                     <option value="ALL">Hapus seluruh riwayat selesai setiap interval tercapai</option>
@@ -268,7 +268,7 @@
           <button 
             type="button" 
             @click="showCleanupModal = false" 
-            class="px-4 py-2 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg text-xs font-medium transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+            class="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg text-xs font-semibold transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
           >
             Tutup
           </button>
@@ -276,7 +276,7 @@
             type="button" 
             @click="saveCleanupConfig" 
             :disabled="isSavingCleanup" 
-            class="px-5 py-2 bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 rounded-lg text-xs font-medium transition flex items-center gap-2 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+            class="px-5 py-2.5 bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 rounded-lg text-xs font-bold transition flex items-center gap-2 shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
           >
             <i class="ph-bold" :class="isSavingCleanup ? 'ph-spinner animate-spin' : 'ph-floppy-disk'"></i> 
             {{ isSavingCleanup ? 'Menyimpan...' : 'Simpan Pengaturan Cronjob' }}
@@ -288,7 +288,7 @@
 
   <!-- Popup Semua Notifikasi -->
   <Teleport to="body">
-    <div v-if="showModal" class="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 font-sans" @click.self="showModal = false">
+    <div v-if="showModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans" @click.self="showModal = false">
       <div class="bg-white border border-slate-200/80 rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col">
         
         <div class="px-6 py-4 bg-slate-50/50 border-b border-slate-200/80 rounded-t-2xl flex items-center justify-between shrink-0">
@@ -296,10 +296,10 @@
             <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
               <i class="ph-bold ph-warning text-rose-500"></i> Semua Notifikasi Gangguan
             </h3>
-            <p class="text-xs text-slate-500 mt-0.5"><span class="font-mono font-bold">{{ alerts.length }}</span> aktif &bull; <span class="font-mono font-bold">{{ history.length }}</span> riwayat selesai</p>
+            <p class="text-xs text-slate-500 font-medium mt-0.5"><span class="font-mono font-bold">{{ alerts.length }}</span> aktif &bull; <span class="font-mono font-bold">{{ history.length }}</span> riwayat selesai</p>
           </div>
           <button @click="showModal = false" class="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">
-            <i class="ph-bold ph-x"></i>
+            <i class="ph-bold ph-x text-lg"></i>
           </button>
         </div>
 
@@ -325,11 +325,11 @@
 
         <!-- Tab Gangguan Aktif -->
         <div v-if="activeTab === 'active'" class="overflow-y-auto flex-1 divide-y divide-slate-100 bg-white">
-          <div v-if="alerts.length === 0" class="p-10 text-center text-sm text-slate-500">
+          <div v-if="alerts.length === 0" class="p-10 text-center text-sm text-slate-500 font-medium">
             <i class="ph ph-check-circle text-3xl text-emerald-500 block mb-2"></i> Tidak ada gangguan aktif
           </div>
           <div v-for="alert in alerts" :key="alert.id" class="px-6 py-4 flex items-start gap-4 hover:bg-slate-50 transition">
-            <div class="w-9 h-9 shrink-0 rounded-full flex items-center justify-center" :class="severityStyle(alert.severity).icon">
+            <div class="w-9 h-9 shrink-0 rounded-full flex items-center justify-center border" :class="severityStyle(alert.severity).icon">
               <i class="ph-bold text-lg" :class="severityStyle(alert.severity).iconClass"></i>
             </div>
             <div class="min-w-0 flex-1">
@@ -350,8 +350,8 @@
 
         <!-- Tab Riwayat Gangguan Selesai -->
         <div v-else class="overflow-y-auto flex-1 divide-y divide-slate-100 bg-white">
-          <div v-if="history.length === 0" class="p-10 text-center text-sm text-slate-500">
-            <i class="ph ph-clock-counter-clockwise text-3xl block mb-2"></i> Belum ada riwayat gangguan yang selesai
+          <div v-if="history.length === 0" class="p-10 text-center text-sm text-slate-500 font-medium">
+            <i class="ph ph-clock-counter-clockwise text-3xl block mb-2 text-slate-400"></i> Belum ada riwayat gangguan yang selesai
           </div>
           <div v-for="item in history" :key="item.id" class="px-6 py-4 flex items-start gap-4 hover:bg-slate-50 transition">
             <div class="w-9 h-9 shrink-0 rounded-full flex items-center justify-center bg-emerald-50 border border-emerald-100 text-emerald-600">
@@ -381,7 +381,7 @@
           <router-link to="/rekap-gangguan" @click="showModal = false" class="text-xs font-semibold text-slate-600 hover:text-slate-900 transition underline underline-offset-2">
             Buka Rekap Gangguan
           </router-link>
-          <button @click="showModal = false" class="px-4 py-2 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg text-xs font-medium transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+          <button @click="showModal = false" class="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg text-xs font-semibold transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
             Tutup
           </button>
         </div>
@@ -578,13 +578,13 @@ const formatDuration = (start, end) => {
 const severityStyle = (severity) => {
   switch (severity) {
     case 'DOWN':
-      return { icon: 'bg-rose-500/15 text-rose-500', iconClass: 'ph-warning-octagon', badge: 'bg-rose-500/10 text-rose-500 border-rose-500/30' };
+      return { icon: 'bg-rose-50 border-rose-100 text-rose-600', iconClass: 'ph-warning-octagon', badge: 'bg-rose-50 text-rose-700 border-rose-200/60' };
     case 'CRITICAL':
-      return { icon: 'bg-orange-500/15 text-orange-500', iconClass: 'ph-warning', badge: 'bg-orange-500/10 text-orange-500 border-orange-500/30' };
+      return { icon: 'bg-orange-50 border-orange-100 text-orange-600', iconClass: 'ph-warning', badge: 'bg-orange-50 text-orange-700 border-orange-200/60' };
     case 'RECOVERED':
-      return { icon: 'bg-blue-500/15 text-blue-400', iconClass: 'ph-arrows-clockwise', badge: 'bg-blue-500/10 text-blue-400 border-blue-500/30' };
+      return { icon: 'bg-blue-50 border-blue-100 text-blue-600', iconClass: 'ph-arrows-clockwise', badge: 'bg-blue-50 text-blue-700 border-blue-200/60' };
     default:
-      return { icon: 'bg-amber-500/15 text-amber-500', iconClass: 'ph-warning-circle', badge: 'bg-amber-500/10 text-amber-500 border-amber-500/30' };
+      return { icon: 'bg-amber-50 border-amber-100 text-amber-600', iconClass: 'ph-warning-circle', badge: 'bg-amber-50 text-amber-700 border-amber-200/60' };
   }
 };
 

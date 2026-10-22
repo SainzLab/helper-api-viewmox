@@ -1,5 +1,5 @@
 <template>
-  <main class="bg-[#f8f9fa] min-h-screen font-sans p-8 pb-12 overflow-x-hidden relative">
+  <main class="bg-[#f8f9fa] min-h-screen font-sans p-8 pb-12 overflow-x-hidden relative animate-fade-in">
     
     <!-- Header Halaman -->
     <div class="flex justify-between items-end mb-6">
@@ -12,7 +12,7 @@
       <div>
         <button 
           @click="openAddModal" 
-          class="px-4 py-2.5 bg-slate-900 text-white rounded-lg flex items-center gap-2 hover:bg-slate-800 text-xs font-semibold transition shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+          class="px-4 h-[42px] bg-slate-900 text-white rounded-lg flex items-center gap-2 hover:bg-slate-800 text-xs font-bold transition shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
         >
           <i class="ph-bold ph-plus-circle text-lg"></i> TAMBAH SERVER PROXMOX
         </button>
@@ -98,8 +98,8 @@
               
               <!-- Status Koneksi -->
               <td class="px-6 py-4">
-                <div v-if="node.isTesting" class="flex items-center gap-2 text-amber-600 text-xs font-semibold">
-                  <i class="ph-bold ph-spinner animate-spin text-base"></i> Menguji...
+                <div v-if="node.isTesting" class="flex items-center gap-2 text-slate-500 text-xs font-medium">
+                  <i class="ph-bold ph-spinner animate-spin text-base text-slate-400"></i> Menguji...
                 </div>
                 <div v-else-if="node.status === 'TERHUBUNG'" class="flex items-center gap-2">
                   <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-emerald-50 border border-emerald-200/60 text-emerald-700 text-[10px] font-bold tracking-wider">
@@ -123,7 +123,7 @@
               <td class="px-6 py-4 text-right" @click.stop>
                 <div class="flex items-center justify-end gap-1.5 text-slate-400">
                   <button @click="testConnection(node)" class="p-1.5 rounded-md hover:bg-emerald-50 hover:text-emerald-600 transition" title="Uji Koneksi API" :disabled="node.isTesting">
-                    <i class="ph-bold ph-plugs-connected text-lg" :class="{'animate-pulse text-amber-500': node.isTesting}"></i>
+                    <i class="ph-bold ph-plugs-connected text-lg" :class="{'animate-pulse text-slate-600': node.isTesting}"></i>
                   </button>
                   <button @click="editNode(node)" class="p-1.5 rounded-md hover:bg-blue-50 hover:text-blue-600 transition" title="Edit Konfigurasi">
                     <i class="ph-bold ph-gear text-lg"></i>
@@ -141,9 +141,9 @@
                 <div class="p-6 animate-fade-in shadow-inner">
                   
                   <!-- Loader saat Fetching API -->
-                  <div v-if="isLoadingDetails" class="flex flex-col items-center justify-center py-10">
-                    <i class="ph-bold ph-spinner animate-spin text-3xl text-emerald-500 mb-3"></i>
-                    <p class="text-sm text-slate-500 font-medium">Menarik data Resources dari node <span class="font-bold text-slate-900">{{ node.name }}</span>...</p>
+                  <div v-if="isLoadingDetails" class="flex flex-col items-center justify-center py-10 text-slate-500">
+                    <i class="ph-bold ph-spinner animate-spin text-2xl text-slate-400 mb-2 inline-block"></i>
+                    <p class="text-xs font-medium">Menarik data Resources dari node <span class="font-bold text-slate-900">{{ node.name }}</span>...</p>
                   </div>
                   
                   <!-- Data Resources (Jika tidak UP) -->
@@ -224,151 +224,157 @@
     <!-- ========================================== -->
     <!-- MODAL FORM PROXMOX (TAMBAH / EDIT)         -->
     <!-- ========================================== -->
-    <div v-if="showModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans">
-      <div class="bg-white border border-slate-200/80 shadow-xl rounded-2xl w-full max-w-xl overflow-hidden transform transition-all relative">
-        
-        <div class="flex justify-between items-center p-6 border-b border-slate-200/80 bg-slate-50/50">
-          <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <i class="ph-bold" :class="isEditMode ? 'ph-pencil-simple text-blue-500' : 'ph-plus-circle text-emerald-500'"></i> 
-            {{ isEditMode ? 'Edit Server Proxmox' : 'Tambah Server Proxmox' }}
-          </h3>
-          <button @click="closeModal" class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center transition">
-            <i class="ph-bold ph-x text-lg"></i>
-          </button>
-        </div>
-
-        <form @submit.prevent="saveNode" class="p-6 space-y-5">
-          <!-- Input Nama Label -->
-          <div>
-            <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Label / Nama Server</label>
-            <div class="relative">
-              <i class="ph ph-tag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
-              <input 
-                type="text" 
-                v-model="form.name" 
-                required 
-                placeholder="Contoh: Datacenter Utama" 
-                class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-400"
-              >
-            </div>
+    <Teleport to="body">
+      <div v-if="showModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans" @click.self="closeModal">
+        <div class="bg-white border border-slate-200/80 shadow-xl rounded-2xl w-full max-w-xl overflow-hidden transform transition-all relative">
+          
+          <div class="flex justify-between items-center p-6 border-b border-slate-200/80 bg-slate-50/50">
+            <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <i class="ph-bold" :class="isEditMode ? 'ph-pencil-simple text-blue-500' : 'ph-plus-circle text-emerald-500'"></i> 
+              {{ isEditMode ? 'Edit Server Proxmox' : 'Tambah Server Proxmox' }}
+            </h3>
+            <button @click="closeModal" class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center transition">
+              <i class="ph-bold ph-x text-lg"></i>
+            </button>
           </div>
 
-          <!-- Input Host URL -->
-          <div>
-            <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Proxmox Host URL</label>
-            <div class="relative">
-              <i class="ph ph-link absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
-              <input 
-                type="url" 
-                v-model="form.hostUrl" 
-                required 
-                placeholder="https://10.10.1.10:8006" 
-                class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-mono tracking-tight font-bold rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-400 placeholder:font-sans placeholder:font-medium"
-              >
-            </div>
-            <p class="text-[10px] font-medium text-slate-500 mt-1.5">Gunakan protokol HTTPS dan port (default: 8006).</p>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <!-- Input Token ID -->
+          <form @submit.prevent="saveNode" class="p-6 space-y-5">
+            <!-- Input Nama Label -->
             <div>
-              <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">API Token ID</label>
+              <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Label / Nama Server</label>
               <div class="relative">
-                <i class="ph ph-identification-card absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
+                <i class="ph ph-tag absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
                 <input 
                   type="text" 
-                  v-model="form.tokenId" 
+                  v-model="form.name" 
                   required 
-                  placeholder="root@pam!moxview" 
+                  placeholder="Contoh: Datacenter Utama" 
+                  class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-400"
+                >
+              </div>
+            </div>
+
+            <!-- Input Host URL -->
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Proxmox Host URL</label>
+              <div class="relative">
+                <i class="ph ph-link absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
+                <input 
+                  type="url" 
+                  v-model="form.hostUrl" 
+                  required 
+                  placeholder="https://10.10.1.10:8006" 
                   class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-mono tracking-tight font-bold rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-400 placeholder:font-sans placeholder:font-medium"
                 >
               </div>
+              <p class="text-[10px] font-medium text-slate-500 mt-1.5">Gunakan protokol HTTPS dan port (default: 8006).</p>
             </div>
 
-            <!-- Input Token Secret -->
-            <div>
-              <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">API Token Secret</label>
-              <div class="relative">
-                <i class="ph ph-key absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
-                <input 
-                  :type="showSecret ? 'text' : 'password'" 
-                  v-model="form.tokenSecret" 
-                  :required="!isEditMode" 
-                  placeholder="UUID Kredensial" 
-                  class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-mono tracking-tight font-bold rounded-lg pl-10 pr-10 py-2.5 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-400 placeholder:font-sans placeholder:font-medium"
-                >
-                <button type="button" @click="showSecret = !showSecret" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition">
-                  <i :class="showSecret ? 'ph-bold ph-eye-slash' : 'ph-bold ph-eye'" class="text-lg"></i>
-                </button>
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Input Token ID -->
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">API Token ID</label>
+                <div class="relative">
+                  <i class="ph ph-identification-card absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
+                  <input 
+                    type="text" 
+                    v-model="form.tokenId" 
+                    required 
+                    placeholder="root@pam!moxview" 
+                    class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-mono tracking-tight font-bold rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-400 placeholder:font-sans placeholder:font-medium"
+                  >
+                </div>
+              </div>
+
+              <!-- Input Token Secret -->
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">API Token Secret</label>
+                <div class="relative">
+                  <i class="ph ph-key absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
+                  <input 
+                    :type="showSecret ? 'text' : 'password'" 
+                    v-model="form.tokenSecret" 
+                    :required="!isEditMode" 
+                    placeholder="UUID Kredensial" 
+                    class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-mono tracking-tight font-bold rounded-lg pl-10 pr-10 py-2.5 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-400 placeholder:font-sans placeholder:font-medium"
+                  >
+                  <button type="button" @click="showSecret = !showSecret" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition">
+                    <i :class="showSecret ? 'ph-bold ph-eye-slash' : 'ph-bold ph-eye'" class="text-lg"></i>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-          <p v-if="isEditMode" class="text-[10px] font-medium text-amber-600 mt-1 flex items-center gap-1.5"><i class="ph-fill ph-warning-circle text-amber-500"></i> Kosongkan Token Secret jika tidak ingin mengubah secret lama.</p>
+            <p v-if="isEditMode" class="text-[10px] font-medium text-amber-600 mt-1 flex items-center gap-1.5"><i class="ph-fill ph-warning-circle text-amber-500"></i> Kosongkan Token Secret jika tidak ingin mengubah secret lama.</p>
 
-          <div class="pt-4 border-t border-slate-100 flex justify-end gap-3 mt-6">
-            <button type="button" @click="closeModal" class="px-5 py-2 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg text-xs font-semibold transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">Batal</button>
-            <button type="submit" class="px-5 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex items-center gap-2" :disabled="isSaving">
-              <i class="ph-bold ph-floppy-disk" v-if="!isSaving"></i>
-              <i class="ph-bold ph-spinner animate-spin" v-if="isSaving"></i>
-              {{ isSaving ? 'Menyimpan...' : 'Simpan Konfigurasi' }}
-            </button>
-          </div>
-        </form>
+            <div class="pt-4 border-t border-slate-100 flex justify-end gap-3 mt-6">
+              <button type="button" @click="closeModal" class="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg text-xs font-semibold transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">Batal</button>
+              <button type="submit" class="px-5 py-2.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 disabled:opacity-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex items-center gap-2" :disabled="isSaving">
+                <i class="ph-bold ph-floppy-disk" v-if="!isSaving"></i>
+                <i class="ph-bold ph-spinner animate-spin" v-if="isSaving"></i>
+                {{ isSaving ? 'Menyimpan...' : 'Simpan Konfigurasi' }}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </Teleport>
 
     <!-- ========================================== -->
     <!-- MODAL KONFIRMASI HAPUS                     -->
     <!-- ========================================== -->
-    <div v-if="showDeleteModal" class="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans">
-      <div class="bg-white border border-slate-200/80 shadow-xl rounded-2xl w-full max-w-md overflow-hidden transform transition-all relative">
-        <div class="p-6 pt-7">
-          <div class="flex items-start gap-4">
-            <div class="flex-shrink-0 w-12 h-12 bg-rose-50 border border-rose-100 rounded-full flex items-center justify-center text-rose-600 mt-0.5">
-              <i class="ph-bold ph-warning-circle text-2xl"></i>
-            </div>
-            <div>
-              <h3 class="text-lg font-bold text-slate-900 mb-2">Hapus Server Proxmox?</h3>
-              <p class="text-sm text-slate-600 font-medium leading-relaxed">
-                Anda akan menghapus koneksi ke <span class="font-bold text-slate-900">{{ nodeToDelete?.name }}</span>. 
-                <br><br>
-                Semua data metrik terkait server ini tidak akan dilacak lagi. Tindakan ini tidak dapat dibatalkan.
-              </p>
+    <Teleport to="body">
+      <div v-if="showDeleteModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans" @click.self="closeDeleteModal">
+        <div class="bg-white border border-slate-200/80 shadow-xl rounded-2xl w-full max-w-md overflow-hidden transform transition-all relative">
+          <div class="p-6 pt-7">
+            <div class="flex items-start gap-4">
+              <div class="flex-shrink-0 w-12 h-12 bg-rose-50 border border-rose-100 rounded-full flex items-center justify-center text-rose-600 mt-0.5">
+                <i class="ph-bold ph-warning-circle text-2xl"></i>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">Hapus Server Proxmox?</h3>
+                <p class="text-sm text-slate-600 font-medium leading-relaxed">
+                  Anda akan menghapus koneksi ke <span class="font-bold text-slate-900">{{ nodeToDelete?.name }}</span>. 
+                  <br><br>
+                  Semua data metrik terkait server ini tidak akan dilacak lagi. Tindakan ini tidak dapat dibatalkan.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="bg-slate-50/50 px-6 py-4 flex justify-end gap-3 border-t border-slate-200/80">
-          <button @click="closeDeleteModal" class="px-5 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-            Batal
-          </button>
-          <button @click="executeDeleteNode" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-2" :disabled="isDeleting">
-            <i class="ph-bold ph-trash" v-if="!isDeleting"></i>
-            <i class="ph-bold ph-spinner animate-spin" v-if="isDeleting"></i>
-            {{ isDeleting ? 'Menghapus...' : 'Ya, Hapus' }}
-          </button>
+          <div class="bg-slate-50/50 px-6 py-4 flex justify-end gap-3 border-t border-slate-200/80">
+            <button @click="closeDeleteModal" class="px-5 py-2.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+              Batal
+            </button>
+            <button @click="executeDeleteNode" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-2" :disabled="isDeleting">
+              <i class="ph-bold ph-trash" v-if="!isDeleting"></i>
+              <i class="ph-bold ph-spinner animate-spin" v-if="isDeleting"></i>
+              {{ isDeleting ? 'Menghapus...' : 'Ya, Hapus' }}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </Teleport>
 
     <!-- ========================================== -->
     <!-- TOAST NOTIFICATION                         -->
     <!-- ========================================== -->
-    <div v-if="toast.show" 
-         class="fixed top-8 right-8 z-[100] w-[400px] bg-white border border-slate-200 shadow-xl rounded-xl p-4 flex gap-4 animate-slide-in font-sans">
-      <div class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center border" 
-           :class="toast.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-rose-50 border-rose-100 text-rose-600'">
-        <i class="text-xl ph-bold" :class="toast.type === 'success' ? 'ph-check-circle' : 'ph-warning-circle'"></i>
-      </div>
-      <div class="flex-1">
-        <div class="flex justify-between items-start">
-          <h3 class="text-slate-900 font-bold text-sm leading-none mb-1.5">{{ toast.title }}</h3>
-          <button @click="toast.show = false" class="text-slate-400 hover:text-slate-600 transition">
-            <i class="ph-bold ph-x text-sm"></i>
-          </button>
+    <Teleport to="body">
+      <div v-if="toast.show" 
+           class="fixed top-8 right-8 z-[1100] w-[400px] bg-white border border-slate-200 shadow-xl rounded-xl p-4 flex gap-4 animate-slide-in font-sans">
+        <div class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center border" 
+             :class="toast.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-rose-50 border-rose-100 text-rose-600'">
+          <i class="text-xl ph-bold" :class="toast.type === 'success' ? 'ph-check-circle' : 'ph-warning-circle'"></i>
         </div>
-        <p class="text-slate-600 text-xs font-medium leading-relaxed">{{ toast.message }}</p>
+        <div class="flex-1">
+          <div class="flex justify-between items-start">
+            <h3 class="text-slate-900 font-bold text-sm leading-none mb-1.5">{{ toast.title }}</h3>
+            <button @click="toast.show = false" class="text-slate-400 hover:text-slate-600 transition">
+              <i class="ph-bold ph-x text-sm"></i>
+            </button>
+          </div>
+          <p class="text-slate-600 text-xs font-medium leading-relaxed">{{ toast.message }}</p>
+        </div>
       </div>
-    </div>
+    </Teleport>
 
   </main>
 </template>
@@ -553,22 +559,4 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-@keyframes slide-in {
-  0% { transform: translateX(100%); opacity: 0; }
-  100% { transform: translateX(0); opacity: 1; }
-}
-.animate-slide-in {
-  animation: slide-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in {
-  animation: fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
 </style>

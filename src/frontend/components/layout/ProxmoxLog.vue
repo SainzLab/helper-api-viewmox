@@ -10,27 +10,27 @@
         <p class="text-slate-500 text-sm font-medium">Riwayat tugas (Tasks) dan rekam jejak aksi (Cluster Log) Proxmox VE.</p>
       </div>
       
-      <div class="flex gap-4 items-center">
+      <div class="flex gap-3 items-center">
         <!-- TOGGLE MODE BUTTON -->
-        <div class="flex bg-slate-50 border border-slate-200/80 p-1 rounded-lg shadow-inner">
-          <button @click="$emit('change-view', 'system')" class="px-4 py-2 rounded-md text-xs font-semibold transition-all duration-300 flex items-center gap-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-transparent">
-            <i class="ph-bold ph-terminal-window"></i> LOG SISTEM
+        <div class="flex bg-slate-50 border border-slate-200/80 p-1 rounded-lg shadow-inner h-[42px] items-center shrink-0">
+          <button @click="$emit('change-view', 'system')" class="px-3 rounded-md text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-transparent h-full whitespace-nowrap">
+            <i class="ph-bold ph-terminal-window text-sm"></i> LOG SISTEM
           </button>
-          <button class="px-4 py-2 rounded-md text-xs font-bold transition-all duration-300 flex items-center gap-2 bg-white text-slate-900 border border-slate-200 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-            <i class="ph-bold ph-hard-drives"></i> LOG PROXMOX
+          <button class="px-3 rounded-md text-xs font-bold transition-all duration-300 flex items-center gap-1.5 bg-white text-slate-900 border border-slate-200 shadow-sm h-full whitespace-nowrap">
+            <i class="ph-bold ph-hard-drives text-sm"></i> LOG PROXMOX
           </button>
         </div>
 
         <!-- SEARCH BAR -->
-        <div class="relative">
-          <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+        <div class="relative flex items-center h-[42px]">
+          <i class="ph ph-magnifying-glass absolute left-3 text-slate-400 pointer-events-none"></i>
           <input 
             type="text" 
             v-model="searchQuery" 
             :placeholder="activeTab === 'tasks' ? 'Cari deskripsi, user...' : 'Cari pesan, service...'" 
-            class="pl-9 pr-4 py-2 w-64 bg-white border border-slate-200 text-slate-900 rounded-lg text-sm font-medium focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-400"
+            class="pl-9 pr-8 h-full w-64 bg-white border border-slate-200 text-slate-900 rounded-lg text-sm font-medium focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-400"
           >
-          <button v-if="searchQuery" @click="searchQuery = ''" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition">
+          <button v-if="searchQuery" @click="searchQuery = ''" class="absolute right-3 text-slate-400 hover:text-slate-700 transition">
              <i class="ph-bold ph-x"></i>  
           </button>
         </div>
@@ -77,7 +77,7 @@
             <template v-if="isLoadingTasks && proxmoxTasks.length === 0">
               <tr class="border-b border-slate-100">
                 <td colspan="6" class="px-6 py-12 text-center text-slate-500">
-                  <i class="ph-bold ph-spinner animate-spin text-2xl text-emerald-500 mb-2 inline-block"></i>
+                  <i class="ph-bold ph-spinner animate-spin text-2xl text-slate-400 mb-2 inline-block"></i>
                   <p class="text-xs font-medium">Menarik data Tasks Log dari API Proxmox...</p>
                 </td>
               </tr>
@@ -133,7 +133,7 @@
             <template v-if="isLoadingCluster && proxmoxClusterLogs.length === 0">
               <tr class="border-b border-slate-100">
                 <td colspan="7" class="px-6 py-12 text-center text-slate-500">
-                  <i class="ph-bold ph-spinner animate-spin text-2xl text-blue-500 mb-2 inline-block"></i>
+                  <i class="ph-bold ph-spinner animate-spin text-2xl text-slate-400 mb-2 inline-block"></i>
                   <p class="text-xs font-medium">Menarik data Cluster Log dari API Proxmox...</p>
                 </td>
               </tr>
@@ -172,7 +172,7 @@
     <!-- SENTINEL TRIGGER INFINITE / UNLIMITED SCROLL -->
     <div ref="loadMoreTrigger" class="h-10 w-full flex items-center justify-center text-[11px] font-medium text-slate-500 gap-2">
       <template v-if="hasMoreToRender">
-        <i class="ph-bold ph-spinner animate-spin text-emerald-500 text-lg"></i>
+        <i class="ph-bold ph-spinner animate-spin text-slate-400 text-base"></i>
         <span>Memuat baris berikutnya (<span class="font-mono">{{ currentDisplayedCount }}</span> / <span class="font-mono">{{ currentTotalFilteredCount }}</span>)...</span>
       </template>
       <template v-else-if="currentDisplayedCount > 0">
@@ -194,13 +194,13 @@
           </div>
           
           <div class="px-6 py-4 bg-white border-b border-slate-100 flex flex-wrap gap-x-8 gap-y-3 text-xs">
-            <div class="flex flex-col"><span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-0.5">Node</span> <span class="text-slate-900 font-bold font-mono">{{ selectedLog?.node }}</span></div>
-            <div class="flex flex-col"><span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-0.5">User name</span> <span class="text-slate-700 font-medium">{{ selectedLog?.user }}</span></div>
-            <div class="flex flex-col"><span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-0.5">Status</span> <span class="font-bold tracking-wider" :class="selectedLog?.status === 'OK' ? 'text-emerald-600' : (selectedLog?.status === 'RUNNING' ? 'text-cyan-600 animate-pulse' : 'text-rose-600')">{{ selectedLog?.status }}</span></div>
-            <div class="flex flex-col"><span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-0.5">Start Time</span> <span class="text-slate-700 font-mono tracking-tight">{{ selectedLog?.starttime }}</span></div>
-            <div class="flex flex-col"><span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-0.5">End Time</span> <span class="text-slate-700 font-mono tracking-tight">{{ selectedLog?.endtime }}</span></div>
+            <div class="flex flex-col"><span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mb-0.5">Node</span> <span class="text-slate-900 font-bold font-mono">{{ selectedLog?.node }}</span></div>
+            <div class="flex flex-col"><span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mb-0.5">User name</span> <span class="text-slate-700 font-medium">{{ selectedLog?.user }}</span></div>
+            <div class="flex flex-col"><span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mb-0.5">Status</span> <span class="font-bold tracking-wider" :class="selectedLog?.status === 'OK' ? 'text-emerald-600' : (selectedLog?.status === 'RUNNING' ? 'text-cyan-600 animate-pulse' : 'text-rose-600')">{{ selectedLog?.status }}</span></div>
+            <div class="flex flex-col"><span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mb-0.5">Start Time</span> <span class="text-slate-700 font-mono tracking-tight">{{ selectedLog?.starttime }}</span></div>
+            <div class="flex flex-col"><span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider mb-0.5">End Time</span> <span class="text-slate-700 font-mono tracking-tight">{{ selectedLog?.endtime }}</span></div>
             <div class="w-full mt-1 flex flex-col items-start gap-1">
-              <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Unique task ID</span> 
+              <span class="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">Unique task ID</span> 
               <span class="font-mono text-[11px] text-slate-600 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200 tracking-tight">{{ selectedLog?.upid }}</span>
             </div>
           </div>
@@ -208,8 +208,8 @@
           <!-- Terminal Area (Light Console Style) -->
           <div class="flex-1 overflow-y-auto p-6 bg-slate-50 font-mono text-xs text-slate-700 whitespace-pre-wrap leading-relaxed no-scrollbar relative border-t border-slate-100 shadow-inner">
             <div v-if="isLoadingDetail && detailedLogText.length === 0" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/80 backdrop-blur-sm z-10 text-slate-500 font-sans">
-              <i class="ph-bold ph-spinner animate-spin text-3xl mb-3 text-emerald-500"></i>
-              <p class="font-medium text-sm">Menarik detail log langsung dari daemon pveproxy node <span class="font-mono font-bold">{{ selectedLog?.node }}</span>...</p>
+              <i class="ph-bold ph-spinner animate-spin text-2xl mb-2 text-slate-400"></i>
+              <p class="font-medium text-xs">Menarik detail log langsung dari daemon pveproxy node <span class="font-mono font-bold text-slate-900">{{ selectedLog?.node }}</span>...</p>
             </div>
             <div v-else class="space-y-1">
               <template v-for="(line, idx) in detailedLogText" :key="idx">
@@ -500,11 +500,4 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in { animation: fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>

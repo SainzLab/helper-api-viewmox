@@ -10,25 +10,25 @@
         <p class="text-slate-500 text-sm font-medium">Catatan aktivitas internal aplikasi, daemon dan autentifikasi.</p>
       </div>
       
-      <div class="flex gap-4 items-center">
+      <div class="flex gap-3 items-center">
         <!-- TOGGLE MODE BUTTON -->
-        <div class="flex bg-slate-50 border border-slate-200/80 p-1 rounded-lg shadow-inner">
-          <button class="px-4 py-2 rounded-md text-xs font-bold transition-all duration-300 flex items-center gap-2 bg-white text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.02)] border border-slate-200">
-            <i class="ph-bold ph-terminal-window"></i> LOG SISTEM
+        <div class="flex bg-slate-50 border border-slate-200/80 p-1 rounded-lg shadow-inner h-[42px] items-center shrink-0">
+          <button class="px-3 rounded-md text-xs font-bold transition-all duration-300 flex items-center gap-1.5 bg-white text-slate-900 shadow-sm border border-slate-200 h-full whitespace-nowrap">
+            <i class="ph-bold ph-terminal-window text-sm"></i> LOG SISTEM
           </button>
-          <button @click="$emit('change-view', 'proxmox')" class="px-4 py-2 rounded-md text-xs font-semibold transition-all duration-300 flex items-center gap-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-transparent">
-            <i class="ph-bold ph-hard-drives"></i> LOG PROXMOX
+          <button @click="$emit('change-view', 'proxmox')" class="px-3 rounded-md text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-transparent h-full whitespace-nowrap">
+            <i class="ph-bold ph-hard-drives text-sm"></i> LOG PROXMOX
           </button>
         </div>
 
         <!-- SEARCH BAR -->
-        <div class="relative flex items-center">
+        <div class="relative flex items-center h-[42px]">
           <i class="ph ph-magnifying-glass absolute left-3 text-slate-400 pointer-events-none"></i>
           <input 
             type="text" 
             v-model="searchQuery" 
             placeholder="Cari pesan atau sumber..." 
-            class="pl-9 pr-8 py-2.5 h-[42px] w-64 bg-white border border-slate-200 text-slate-900 rounded-lg text-sm font-medium focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-400"
+            class="pl-9 pr-8 h-full w-64 bg-white border border-slate-200 text-slate-900 rounded-lg text-sm font-medium focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-400"
           >
           <!-- Tombol silang untuk reset pencarian -->
           <button v-if="searchQuery" @click="searchQuery = ''" class="absolute right-3 text-slate-400 hover:text-slate-700 transition">
@@ -74,7 +74,7 @@
             <template v-if="isLoading && logs.length === 0">
               <tr class="border-b border-slate-100">
                 <td colspan="4" class="px-6 py-12 text-center text-slate-500">
-                  <i class="ph-bold ph-spinner animate-spin text-2xl text-blue-500 mb-2 inline-block"></i>
+                  <i class="ph-bold ph-spinner animate-spin text-2xl text-slate-400 mb-2 inline-block"></i>
                   <p class="font-medium text-xs">Memuat log sistem...</p>
                 </td>
               </tr>
@@ -126,7 +126,7 @@
     <!-- SENTINEL TRIGGER INFINITE / UNLIMITED SCROLL -->
     <div ref="loadMoreTrigger" class="h-10 w-full flex items-center justify-center text-[11px] font-medium text-slate-500 gap-2">
       <template v-if="hasMoreToRender">
-        <i class="ph-bold ph-spinner animate-spin text-blue-500 text-lg"></i>
+        <i class="ph-bold ph-spinner animate-spin text-slate-400 text-base"></i>
         <span>Memuat baris log berikutnya (<span class="font-mono font-bold">{{ displayedLogs.length }}</span> / <span class="font-mono">{{ filteredLogs.length }}</span>)...</span>
       </template>
       <template v-else-if="displayedLogs.length > 0">
@@ -263,9 +263,4 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in { animation: fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
 </style>

@@ -5,21 +5,21 @@
     <div class="flex justify-end gap-3 mb-6">
       <button 
         @click="openAddModal" 
-        class="px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-lg flex items-center gap-2 text-xs font-semibold transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+        class="px-4 h-[42px] bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-lg flex items-center gap-2 text-xs font-semibold transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
       >
         <i class="ph-bold ph-plus text-base"></i> Tambah Target Network
       </button>
       <button 
         v-if="hasUnsavedChanges && !isSaving" 
         @click="discardChanges" 
-        class="px-4 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg flex items-center gap-2 text-xs font-semibold transition"
+        class="px-4 h-[42px] bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg flex items-center gap-2 text-xs font-semibold transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
       >
         Batal
       </button>
       <button 
         @click="saveChanges" 
         :disabled="!hasUnsavedChanges || isSaving" 
-        class="px-5 py-2 rounded-lg flex items-center gap-2 text-xs font-bold transition-all duration-300 shadow-sm" 
+        class="px-5 h-[42px] rounded-lg flex items-center gap-2 text-xs font-bold transition-all duration-300 shadow-sm" 
         :class="hasUnsavedChanges ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)] cursor-pointer' : 'bg-slate-50 text-slate-400 border border-slate-200 cursor-not-allowed'"
       >
         <i class="text-base" :class="isSaving ? 'ph-bold ph-spinner animate-spin' : 'ph-bold ph-floppy-disk'"></i> 
@@ -28,9 +28,9 @@
     </div>
 
     <!-- State Loading -->
-    <div v-if="isLoading" class="flex flex-col items-center justify-center py-20 bg-white border border-slate-200/80 rounded-xl shadow-sm">
-      <i class="ph-bold ph-spinner animate-spin text-4xl text-slate-400 mb-4"></i>
-      <p class="text-slate-500 font-medium text-sm">Memuat konfigurasi jaringan...</p>
+    <div v-if="isLoading" class="flex flex-col items-center justify-center py-20 bg-white border border-slate-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] text-slate-500">
+      <i class="ph-bold ph-spinner animate-spin text-2xl text-slate-400 mb-2"></i>
+      <p class="font-medium text-xs">Memuat konfigurasi jaringan...</p>
     </div>
 
     <!-- Grid Konfigurasi Per Target ICMP/TCP -->
@@ -240,12 +240,12 @@
     <!-- MODAL PILIH TARGET NETWORK DARI DB         -->
     <!-- ========================================== -->
     <Teleport to="body">
-      <div v-if="showAddModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans">
+      <div v-if="showAddModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans" @click.self="closeAddModal">
         <div class="bg-white border border-slate-200/80 shadow-xl rounded-2xl w-full max-w-md overflow-hidden transform transition-all">
           
           <div class="flex justify-between items-center p-6 border-b border-slate-200/80 bg-slate-50/50">
             <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <i class="ph-bold ph-plus-circle text-slate-500"></i> Aktifkan Notifikasi Target
+              <i class="ph-bold ph-plus-circle text-emerald-500"></i> Aktifkan Notifikasi Target
             </h3>
             <button @click="closeAddModal" class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center transition">
               <i class="ph-bold ph-x text-lg"></i>
@@ -293,6 +293,57 @@
       </div>
     </Teleport>
 
+    <!-- ========================================== -->
+    <!-- MODAL KONFIRMASI HAPUS / BATAL             -->
+    <!-- ========================================== -->
+    <Teleport to="body">
+      <div v-if="confirmModal.show" class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans" @click.self="closeConfirmModal">
+        <div class="bg-white border border-slate-200/80 shadow-xl rounded-2xl w-full max-w-md overflow-hidden transform transition-all relative">
+          <div class="p-6 pt-7">
+            <div class="flex items-start gap-4">
+              <div class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center mt-0.5 border"
+                   :class="confirmModal.type === 'danger' ? 'bg-rose-50 border-rose-100 text-rose-600' : 'bg-amber-50 border-amber-100 text-amber-600'">
+                <i class="ph-bold ph-warning-circle text-2xl"></i>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">{{ confirmModal.title }}</h3>
+                <p class="text-sm text-slate-600 font-medium leading-relaxed">{{ confirmModal.message }}</p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-slate-50/50 px-6 py-4 flex justify-end gap-3 border-t border-slate-200/80">
+            <button @click="closeConfirmModal" class="px-5 py-2.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+              Batal
+            </button>
+            <button @click="executeConfirmAction" class="px-5 py-2.5 text-white rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-2"
+                    :class="confirmModal.type === 'danger' ? 'bg-rose-600 hover:bg-rose-700' : 'bg-slate-900 hover:bg-slate-800'">
+              {{ confirmModal.confirmText }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- ========================================== -->
+    <!-- TOAST NOTIFICATION                         -->
+    <!-- ========================================== -->
+    <Teleport to="body">
+      <div v-if="toast.show" class="fixed top-8 right-8 z-[1100] w-[400px] bg-white border border-slate-200 shadow-xl rounded-xl p-4 flex gap-4 animate-slide-in font-sans">
+        <div class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center border" :class="toast.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-rose-50 border-rose-100 text-rose-600'">
+          <i class="text-xl ph-bold" :class="toast.type === 'success' ? 'ph-check-circle' : 'ph-warning-circle'"></i>
+        </div>
+        <div class="flex-1">
+          <div class="flex justify-between items-start">
+            <h3 class="text-slate-900 font-bold text-sm leading-none mb-1.5">{{ toast.title }}</h3>
+            <button @click="toast.show = false" class="text-slate-400 hover:text-slate-600 transition">
+              <i class="ph-bold ph-x text-sm"></i>
+            </button>
+          </div>
+          <p class="text-slate-600 text-xs font-medium leading-relaxed">{{ toast.message }}</p>
+        </div>
+      </div>
+    </Teleport>
+
   </div>
 </template>
 
@@ -308,8 +359,22 @@ const hasUnsavedChanges = ref(false);
 const isSaving = ref(false);
 const isLoading = ref(true);
 
-// === STATE MODAL ===
+// === STATE MODAL & TOAST ===
 const showAddModal = ref(false);
+const toast = ref({ show: false, type: 'success', title: '', message: '' });
+let toastTimer = null;
+const showToast = (type, title, message) => {
+  toast.value = { show: true, type, title, message };
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.value.show = false; }, 5000);
+};
+
+const confirmModal = ref({ show: false, type: 'danger', title: '', message: '', confirmText: 'Ya, Lanjutkan', onConfirm: null });
+const closeConfirmModal = () => { confirmModal.value.show = false; confirmModal.value.onConfirm = null; };
+const executeConfirmAction = () => {
+  if (typeof confirmModal.value.onConfirm === 'function') confirmModal.value.onConfirm();
+  closeConfirmModal();
+};
 
 // === FETCH DATA DARI API ===
 const fetchThresholds = async () => {
@@ -348,14 +413,14 @@ const saveChanges = async () => {
     const data = await res.json();
     if (data.success) {
       hasUnsavedChanges.value = false;
-      alert("Konfigurasi Network berhasil disimpan!");
+      showToast('success', 'Konfigurasi Disimpan', 'Konfigurasi threshold Network berhasil disimpan.');
       fetchThresholds(); // Refresh data untuk memastikan sinkron dengan DB
     } else {
-      alert("Gagal menyimpan: " + data.message);
+      showToast('error', 'Gagal Menyimpan', data.message || 'Gagal menyimpan konfigurasi.');
     }
   } catch (error) {
     console.error("Kesalahan jaringan saat menyimpan:", error);
-    alert("Terjadi kesalahan jaringan.");
+    showToast('error', 'Kesalahan Jaringan', 'Terjadi kesalahan jaringan saat menyimpan konfigurasi.');
   } finally {
     isSaving.value = false;
   }
@@ -365,18 +430,32 @@ const saveChanges = async () => {
 const triggerChange = () => { hasUnsavedChanges.value = true; };
 
 const discardChanges = () => {
-  if (confirm("Batalkan semua perubahan pada Network?")) { fetchThresholds(); }
+  confirmModal.value = {
+    show: true,
+    type: 'warning',
+    title: 'Batalkan Perubahan?',
+    message: 'Semua perubahan konfigurasi threshold Network yang belum disimpan akan dikembalikan ke pengaturan awal.',
+    confirmText: 'Ya, Batalkan',
+    onConfirm: () => fetchThresholds()
+  };
 };
 
 const removeTarget = (index) => {
-  if(confirm('Hapus target ini dari pemantauan Threshold (Notifikasi dimatikan)?')) { 
-    // Pindahkan kembali ke katalog agar muncul lagi di dropdown
-    const removedTarget = networkTargets.value.splice(index, 1)[0]; 
-    catalogTargets.value.push({
-      id: removedTarget.id, name: removedTarget.name, type: removedTarget.type, host: removedTarget.host, port: removedTarget.port
-    });
-    triggerChange(); 
-  }
+  const target = networkTargets.value[index];
+  confirmModal.value = {
+    show: true,
+    type: 'danger',
+    title: 'Matikan Notifikasi Target?',
+    message: `Anda akan menghapus target "${target?.name}" dari pemantauan Threshold. Jangan khawatir, tekan Simpan Perubahan untuk menerapkan.`,
+    confirmText: 'Ya, Hapus',
+    onConfirm: () => {
+      const removedTarget = networkTargets.value.splice(index, 1)[0]; 
+      catalogTargets.value.push({
+        id: removedTarget.id, name: removedTarget.name, type: removedTarget.type, host: removedTarget.host, port: removedTarget.port
+      });
+      triggerChange();
+    }
+  };
 };
 
 const openAddModal = () => {
@@ -423,8 +502,6 @@ onMounted(() => { fetchThresholds(); });
 </script>
 
 <style scoped>
-@keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-.animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
 input[type=range] { -webkit-appearance: none; }
 input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #ffffff; cursor: pointer; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3); margin-top: -6px; }
 input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; border-radius: 4px; }

@@ -67,7 +67,7 @@
                         <tr v-if="isLoading" class="border-b border-slate-100">
                             <td colspan="6" class="px-6 py-12 text-center text-slate-500">
                                 <i class="ph-bold ph-spinner animate-spin text-2xl text-slate-400 mb-2 inline-block"></i>
-                                <p class="text-sm font-medium">Memuat dan menyinkronkan data target...</p>
+                                <p class="text-xs font-medium">Memuat dan menyinkronkan data target...</p>
                             </td>
                         </tr>
                         <tr v-else-if="filteredTargets.length === 0" class="border-b border-slate-100">
@@ -213,7 +213,7 @@
         <!-- MODAL FORM... -->
         <Teleport to="body">
             <!-- Modal Edit/Tambah -->
-            <div v-if="showModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans">
+            <div v-if="showModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans" @click.self="closeModal">
                 <div class="bg-white border border-slate-200/80 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden">
                     <div class="flex justify-between items-center p-6 bg-slate-50/50 border-b border-slate-200/80">
                         <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -225,17 +225,17 @@
                     <form @submit.prevent="saveTarget" class="p-6 space-y-5">
                         <div class="space-y-4">
                             <div>
-                                <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Nama Layanan</label>
-                                <input type="text" v-model="form.name" required placeholder="Contoh: Core Gateway Diskominfo" class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg px-4 py-2 focus:border-slate-400 outline-none transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-300">
+                                <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Nama Layanan</label>
+                                <input type="text" v-model="form.name" required placeholder="Contoh: Core Gateway Diskominfo" class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg px-4 py-2 focus:border-slate-400 outline-none transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-400">
                             </div>
                             <div>
-                                <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Deskripsi Layanan</label>
-                                <input type="text" v-model="form.description" placeholder="Contoh: Router Utama Mikrotik CCR" class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg px-4 py-2 focus:border-slate-400 outline-none transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-300">
+                                <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Deskripsi Layanan</label>
+                                <input type="text" v-model="form.description" placeholder="Contoh: Router Utama Mikrotik CCR" class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg px-4 py-2 focus:border-slate-400 outline-none transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-400">
                             </div>
                         </div>
                         <div class="p-4 bg-slate-50/50 border border-slate-200/80 rounded-xl space-y-4">
                             <div>
-                                <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Jenis Protokol</label>
+                                <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Jenis Protokol</label>
                                 <select v-model="form.protocol" class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg px-4 py-2 focus:border-slate-400 outline-none appearance-none cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
                                     <option value="ICMP PING">ICMP PING (Test Konektivitas)</option>
                                     <option value="TCP SOCKET">TCP SOCKET (Test Port Spesifik)</option>
@@ -243,12 +243,12 @@
                             </div>
                             <div class="flex gap-4">
                                 <div class="flex-[2]">
-                                    <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">IP Address / Host</label>
-                                    <input type="text" v-model="form.ip_address" required placeholder="Contoh: 10.10.0.1" class="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-lg px-4 py-2 font-mono font-bold tracking-tight focus:border-slate-400 outline-none transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-300 placeholder:font-sans">
+                                    <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">IP Address / Host</label>
+                                    <input type="text" v-model="form.ip_address" required placeholder="Contoh: 10.10.0.1" class="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-lg px-4 py-2 font-mono font-bold tracking-tight focus:border-slate-400 outline-none transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-400 placeholder:font-sans">
                                 </div>
                                 <div class="flex-1" v-if="form.protocol === 'TCP SOCKET'">
-                                    <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Port</label>
-                                    <input type="number" v-model="form.port" required placeholder="443" class="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-lg px-4 py-2 font-mono font-bold tracking-tight focus:border-slate-400 outline-none transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-300 placeholder:font-sans">
+                                    <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Port</label>
+                                    <input type="number" v-model="form.port" required placeholder="443" class="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-lg px-4 py-2 font-mono font-bold tracking-tight focus:border-slate-400 outline-none transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-400 placeholder:font-sans">
                                 </div>
                             </div>
                         </div>
@@ -258,14 +258,14 @@
                             </h4>
                             <div class="flex gap-4">
                                 <div class="flex-1">
-                                    <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Interval Cek</label>
+                                    <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Interval Cek</label>
                                     <div class="relative">
                                         <input type="number" v-model="form.check_interval" required min="1" class="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-lg pl-4 pr-10 py-2 font-mono font-bold focus:border-amber-400 outline-none transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
                                         <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] font-bold uppercase">dtk</span>
                                     </div>
                                 </div>
                                 <div class="flex-1">
-                                    <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Batas Gagal</label>
+                                    <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Batas Gagal</label>
                                     <div class="relative">
                                         <input type="number" v-model="form.max_retries" required min="1" max="10" class="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-lg pl-4 pr-12 py-2 font-mono font-bold focus:border-amber-400 outline-none transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
                                         <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-[10px] font-bold uppercase">kali</span>
@@ -278,7 +278,9 @@
                         </div>
                         <div class="pt-4 border-t border-slate-100 flex justify-end gap-3 mt-6">
                             <button type="button" @click="closeModal" class="px-5 py-2.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">Batal</button>
-                            <button type="submit" class="px-5 py-2.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition shadow-[0_1px_2px_rgba(0,0,0,0.04)]" :disabled="isSaving">
+                            <button type="submit" class="px-5 py-2.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 disabled:opacity-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex items-center gap-2" :disabled="isSaving">
+                                <i v-if="isSaving" class="ph-bold ph-spinner animate-spin"></i>
+                                <i v-else class="ph-bold ph-floppy-disk"></i>
                                 {{ isSaving ? 'Menyimpan...' : (isEditMode ? 'Simpan Perubahan' : 'Tambah Target') }}
                             </button>
                         </div>
@@ -289,7 +291,7 @@
 
         <!-- Modal Confirm Delete -->
         <Teleport to="body">
-            <div v-if="showDeleteModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans">
+            <div v-if="showDeleteModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans" @click.self="closeDeleteModal">
                 <div class="bg-white border border-slate-200/80 shadow-xl rounded-2xl w-full max-w-md overflow-hidden transform transition-all relative">
                     <div class="p-6 pt-7">
                         <div class="flex items-start gap-4">
@@ -306,8 +308,8 @@
                     </div>
                     <div class="bg-slate-50/50 px-6 py-4 flex justify-end gap-3 border-t border-slate-200/80">
                         <button @click="closeDeleteModal" class="px-5 py-2.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]"> Batal </button>
-                        <button @click="executeDeleteTarget" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-2" :disabled="isDeleting">
-                            <i class="ph-bold ph-trash" v-if="!isDeleting"></i> {{ isDeleting ? 'Menghapus...' : 'Ya, Hapus Target' }}
+                        <button @click="executeDeleteTarget" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-2" :disabled="isDeleting">
+                            <i class="ph-bold" :class="isDeleting ? 'ph-spinner animate-spin' : 'ph-trash'"></i> {{ isDeleting ? 'Menghapus...' : 'Ya, Hapus Target' }}
                         </button>
                     </div>
                 </div>
@@ -352,7 +354,7 @@ const chartOptions = {
     maintainAspectRatio: false,
     plugins: { legend: { display: false } },
     scales: {
-        y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8', font: { size: 10 } } },
+        y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { color: '#64748b', font: { size: 10 } } },
         x: { grid: { display: false }, ticks: { color: '#64748b', font: { size: 10 }, maxRotation: 0 } }
     },
     elements: {
@@ -566,8 +568,4 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-@keyframes slide-in { from { opacity: 0; transform: translateX(50px); } to { opacity: 1; transform: translateX(0); } }
-.animate-slide-in { animation: slide-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
-@keyframes fade-in { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-.animate-fade-in { animation: fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
 </style>

@@ -6,7 +6,7 @@
     <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-500/5 blur-[120px] rounded-full pointer-events-none"></div>
 
     <!-- Login Container -->
-    <div class="flex max-w-5xl w-full h-[550px] bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden border border-slate-200/80 relative z-10">
+    <div class="flex max-w-5xl w-full h-[550px] bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden border border-slate-200/80 relative z-10 animate-fade-in">
       
       <!-- Panel Form Kiri -->
       <div class="w-full md:w-[450px] p-10 flex flex-col justify-center bg-white relative z-20">
@@ -81,9 +81,12 @@
           <div class="pt-4">
             <button 
               type="submit" 
-              class="w-full bg-slate-900 text-white hover:bg-slate-800 font-bold text-sm py-3 rounded-lg transition shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:shadow-md flex justify-center items-center gap-2" 
+              :disabled="isLoggingIn"
+              class="w-full bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 font-bold text-xs py-3 rounded-lg transition shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:shadow-md flex justify-center items-center gap-2" 
             >
-              <i class="ph-bold ph-sign-in text-lg"></i> Masuk Sistem
+              <i v-if="isLoggingIn" class="ph-bold ph-spinner animate-spin text-base"></i>
+              <i v-else class="ph-bold ph-sign-in text-base"></i>
+              {{ isLoggingIn ? 'Memverifikasi...' : 'Masuk Sistem' }}
             </button>
           </div>
         </form>
@@ -119,6 +122,24 @@
       </div>
 
     </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <Teleport to="body">
+      <div v-if="toast.show" class="fixed top-8 right-8 z-[1100] w-[400px] bg-white border border-slate-200 shadow-xl rounded-xl p-4 flex gap-4 animate-slide-in font-sans">
+        <div class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center border" :class="toast.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-rose-50 border-rose-100 text-rose-600'">
+          <i class="text-xl ph-bold" :class="toast.type === 'success' ? 'ph-check-circle' : 'ph-warning-circle'"></i>
+        </div>
+        <div class="flex-1">
+          <div class="flex justify-between items-start">
+            <h3 class="text-slate-900 font-bold text-sm leading-none mb-1.5">{{ toast.title }}</h3>
+            <button @click="toast.show = false" class="text-slate-400 hover:text-slate-600 transition">
+              <i class="ph-bold ph-x text-sm"></i>
+            </button>
+          </div>
+          <p class="text-slate-600 text-xs font-medium leading-relaxed">{{ toast.message }}</p>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -137,6 +158,16 @@ const form = ref({
 const captchaCanvas = ref(null);
 const actualCaptchaText = ref('');
 const captchaError = ref(false);
+const isLoggingIn = ref(false);
+
+const toast = ref({ show: false, type: 'error', title: '', message: '' });
+let toastTimer = null;
+
+const showToast = (type, title, message) => {
+  toast.value = { show: true, type, title, message };
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.value.show = false; }, 5000);
+};
 
 const generateCaptcha = () => {
   if (!captchaCanvas.value) return;
@@ -157,7 +188,7 @@ const generateCaptcha = () => {
   actualCaptchaText.value = code;
 
   // Tipografi Captcha disesuaikan dengan tema
-  ctx.font = 'bold 24px "Courier New", Courier, monospace';
+  ctx.font = 'bold 24px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace';
   ctx.textBaseline = 'middle';
 
   for (let i = 0; i < code.length; i++) {
@@ -195,6 +226,7 @@ const handleLogin = async () => {
   }
 
   captchaError.value = false;
+  isLoggingIn.value = true;
   
   try {
     // Tembak API Backend
@@ -218,14 +250,16 @@ const handleLogin = async () => {
       router.push('/dashboard'); 
     } else {
       // Menampilkan pesan error (Misal: Password salah / Bukan Admin)
-      alert(data.message);
+      showToast('error', 'Otentikasi Gagal', data.message || 'Username atau password salah.');
       form.value.password = '';
       form.value.captchaInput = '';
       generateCaptcha();
     }
   } catch (err) {
     console.error(err);
-    alert('Gagal terhubung ke server database.');
+    showToast('error', 'Kesalahan Jaringan', 'Gagal terhubung ke server database.');
+  } finally {
+    isLoggingIn.value = false;
   }
 };
 

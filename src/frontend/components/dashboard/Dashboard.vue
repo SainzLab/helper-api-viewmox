@@ -1,5 +1,5 @@
 <template>
-  <main class="bg-[#f8f9fa] p-8 pb-12 overflow-x-hidden min-h-screen font-sans">
+  <main class="bg-[#f8f9fa] p-8 pb-12 overflow-x-hidden min-h-screen font-sans animate-fade-in">
     
     <!-- Header Dashboard -->
     <div class="flex justify-between items-end mb-8">
@@ -7,22 +7,22 @@
         <h2 class="text-2xl font-bold text-slate-900 mb-1 flex items-center gap-2.5">
           <i class="ph-bold ph-squares-four text-slate-700"></i> Ringkasan Infrastruktur
         </h2>
-        <p class="text-slate-500 text-sm">Pemantauan performa cluster Proxmox VE dan konektivitas jaringan secara langsung.</p>
+        <p class="text-slate-500 text-sm font-medium">Pemantauan performa cluster Proxmox VE dan konektivitas jaringan secara langsung.</p>
       </div>
       <div class="flex gap-3 items-center">
         <button 
           @click="fetchDashboardData(true)" 
-          class="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center gap-2 text-xs font-medium transition shadow-[0_1px_2px_rgba(0,0,0,0.04)]" 
+          class="w-[42px] h-[42px] flex items-center justify-center bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]" 
           title="Segarkan Data Secara Manual"
         >
-          <i class="ph-bold ph-arrows-clockwise text-base" :class="{ 'animate-spin text-slate-900': isRefreshing }"></i>
+          <i class="ph-bold ph-arrows-clockwise text-lg" :class="{ 'animate-spin text-slate-900': isRefreshing }"></i>
         </button>
         <button 
           @click="exportDashboardPdf" 
           :disabled="isExporting" 
-          class="bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs font-medium transition shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+          class="px-4 h-[42px] bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 rounded-lg flex items-center gap-2 text-xs font-bold transition shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
         >
-          <i class="ph-bold" :class="isExporting ? 'ph-spinner animate-spin' : 'ph-download-simple'"></i>
+          <i class="ph-bold" :class="isExporting ? 'ph-spinner animate-spin' : 'ph-download-simple text-base'"></i>
           {{ isExporting ? 'Menyiapkan PDF...' : 'Ekspor Laporan' }}
         </button>
       </div>
@@ -268,12 +268,13 @@
           </thead>
           <tbody class="text-sm">
             <tr v-if="isLoading && summary.recent_incidents.length === 0">
-              <td colspan="5" class="py-8 text-center text-slate-500 text-xs">
-                <i class="ph-bold ph-spinner animate-spin text-lg block mb-1"></i> Memuat data insiden terbaru...
+              <td colspan="5" class="py-12 text-center text-slate-500">
+                <i class="ph-bold ph-spinner animate-spin text-2xl text-slate-400 mb-2 inline-block"></i>
+                <p class="text-xs font-medium">Memuat data insiden terbaru...</p>
               </td>
             </tr>
             <tr v-else-if="summary.recent_incidents.length === 0">
-              <td colspan="5" class="py-8 text-center text-slate-500 text-xs">
+              <td colspan="5" class="py-12 text-center text-slate-500 text-xs font-medium">
                 Belum ada riwayat alert atau insiden yang tercatat.
               </td>
             </tr>
@@ -287,8 +288,7 @@
                 {{ formatWibDateTime(inc.time) }}
               </td>
               <td class="py-2.5 px-3">
-                <!-- Pastikan fungsi getSeverityBadgeClass Anda di-update mereturn warna pastel (bg-rose-50 text-rose-700 dst) -->
-                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold border" :class="getSeverityBadgeClass(inc.severity)">
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border" :class="getSeverityBadgeClass(inc.severity)">
                   <span class="w-1.5 h-1.5 rounded-full" :class="getSeverityDotClass(inc.severity)"></span>
                   {{ inc.severity }}
                 </span>
@@ -308,6 +308,24 @@
         </table>
       </div>
     </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <Teleport to="body">
+      <div v-if="toast.show" class="fixed top-8 right-8 z-[1100] w-[400px] bg-white border border-slate-200 shadow-xl rounded-xl p-4 flex gap-4 animate-slide-in font-sans">
+        <div class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center border" :class="toast.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-rose-50 border-rose-100 text-rose-600'">
+          <i class="text-xl ph-bold" :class="toast.type === 'success' ? 'ph-check-circle' : 'ph-warning-circle'"></i>
+        </div>
+        <div class="flex-1">
+          <div class="flex justify-between items-start">
+            <h3 class="text-slate-900 font-bold text-sm leading-none mb-1.5">{{ toast.title }}</h3>
+            <button @click="toast.show = false" class="text-slate-400 hover:text-slate-600 transition">
+              <i class="ph-bold ph-x text-sm"></i>
+            </button>
+          </div>
+          <p class="text-slate-600 text-xs font-medium leading-relaxed">{{ toast.message }}</p>
+        </div>
+      </div>
+    </Teleport>
     
   </main>
 </template>
@@ -329,6 +347,14 @@ const isLoading = ref(false);
 const isRefreshing = ref(false);
 const isExporting = ref(false);
 const selectedTimeframe = ref('1h');
+
+const toast = ref({ show: false, type: 'success', title: '', message: '' });
+let toastTimer = null;
+const showToast = (type, title, message) => {
+  toast.value = { show: true, type, title, message };
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.value.show = false; }, 5000);
+};
 
 // STATE ANALITIK SLA (UPTIME, DOWNTIME, MTTR, AVAILABILITY)
 const slaPeriod = ref('24h');
@@ -352,12 +378,12 @@ const slaFilterLabel = computed(() => {
 
 const slaAvailabilityColor = computed(() => {
   const a = slaAnalytics.value.summary.availability;
-  return a >= 99 ? 'text-moxgreen' : a >= 95 ? 'text-amber-400' : 'text-rose-500';
+  return a >= 99 ? 'text-emerald-600' : a >= 95 ? 'text-amber-600' : 'text-rose-600';
 });
 
 const slaAvailabilityBar = computed(() => {
   const a = slaAnalytics.value.summary.availability;
-  return a >= 99 ? 'bg-moxgreen shadow-[0_0_8px_#10b981]' : a >= 95 ? 'bg-amber-400 shadow-[0_0_8px_#fbbf24]' : 'bg-rose-500 shadow-[0_0_8px_#f43f5e]';
+  return a >= 99 ? 'bg-emerald-500' : a >= 95 ? 'bg-amber-500' : 'bg-rose-500';
 });
 
 const formatPreciseDuration = (totalSeconds) => {
@@ -420,26 +446,26 @@ const slaDurationChartOptions = computed(() => {
   const unit = slaDurationUnit.value;
   return {
     chart: { type: 'bar', background: 'transparent', toolbar: { show: false }, zoom: { enabled: false }, fontFamily: 'inherit' },
-    theme: { mode: 'dark' },
+    theme: { mode: 'light' },
     colors: ['#10b981', '#f43f5e', '#06b6d4'],
     plotOptions: { bar: { borderRadius: 3, columnWidth: '65%' } },
-    grid: { borderColor: '#1e293b', strokeDashArray: 4 },
+    grid: { borderColor: '#f1f5f9', strokeDashArray: 4 },
     dataLabels: { enabled: false },
     xaxis: {
       categories: slaLabels.value,
-      labels: { style: { colors: '#94a3b8', fontSize: '10px' } },
-      axisBorder: { color: '#334155' },
-      axisTicks: { color: '#334155' }
+      labels: { style: { colors: '#64748b', fontSize: '10px' } },
+      axisBorder: { color: '#e2e8f0' },
+      axisTicks: { color: '#e2e8f0' }
     },
     yaxis: {
       min: 0,
       labels: {
-        style: { colors: '#94a3b8', fontSize: '10px' },
+        style: { colors: '#64748b', fontSize: '10px' },
         formatter: (v) => formatPreciseDuration(Math.round(v * unit.div))
       }
     },
     tooltip: {
-      theme: 'dark',
+      theme: 'light',
       y: {
         formatter: (v, { seriesIndex, dataPointIndex }) => {
           const row = slaAnalytics.value.chartData[dataPointIndex];
@@ -451,7 +477,7 @@ const slaDurationChartOptions = computed(() => {
         }
       }
     },
-    legend: { labels: { colors: '#cbd5e1' }, fontSize: '11px', position: 'top' }
+    legend: { labels: { colors: '#475569' }, fontSize: '11px', position: 'top' }
   };
 });
 
@@ -467,33 +493,33 @@ const slaAvailabilityChartOptions = computed(() => {
   const minVal = vals.length ? Math.max(0, Math.floor(Math.min(...vals)) - 1) : 0;
   return {
     chart: { type: 'area', background: 'transparent', toolbar: { show: false }, zoom: { enabled: false }, fontFamily: 'inherit' },
-    theme: { mode: 'dark' },
+    theme: { mode: 'light' },
     colors: ['#10b981'],
     stroke: { curve: 'smooth', width: 2.5 },
-    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.02 } },
-    grid: { borderColor: '#1e293b', strokeDashArray: 4 },
+    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.25, opacityTo: 0.02 } },
+    grid: { borderColor: '#f1f5f9', strokeDashArray: 4 },
     dataLabels: { enabled: false },
     xaxis: {
       categories: slaLabels.value,
-      labels: { style: { colors: '#94a3b8', fontSize: '10px' } },
-      axisBorder: { color: '#334155' },
-      axisTicks: { color: '#334155' }
+      labels: { style: { colors: '#64748b', fontSize: '10px' } },
+      axisBorder: { color: '#e2e8f0' },
+      axisTicks: { color: '#e2e8f0' }
     },
     yaxis: {
       min: minVal,
       max: 100,
       labels: {
-        style: { colors: '#94a3b8', fontSize: '10px' },
+        style: { colors: '#64748b', fontSize: '10px' },
         formatter: (v) => `${v.toFixed(1)}%`
       }
     },
     tooltip: {
-      theme: 'dark',
+      theme: 'light',
       y: {
         formatter: (v) => `${Number(v).toFixed(2)}%`
       }
     },
-    legend: { labels: { colors: '#cbd5e1' }, fontSize: '11px', position: 'top' }
+    legend: { labels: { colors: '#475569' }, fontSize: '11px', position: 'top' }
   };
 });
 
@@ -526,27 +552,29 @@ const timeframeLabel = computed(() => {
 const getSeverityBadgeClass = (sev) => {
   switch (sev) {
     case 'DOWN':
+      return 'bg-rose-50 border-rose-200/60 text-rose-700';
     case 'CRITICAL':
-      return 'bg-rose-500/10 border-rose-500/20 text-rose-400';
+      return 'bg-orange-50 border-orange-200/60 text-orange-700';
     case 'WARNING':
-      return 'bg-amber-500/10 border-amber-500/20 text-amber-500';
+      return 'bg-amber-50 border-amber-200/60 text-amber-700';
     case 'RECOVERED':
-      return 'bg-blue-500/10 border-blue-500/20 text-blue-400';
+      return 'bg-blue-50 border-blue-200/60 text-blue-700';
     case 'RESOLVED':
     default:
-      return 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400';
+      return 'bg-emerald-50 border-emerald-200/60 text-emerald-700';
   }
 };
 
 const getSeverityDotClass = (sev) => {
   switch (sev) {
     case 'DOWN':
-    case 'CRITICAL':
       return 'bg-rose-500';
+    case 'CRITICAL':
+      return 'bg-orange-500';
     case 'WARNING':
       return 'bg-amber-500';
     case 'RECOVERED':
-      return 'bg-blue-400';
+      return 'bg-blue-500';
     case 'RESOLVED':
     default:
       return 'bg-emerald-500';
@@ -554,9 +582,9 @@ const getSeverityDotClass = (sev) => {
 };
 
 const getStatusTextClass = (statusLabel) => {
-  if (statusLabel === 'NORMAL') return 'text-emerald-500';
-  if (statusLabel === 'INVESTIGASI') return 'text-cyan-400';
-  return 'text-rose-500';
+  if (statusLabel === 'NORMAL') return 'text-emerald-600';
+  if (statusLabel === 'INVESTIGASI') return 'text-cyan-600';
+  return 'text-rose-600';
 };
 
 const initOrUpdateChart = () => {
@@ -578,7 +606,7 @@ const initOrUpdateChart = () => {
 
   const ctx = chartCanvas.value.getContext('2d');
   const gradientCPU = ctx.createLinearGradient(0, 0, 0, 300);
-  gradientCPU.addColorStop(0, 'rgba(16, 185, 129, 0.2)');
+  gradientCPU.addColorStop(0, 'rgba(16, 185, 129, 0.15)');
   gradientCPU.addColorStop(1, 'rgba(16, 185, 129, 0)');
 
   chartInstance = new window.Chart(ctx, {
@@ -592,7 +620,7 @@ const initOrUpdateChart = () => {
           borderColor: '#10b981',
           backgroundColor: gradientCPU,
           borderWidth: 2,
-          pointBackgroundColor: '#0f172a',
+          pointBackgroundColor: '#ffffff',
           pointBorderColor: '#10b981',
           pointBorderWidth: 2,
           pointRadius: 3,
@@ -602,10 +630,10 @@ const initOrUpdateChart = () => {
         {
           label: 'RAM Usage (%)',
           data: ramData,
-          borderColor: '#60a5fa',
+          borderColor: '#3b82f6',
           borderWidth: 2,
-          pointBackgroundColor: '#0f172a',
-          pointBorderColor: '#60a5fa',
+          pointBackgroundColor: '#ffffff',
+          pointBorderColor: '#3b82f6',
           pointBorderWidth: 2,
           pointRadius: 3,
           fill: false,
@@ -614,10 +642,10 @@ const initOrUpdateChart = () => {
         {
           label: 'IO Delay (%)',
           data: ioData,
-          borderColor: '#fbbf24',
+          borderColor: '#f59e0b',
           borderWidth: 2,
-          pointBackgroundColor: '#0f172a',
-          pointBorderColor: '#fbbf24',
+          pointBackgroundColor: '#ffffff',
+          pointBorderColor: '#f59e0b',
           pointBorderWidth: 2,
           pointRadius: 3,
           fill: false,
@@ -635,21 +663,21 @@ const initOrUpdateChart = () => {
       scales: {
         x: {
           grid: {
-            color: 'rgba(51, 65, 85, 0.4)',
+            color: '#f1f5f9',
             drawBorder: false
           },
           ticks: {
-            color: '#94a3b8',
+            color: '#64748b',
             font: { size: 10 }
           }
         },
         y: {
           grid: {
-            color: 'rgba(51, 65, 85, 0.4)',
+            color: '#f1f5f9',
             drawBorder: false
           },
           ticks: {
-            color: '#94a3b8',
+            color: '#64748b',
             font: { size: 10 },
             callback: function (value) { return value + '%'; },
             stepSize: 10
@@ -837,6 +865,7 @@ const exportDashboardPdf = () => {
     doc.save(`Ringkasan_Infrastruktur_Viewmox_${stamp}.pdf`);
   } catch (err) {
     console.error('Error exportDashboardPdf:', err);
+    showToast('error', 'Gagal Mengekspor', 'Gagal membuat laporan PDF.');
   } finally {
     isExporting.value = false;
   }

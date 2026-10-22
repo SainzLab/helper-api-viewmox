@@ -5,36 +5,36 @@
     <div class="flex justify-between items-end mb-6">
       <div>
         <h2 class="text-2xl font-bold text-slate-900 mb-1 flex items-center gap-3">
-          <i class="ph-bold ph-hard-drives text-emerald-500"></i> Proxmox Cluster Dashboard
+          <i class="ph-bold ph-hard-drives text-slate-700"></i> Proxmox Cluster Dashboard
         </h2>
         <p class="text-slate-500 text-sm font-medium">Pemantauan real-time resource Node, VM dan LXC.</p>
       </div>
       
-      <div class="flex gap-4 items-center">
+      <div class="flex gap-3 items-center">
         <!-- TOGGLE MODE BUTTON -->
-        <div class="flex bg-slate-50 border border-slate-200/80 p-1 rounded-lg shadow-inner">
-          <button @click="$emit('change-view', 'icmp')" class="px-4 py-2 rounded-md text-xs font-semibold transition-all duration-300 flex items-center gap-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-transparent">
-            <i class="ph-bold ph-plugs"></i> ICMP / TCP
+        <div class="flex bg-slate-50 border border-slate-200/80 p-1 rounded-lg shadow-inner h-[42px] items-center shrink-0">
+          <button @click="$emit('change-view', 'icmp')" class="px-3 rounded-md text-xs font-semibold transition-all duration-300 flex items-center gap-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-transparent h-full whitespace-nowrap">
+            <i class="ph-bold ph-plugs text-sm"></i> ICMP / TCP
           </button>
-          <button class="px-4 py-2 rounded-md text-xs font-bold transition-all duration-300 flex items-center gap-2 bg-white text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.02)] border border-slate-200">
-            <i class="ph-bold ph-hard-drives"></i> PROXMOX
+          <button class="px-3 rounded-md text-xs font-bold transition-all duration-300 flex items-center gap-1.5 bg-white text-slate-900 shadow-sm border border-slate-200 h-full whitespace-nowrap">
+            <i class="ph-bold ph-hard-drives text-sm"></i> PROXMOX
           </button>
         </div>
         
-        <button @click="fetchProxmoxData(true)" class="w-[42px] h-[42px] flex items-center justify-center border border-slate-200 bg-white text-slate-600 rounded-lg hover:bg-slate-50 hover:text-emerald-600 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]" title="Segarkan Data Secara Manual">
-          <i class="ph-bold ph-arrows-clockwise text-lg" :class="{'animate-spin text-emerald-500': isRefreshing}"></i>
+        <button @click="fetchProxmoxData(true)" class="w-[42px] h-[42px] flex items-center justify-center border border-slate-200 bg-white text-slate-600 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]" title="Segarkan Data Secara Manual">
+          <i class="ph-bold ph-arrows-clockwise text-lg" :class="{'animate-spin text-slate-900': isRefreshing}"></i>
         </button>
         
-        <router-link to="/proxmox-config" class="px-4 py-2.5 bg-slate-900 text-white rounded-lg flex items-center gap-2 hover:bg-slate-800 text-xs font-semibold transition shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-          <i class="ph-bold ph-gear"></i> Konfigurasi Node
+        <router-link to="/proxmox-config" class="px-4 h-[42px] bg-slate-900 text-white rounded-lg flex items-center gap-2 hover:bg-slate-800 text-xs font-bold transition shadow-[0_1px_2px_rgba(0,0,0,0.04)] whitespace-nowrap">
+          <i class="ph-bold ph-gear text-base"></i> Konfigurasi Node
         </router-link>
       </div>
     </div>
 
     <!-- PROXMOX DASHBOARD STATES -->
-    <div v-if="isLoadingProxmox" class="flex flex-col items-center justify-center py-20 bg-white border border-slate-200/80 rounded-xl shadow-sm">
-      <i class="ph-bold ph-spinner animate-spin text-4xl text-emerald-500 mb-4"></i>
-      <p class="text-slate-500 font-medium">Menghubungkan ke API Cluster Proxmox...</p>
+    <div v-if="isLoadingProxmox" class="flex flex-col items-center justify-center py-20 bg-white border border-slate-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] text-slate-500">
+      <i class="ph-bold ph-spinner animate-spin text-2xl text-slate-400 mb-2"></i>
+      <p class="text-xs font-medium">Menghubungkan ke API Cluster Proxmox...</p>
     </div>
     
     <div v-else-if="proxmoxNodesData.length === 0" class="text-center py-20 bg-slate-50 border border-slate-200/80 rounded-xl shadow-sm">
@@ -362,14 +362,4 @@ const openProxmoxAdmin = (hostUrl, type, vmid) => {
 </script>
 
 <style scoped>
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in { 
-  animation: fade-in 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; 
-}
-/* Menghilangkan scrollbar bawaan untuk area tertentu jika ada */
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>

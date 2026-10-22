@@ -28,8 +28,37 @@
   
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fade-in 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    @keyframes slide-in {
+      0% { transform: translateX(100%); opacity: 0; }
+      100% { transform: translateX(0); opacity: 1; }
+    }
+    .animate-slide-in {
+      animation: slide-in 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes bounce-in {
+      0% { transform: scale(0.95); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-bounce-in {
+      animation: bounce-in 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  </style>
 </head>
-<body class="bg-moxdark text-white font-sans antialiased">
+<body class="bg-[#f8f9fa] text-slate-900 font-sans antialiased">
   
   <!-- Vue Root Element -->
   <div id="app"></div>

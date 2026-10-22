@@ -28,68 +28,69 @@
   <div class="hidden md:block relative font-sans">
     
     <!-- TOAST SUCCESS LOGIN -->
-    <div v-if="showSuccessToast" class="fixed top-8 right-8 z-50 w-[400px] bg-white border-t-4 border-emerald-500 rounded-b-xl rounded-t-sm shadow-xl p-5 flex gap-4 animate-slide-in">
-      <div class="flex-shrink-0 w-12 h-12 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center justify-center">
-        <div class="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow-sm">
-          <i class="ph-bold ph-check text-sm"></i>
+    <Teleport to="body">
+      <div v-if="showSuccessToast" class="fixed top-8 right-8 z-[1100] w-[400px] bg-white border border-slate-200 rounded-xl shadow-xl p-4 flex gap-4 animate-slide-in font-sans">
+        <div class="flex-shrink-0 w-10 h-10 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center">
+          <i class="ph-bold ph-check-circle text-xl"></i>
+        </div>
+        <div class="flex-1">
+          <div class="flex justify-between items-start">
+            <h3 class="text-slate-900 font-bold text-sm leading-none mb-1.5">Login Berhasil!</h3>
+            <button @click="showSuccessToast = false" class="text-slate-400 hover:text-slate-600 transition">
+              <i class="ph-bold ph-x text-sm"></i>
+            </button>
+          </div>
+          <p class="text-slate-600 font-medium text-xs leading-relaxed mb-1">
+            Selamat datang kembali, <span class="font-bold text-slate-900">{{ userName }}</span>.
+          </p>
+          <p class="text-slate-600 font-medium text-xs leading-relaxed">
+            Sesi otentikasi aktif untuk role <span class="text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.5 rounded-md font-mono tracking-tight font-bold text-[10px] uppercase ml-0.5">{{ userRole }}</span>.
+          </p>
         </div>
       </div>
-      <div class="flex-1">
-        <div class="flex justify-between items-start">
-          <h3 class="text-slate-900 font-bold text-base tracking-tight leading-none mb-2.5">Login Berhasil!</h3>
-          <button @click="showSuccessToast = false" class="text-slate-400 hover:text-slate-600 transition">
-            <i class="ph-bold ph-x text-sm"></i>
-          </button>
-        </div>
-        <p class="text-slate-500 font-medium text-sm mb-1.5">
-          Selamat datang kembali, <span class="font-bold text-slate-900">{{ userName }}</span>.
-        </p>
-        <p class="text-slate-500 font-medium text-sm">
-          Sesi otentikasi aktif untuk role <span class="text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.5 rounded-md font-mono tracking-tight font-bold text-[11px] uppercase ml-0.5">{{ userRole }}</span>.
-        </p>
-      </div>
-    </div>
+    </Teleport>
 
     <!-- TOAST LOGOUT -->
-    <div v-if="showLogoutToast" class="fixed top-8 right-8 z-50 w-[400px] bg-white border border-slate-200 rounded-xl shadow-xl p-5 flex gap-4 animate-slide-in">
-      <div class="flex-shrink-0 w-12 h-12 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-center shadow-sm">
-        <i class="ph-bold ph-sign-out text-xl text-slate-600"></i>
-      </div>
-      <div class="flex-1">
-        <div class="flex justify-between items-start">
-          <h3 class="text-slate-900 font-bold text-base tracking-tight leading-none mb-2.5">Sesi Telah Ditutup</h3>
-          <button @click="showLogoutToast = false" class="text-slate-400 hover:text-slate-600 transition">
-            <i class="ph-bold ph-x text-sm"></i>
-          </button>
+    <Teleport to="body">
+      <div v-if="showLogoutToast" class="fixed top-8 right-8 z-[1100] w-[400px] bg-white border border-slate-200 rounded-xl shadow-xl p-4 flex gap-4 animate-slide-in font-sans">
+        <div class="flex-shrink-0 w-10 h-10 bg-slate-50 border border-slate-200 text-slate-600 rounded-lg flex items-center justify-center">
+          <i class="ph-bold ph-sign-out text-xl"></i>
         </div>
-        <p class="text-slate-500 font-medium text-sm mb-1.5">
-          Token sesi Anda telah berhasil dihapus.
-        </p>
-        <p class="text-slate-500 font-medium text-sm">
-          Sampai jumpa kembali di konsol monitoring.
-        </p>
+        <div class="flex-1">
+          <div class="flex justify-between items-start">
+            <h3 class="text-slate-900 font-bold text-sm leading-none mb-1.5">Sesi Telah Ditutup</h3>
+            <button @click="showLogoutToast = false" class="text-slate-400 hover:text-slate-600 transition">
+              <i class="ph-bold ph-x text-sm"></i>
+            </button>
+          </div>
+          <p class="text-slate-600 font-medium text-xs leading-relaxed">
+            Token sesi Anda telah berhasil dihapus. Sampai jumpa kembali di konsol monitoring.
+          </p>
+        </div>
       </div>
-    </div>
+    </Teleport>
 
     <!-- MODAL POP-UP TIMEOUT (Custom Alert) -->
-    <div v-if="showTimeoutModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 transition-opacity">
-      <div class="bg-white border border-slate-200/80 rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl relative overflow-hidden animate-bounce-in">
-        
-        <!-- Dekorasi Background Modal -->
-        <div class="absolute -top-10 -right-10 w-32 h-32 bg-rose-50 rounded-full blur-[30px]"></div>
-        
-        <div class="w-16 h-16 bg-rose-50 border border-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-5 relative z-10 shadow-sm">
-          <i class="ph-fill ph-clock-countdown text-3xl"></i>
+    <Teleport to="body">
+      <div v-if="showTimeoutModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans">
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-8 max-w-sm w-full text-center shadow-xl relative overflow-hidden">
+          
+          <!-- Dekorasi Background Modal -->
+          <div class="absolute -top-10 -right-10 w-32 h-32 bg-rose-50 rounded-full blur-[30px]"></div>
+          
+          <div class="w-16 h-16 bg-rose-50 border border-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-5 relative z-10 shadow-sm">
+            <i class="ph-fill ph-clock-countdown text-3xl"></i>
+          </div>
+          <h3 class="text-lg font-bold text-slate-900 mb-2 relative z-10 tracking-tight">Sesi Telah Berakhir</h3>
+          <p class="text-sm text-slate-500 font-medium mb-6 relative z-10 leading-relaxed">
+            Sistem mendeteksi tidak ada aktivitas selama 1 menit. Demi keamanan server, Anda telah dikeluarkan secara otomatis.
+          </p>
+          <button @click="confirmTimeout" class="w-full px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg transition shadow-sm relative z-10 flex justify-center items-center gap-2">
+            Kembali ke Login <i class="ph-bold ph-arrow-right"></i>
+          </button>
         </div>
-        <h3 class="text-xl font-bold text-slate-900 mb-2 relative z-10 tracking-tight">Sesi Telah Berakhir</h3>
-        <p class="text-sm text-slate-500 font-medium mb-8 relative z-10 leading-relaxed">
-          Sistem mendeteksi tidak ada aktivitas selama 1 menit. Demi keamanan server, Anda telah dikeluarkan secara otomatis.
-        </p>
-        <button @click="confirmTimeout" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-lg transition shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:shadow-md relative z-10 flex justify-center items-center gap-2">
-          Kembali ke Login <i class="ph-bold ph-arrow-right"></i>
-        </button>
       </div>
-    </div>
+    </Teleport>
 
     <!-- Router View -->
     <router-view v-if="$route.name === 'login'" />
@@ -222,27 +223,4 @@ watch(() => route.name, (newName, oldName) => {
 </script>
 
 <style scoped>
-@keyframes bounce-in {
-  0% { transform: scale(0.9); opacity: 0; }
-  50% { transform: scale(1.02); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
-}
-.animate-bounce-in {
-  animation: bounce-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-
-@keyframes slide-in {
-  0% { transform: translateX(100%); opacity: 0; }
-  100% { transform: translateX(0); opacity: 1; }
-}
-.animate-slide-in {
-  animation: slide-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-@keyframes slide-in {
-  0% { transform: translateX(100%); opacity: 0; }
-  100% { transform: translateX(0); opacity: 1; }
-}
-.animate-slide-in {
-  animation: slide-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
 </style>

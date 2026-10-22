@@ -1,5 +1,5 @@
 <template>
-  <main class="bg-[#f8f9fa] min-h-screen font-sans p-8 pb-12 overflow-x-hidden" @click="closeExportMenu">
+  <main class="bg-[#f8f9fa] min-h-screen font-sans p-8 pb-12 overflow-x-hidden animate-fade-in" @click="closeExportMenu">
     
     <!-- Header Halaman -->
     <div class="flex justify-between items-end mb-6">
@@ -13,9 +13,9 @@
         <button
           @click="showExportMenu = !showExportMenu"
           :disabled="isExporting"
-          class="px-5 py-2.5 bg-slate-900 text-white rounded-lg flex items-center gap-2 hover:bg-slate-800 disabled:opacity-50 text-xs font-bold transition shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+          class="px-4 h-[42px] bg-slate-900 text-white rounded-lg flex items-center gap-2 hover:bg-slate-800 disabled:opacity-50 text-xs font-bold transition shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
         >
-          <i class="ph-bold" :class="isExporting ? 'ph-spinner animate-spin' : 'ph-file-pdf'"></i>
+          <i class="ph-bold" :class="isExporting ? 'ph-spinner animate-spin' : 'ph-file-pdf text-base'"></i>
           <span>{{ isExporting ? 'Menyiapkan PDF...' : 'Export PDF' }}</span>
           <i class="ph-bold ph-caret-down text-xs ml-0.5 transition-transform duration-200" :class="showExportMenu ? 'rotate-180' : ''"></i>
         </button>
@@ -23,7 +23,7 @@
         <!-- Dropdown Opsi Periode Export PDF -->
         <div
           v-if="showExportMenu"
-          class="absolute right-0 top-full mt-2 w-56 bg-white border border-slate-200/80 rounded-xl shadow-lg py-1.5 z-50 overflow-hidden"
+          class="absolute right-0 top-full mt-2 w-56 bg-white border border-slate-200/80 rounded-xl shadow-lg py-1.5 z-50 overflow-hidden animate-fade-in"
         >
           <div class="px-3.5 py-2 bg-slate-50/50 border-b border-slate-100">
             <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Pilih Rentang Laporan</p>
@@ -226,13 +226,14 @@
 
     <!-- Ticket List Dinamis -->
     <div class="space-y-4">
-      <div v-if="isLoading" class="text-center py-10 text-slate-500 font-medium text-sm flex flex-col justify-center items-center gap-2">
-        <i class="ph-bold ph-spinner animate-spin text-2xl text-slate-400"></i> Memuat data tiket...
+      <div v-if="isLoading" class="bg-white border border-slate-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] text-center py-12 text-slate-500">
+        <i class="ph-bold ph-spinner animate-spin text-2xl text-slate-400 mb-2 inline-block"></i>
+        <p class="text-xs font-medium">Memuat data tiket...</p>
       </div>
-      <div v-else-if="tickets.length === 0" class="text-center py-10 text-slate-500 font-medium text-sm">
+      <div v-else-if="tickets.length === 0" class="bg-white border border-slate-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] text-center py-12 text-slate-500 font-medium text-xs">
         Belum ada riwayat gangguan yang tercatat.
       </div>
-      <div v-else-if="filteredTickets.length === 0" class="text-center py-10 text-slate-500 font-medium text-sm">
+      <div v-else-if="filteredTickets.length === 0" class="bg-white border border-slate-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] text-center py-12 text-slate-500 font-medium text-xs">
         Tidak ada tiket yang cocok dengan pencarian/filter.
       </div>
       
@@ -379,6 +380,24 @@
       </div>
     </div>
 
+    <!-- TOAST NOTIFICATION -->
+    <Teleport to="body">
+      <div v-if="toast.show" class="fixed top-8 right-8 z-[1100] w-[400px] bg-white border border-slate-200 shadow-xl rounded-xl p-4 flex gap-4 animate-slide-in font-sans">
+        <div class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center border" :class="toast.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-rose-50 border-rose-100 text-rose-600'">
+          <i class="text-xl ph-bold" :class="toast.type === 'success' ? 'ph-check-circle' : 'ph-warning-circle'"></i>
+        </div>
+        <div class="flex-1">
+          <div class="flex justify-between items-start">
+            <h3 class="text-slate-900 font-bold text-sm leading-none mb-1.5">{{ toast.title }}</h3>
+            <button @click="toast.show = false" class="text-slate-400 hover:text-slate-600 transition">
+              <i class="ph-bold ph-x text-sm"></i>
+            </button>
+          </div>
+          <p class="text-slate-600 text-xs font-medium leading-relaxed">{{ toast.message }}</p>
+        </div>
+      </div>
+    </Teleport>
+
   </main>
 </template>
 
@@ -397,6 +416,14 @@ const expandedMap = ref({});
 const hasInitializedExpand = ref(false);
 const isLoading = ref(true);
 const stats = ref({ down: 0, critical: 0, warning: 0, progress: 0, resolved: 0 });
+
+const toast = ref({ show: false, type: 'success', title: '', message: '' });
+let toastTimer = null;
+const showToast = (type, title, message) => {
+  toast.value = { show: true, type, title, message };
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { toast.value.show = false; }, 5000);
+};
 
 // STATE EXPORT PDF
 const showExportMenu = ref(false);
@@ -458,9 +485,9 @@ const analytics = ref({
 // Format Waktu & Warna Dasar
 const formatDate = (dateString) => formatWibShort(dateString);
 
-const getIndicatorColor = (t) => t.status === 'Selesai' ? 'bg-emerald-500' : t.severity === 'RECOVERED' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' : t.severity === 'DOWN' ? 'bg-rose-600 shadow-[0_0_8px_rgba(225,29,72,0.5)]' : t.severity === 'CRITICAL' ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]' : 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]';
-const getStatusBadge = (s, sv) => s === 'Selesai' ? 'bg-emerald-500/20 text-emerald-500 ring-1 ring-emerald-500/50' : sv === 'RECOVERED' ? 'bg-blue-500/10 text-blue-400 ring-1 ring-blue-500/50' : s === 'Dalam Penanganan' ? 'bg-cyan-500/20 text-cyan-500' : sv === 'DOWN' ? 'bg-rose-600/20 text-rose-500' : sv === 'CRITICAL' ? 'bg-orange-500/20 text-orange-500' : 'bg-amber-400/20 text-amber-400';
-const getTimelineProgress = (s) => s === 'Gangguan Aktif' ? 'bg-rose-500 w-0' : s === 'Dalam Penanganan' ? 'bg-gradient-to-r from-moxgreen to-cyan-500 w-[50%]' : 'bg-emerald-500 w-full';
+const getIndicatorColor = (t) => t.status === 'Selesai' ? 'bg-emerald-500' : t.severity === 'RECOVERED' ? 'bg-blue-500' : t.severity === 'DOWN' ? 'bg-rose-500' : t.severity === 'CRITICAL' ? 'bg-orange-500' : 'bg-amber-400';
+const getStatusBadge = (s, sv) => s === 'Selesai' ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' : sv === 'RECOVERED' ? 'bg-blue-50 text-blue-700 border-blue-200/60' : s === 'Dalam Penanganan' ? 'bg-cyan-50 text-cyan-700 border-cyan-200/60' : sv === 'DOWN' ? 'bg-rose-50 text-rose-700 border-rose-200/60' : sv === 'CRITICAL' ? 'bg-orange-50 text-orange-700 border-orange-200/60' : 'bg-amber-50 text-amber-700 border-amber-200/60';
+const getTimelineProgress = (s) => s === 'Gangguan Aktif' ? 'bg-rose-500 w-0' : s === 'Dalam Penanganan' ? 'bg-gradient-to-r from-emerald-500 to-cyan-500 w-[50%]' : 'bg-emerald-500 w-full';
 
 // FORMATTER WAKTU PRESISI (Detik -> Hari, Jam, Menit, Detik)
 const formatPreciseDuration = (totalSeconds) => {
@@ -712,7 +739,7 @@ const exportToPdf = async (periodKey) => {
     doc.save(`Laporan_Rekap_Gangguan_${periodKey}_${sevFilter}_${stamp}.pdf`);
   } catch (err) {
     console.error('Error exportToPdf:', err);
-    alert('Gagal mengekspor laporan PDF.');
+    showToast('error', 'Gagal Mengekspor', 'Gagal mengekspor laporan PDF.');
   } finally {
     isExporting.value = false;
   }
@@ -733,11 +760,11 @@ const setAnalyticsSeverity = (severity) => {
 // GRAFIK & VISUAL
 const availabilityColor = computed(() => {
   const a = analytics.value.summary.availability;
-  return a >= 99 ? 'text-moxgreen' : a >= 95 ? 'text-amber-400' : 'text-rose-500';
+  return a >= 99 ? 'text-emerald-600' : a >= 95 ? 'text-amber-600' : 'text-rose-600';
 });
 const availabilityBar = computed(() => {
   const a = analytics.value.summary.availability;
-  return a >= 99 ? 'bg-moxgreen shadow-[0_0_8px_#10b981]' : a >= 95 ? 'bg-amber-400 shadow-[0_0_8px_#fbbf24]' : 'bg-rose-500 shadow-[0_0_8px_#f43f5e]';
+  return a >= 99 ? 'bg-emerald-500' : a >= 95 ? 'bg-amber-500' : 'bg-rose-500';
 });
 
 // Konfigurasi ApexCharts
@@ -746,12 +773,12 @@ const seriesOf = (key) => analytics.value.chartData.map(d => d[key]);
 
 const baseChartOptions = (type) => ({
   chart: { type, background: 'transparent', toolbar: { show: false }, zoom: { enabled: false }, fontFamily: 'inherit' },
-  theme: { mode: 'dark' },
-  grid: { borderColor: '#1e293b', strokeDashArray: 4 },
+  theme: { mode: 'light' },
+  grid: { borderColor: '#f1f5f9', strokeDashArray: 4 },
   dataLabels: { enabled: false },
-  xaxis: { categories: chartLabels.value, labels: { style: { colors: '#94a3b8', fontSize: '11px' } }, axisBorder: { color: '#334155' }, axisTicks: { color: '#334155' } },
-  tooltip: { theme: 'dark' },
-  legend: { labels: { colors: '#cbd5e1' }, fontSize: '11px' }
+  xaxis: { categories: chartLabels.value, labels: { style: { colors: '#64748b', fontSize: '11px' } }, axisBorder: { color: '#e2e8f0' }, axisTicks: { color: '#e2e8f0' } },
+  tooltip: { theme: 'light' },
+  legend: { labels: { colors: '#475569' }, fontSize: '11px' }
 });
 
 const availabilitySeries = computed(() => [{ name: 'Availability', data: seriesOf('availability') }]);
@@ -760,9 +787,9 @@ const availabilityOptions = computed(() => {
   const minVal = vals.length ? Math.max(0, Math.floor(Math.min(...vals)) - 1) : 0;
   return {
     ...baseChartOptions('area'), colors: ['#10b981'], stroke: { curve: 'smooth', width: 2.5 },
-    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.02 } },
-    yaxis: { min: minVal, max: 100, labels: { style: { colors: '#94a3b8', fontSize: '11px' }, formatter: (v) => `${v.toFixed(1)}%` } },
-    tooltip: { y: { formatter: (v) => `${v.toFixed(2)}%` } }
+    fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.25, opacityTo: 0.02 } },
+    yaxis: { min: minVal, max: 100, labels: { style: { colors: '#64748b', fontSize: '11px' }, formatter: (v) => `${v.toFixed(1)}%` } },
+    tooltip: { theme: 'light', y: { formatter: (v) => `${v.toFixed(2)}%` } }
   };
 });
 
@@ -811,7 +838,7 @@ const mttrInfo = computed(() => describeSeries('mttr_sec'));
 const durationAxis = (unit) => ({
   min: 0,
   title: { text: `${unit.name} (label: hari/jam/menit/detik)`, style: { color: '#64748b', fontSize: '10px', fontWeight: 600 } },
-  labels: { style: { colors: '#94a3b8', fontSize: '11px' }, formatter: (v) => formatPreciseDuration(Math.round(v * unit.div)) }
+  labels: { style: { colors: '#64748b', fontSize: '11px' }, formatter: (v) => formatPreciseDuration(Math.round(v * unit.div)) }
 });
 
 const mttrSeries = computed(() => [{ name: 'MTTR', data: seriesInUnit('mttr_sec', mttrUnit.value) }]);
@@ -819,7 +846,7 @@ const mttrOptions = computed(() => ({
   ...baseChartOptions('bar'), colors: ['#06b6d4'],
   plotOptions: { bar: { borderRadius: 4, columnWidth: '55%' } },
   yaxis: durationAxis(mttrUnit.value),
-  tooltip: { theme: 'dark', y: { formatter: (v, { dataPointIndex }) => formatFullDuration(analytics.value.chartData[dataPointIndex]?.mttr_sec) } }
+  tooltip: { theme: 'light', y: { formatter: (v, { dataPointIndex }) => formatFullDuration(analytics.value.chartData[dataPointIndex]?.mttr_sec) } }
 }));
 
 let refreshTimer = null;

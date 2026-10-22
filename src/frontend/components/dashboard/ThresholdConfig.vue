@@ -1,5 +1,5 @@
 <template>
-  <main class="bg-[#f8f9fa] min-h-screen font-sans p-8 pb-12 overflow-x-hidden relative">
+  <main class="bg-[#f8f9fa] min-h-screen font-sans p-8 pb-12 overflow-x-hidden relative animate-fade-in">
     
     <!-- Header Halaman & Toggle Tab -->
     <div class="flex justify-between items-end mb-6 pb-5">
@@ -11,20 +11,20 @@
       </div>
 
       <!-- TOGGLE MODE BUTTON -->
-      <div class="flex bg-slate-50 border border-slate-200/80 p-1 rounded-lg shadow-inner">
+      <div class="flex bg-slate-50 border border-slate-200/80 p-1 rounded-lg shadow-inner h-[42px] items-center shrink-0">
         <button 
           @click="activeTab = 'proxmox'" 
-          class="px-5 py-2 rounded-md text-xs font-semibold transition-all duration-300 flex items-center gap-2" 
-          :class="activeTab === 'proxmox' ? 'bg-white text-slate-900 border border-slate-200 shadow-sm' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-transparent'"
+          class="px-3 h-full rounded-md text-xs transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap" 
+          :class="activeTab === 'proxmox' ? 'bg-white text-slate-900 font-bold border border-slate-200 shadow-sm' : 'text-slate-500 font-semibold hover:text-slate-900 hover:bg-slate-100 border border-transparent'"
         >
-          <i class="ph-bold ph-hard-drives"></i> PROXMOX API
+          <i class="ph-bold ph-hard-drives text-sm"></i> PROXMOX API
         </button>
         <button 
           @click="activeTab = 'network'" 
-          class="px-5 py-2 rounded-md text-xs font-semibold transition-all duration-300 flex items-center gap-2" 
-          :class="activeTab === 'network' ? 'bg-white text-slate-900 border border-slate-200 shadow-sm' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-transparent'"
+          class="px-3 h-full rounded-md text-xs transition-all duration-300 flex items-center gap-1.5 whitespace-nowrap" 
+          :class="activeTab === 'network' ? 'bg-white text-slate-900 font-bold border border-slate-200 shadow-sm' : 'text-slate-500 font-semibold hover:text-slate-900 hover:bg-slate-100 border border-transparent'"
         >
-          <i class="ph-bold ph-activity"></i> ICMP / TCP
+          <i class="ph-bold ph-activity text-sm"></i> ICMP / TCP
         </button>
       </div>
     </div>

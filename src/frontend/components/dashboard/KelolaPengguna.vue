@@ -1,19 +1,19 @@
 <template>
-  <main class="bg-[#f8f9fa] min-h-screen font-sans p-8 pb-12 overflow-x-hidden relative">
+  <main class="bg-[#f8f9fa] min-h-screen font-sans p-8 pb-12 overflow-x-hidden relative animate-fade-in">
     <!-- Header Halaman -->
     <div class="flex justify-between items-end mb-6">
       <div>
         <h2 class="text-2xl font-bold text-slate-900 mb-1 flex items-center gap-3">
           <i class="ph-bold ph-user-list text-slate-700"></i> Kelola Pengguna Sistem
         </h2>
-        <p class="text-slate-500 text-sm">Daftar operator dan hak akses user ke API daemon.</p>
+        <p class="text-slate-500 text-sm font-medium">Daftar operator dan hak akses user ke API daemon.</p>
       </div>
       <div>
         <button 
           @click="openAddModal" 
-          class="px-4 py-2.5 bg-slate-900 text-white rounded-lg flex items-center gap-2 hover:bg-slate-800 text-xs font-semibold transition shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+          class="px-4 h-[42px] bg-slate-900 text-white rounded-lg flex items-center gap-2 hover:bg-slate-800 text-xs font-bold transition shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
         >
-          <i class="ph-bold ph-user-plus text-lg"></i> TAMBAH PENGGUNA BARU
+          <i class="ph-bold ph-user-plus text-lg"></i> TAMBAH PENGGUNA
         </button>
       </div>
     </div>
@@ -59,7 +59,7 @@
           </thead>
           <tbody class="text-sm">
             <tr v-if="isLoading" class="border-b border-slate-100">
-              <td colspan="6" class="px-6 py-8 text-center text-slate-500">
+              <td colspan="6" class="px-6 py-12 text-center text-slate-500">
                 <i class="ph-bold ph-spinner animate-spin text-2xl text-slate-400 mb-2 inline-block"></i>
                 <p class="text-xs font-medium">Memuat data pengguna...</p>
               </td>
@@ -175,206 +175,218 @@
     </div>
 
     <!-- MODAL MANAJEMEN TOKEN API -->
-    <div v-if="showTokenModal" class="fixed inset-0 z-[40] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans">
-      <div class="bg-white border border-slate-200/80 shadow-xl rounded-2xl w-full max-w-lg overflow-hidden transform transition-all relative">
-        <div class="flex justify-between items-center p-6 bg-slate-50/50 border-b border-slate-200/80">
-          <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <i class="ph-bold ph-key text-amber-500"></i> Manajemen Token Mobile
-          </h3>
-          <button @click="closeTokenModal" class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center transition">
-            <i class="ph-bold ph-x text-lg"></i>
-          </button>
-        </div>
-        <div class="p-6 space-y-6">
-          <p class="text-sm text-slate-600 leading-relaxed font-medium">
-            API Token untuk pengguna <span class="font-bold text-slate-900 font-mono tracking-tight">@{{ activeTokenUser?.username }}</span>. Gunakan kunci ini pada aplikasi Mobile untuk otentifikasi.
-          </p>
-          <div v-if="isLoadingToken" class="flex justify-center py-6">
-            <i class="ph-bold ph-spinner animate-spin text-3xl text-amber-500"></i>
-          </div>
-          <div v-else>
-            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Access Token</label>
-            <div class="flex gap-2">
-              <div class="relative flex-1">
-                <input 
-                  :type="showApiToken ? 'text' : 'password'" 
-                  :value="apiTokenString" 
-                  readonly 
-                  class="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold rounded-lg pl-4 pr-10 py-2.5 outline-none font-mono tracking-tight selection:bg-amber-100 shadow-inner" 
-                >
-                <button type="button" @click="showApiToken = !showApiToken" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition">
-                  <i :class="showApiToken ? 'ph-bold ph-eye-slash' : 'ph-bold ph-eye'" class="text-lg"></i>
-                </button>
-              </div>
-              <button @click="copyToken" class="px-4 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-lg transition flex items-center justify-center gap-2 shadow-sm" title="Salin Token">
-                <i class="ph-bold ph-copy"></i>
-              </button>
-            </div>
-          </div>
-        </div>
-        <div class="bg-slate-50/50 px-6 py-4 flex justify-between items-center border-t border-slate-200/80">
-          <button @click="confirmResetToken" class="px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200/60 rounded-lg text-xs font-bold transition flex items-center gap-2">
-            <i class="ph-bold ph-arrows-clockwise"></i> Generate Ulang Token
-          </button>
-          <button @click="closeTokenModal" class="px-5 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-white bg-white border border-slate-200 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-            Tutup
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL KONFIRMASI GENERATE ULANG TOKEN -->
-    <div v-if="showConfirmResetTokenModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans">
-      <div class="bg-white border border-slate-200/80 shadow-xl rounded-2xl w-full max-w-md overflow-hidden transform transition-all relative">
-        <div class="p-6 pt-7">
-          <div class="flex items-start gap-4">
-            <div class="flex-shrink-0 w-12 h-12 bg-amber-50 border border-amber-100 rounded-full flex items-center justify-center text-amber-600 mt-0.5">
-              <i class="ph-bold ph-arrows-clockwise text-2xl"></i>
-            </div>
-            <div>
-              <h3 class="text-lg font-bold text-slate-900 mb-2">Generate Token Baru?</h3>
-              <p class="text-sm text-slate-600 font-medium leading-relaxed">
-                Anda akan mereset API Token untuk <span class="font-bold text-slate-900 font-mono tracking-tight">@{{ activeTokenUser?.username }}</span>. <br><br>
-                Token lama akan langsung <span class="text-amber-600 font-bold">hangus</span> dan semua perangkat mobile yang menggunakan token tersebut akan terputus dari server.
-              </p>
-            </div>
-          </div>
-        </div>
-        <div class="bg-slate-50/50 px-6 py-4 flex justify-end gap-3 border-t border-slate-200/80">
-          <button @click="closeConfirmResetTokenModal" class="px-5 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-            Batal
-          </button>
-          <button @click="executeResetToken" class="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-2" :disabled="isResettingToken">
-            <i class="ph-bold ph-arrows-clockwise" :class="{'animate-spin': isResettingToken}"></i>
-            {{ isResettingToken ? 'Memproses...' : 'Ya, Generate Baru' }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL FORM PENGGUNA (TAMBAH / EDIT) -->
-    <div v-if="showModal" class="fixed inset-0 z-[40] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 font-sans">
-      <div class="bg-white border border-slate-200/80 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden">
-        <div class="flex justify-between items-center p-6 bg-slate-50/50 border-b border-slate-200/80">
-          <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <i class="ph-bold" :class="isEditMode ? 'ph-pencil-simple text-blue-500' : 'ph-user-plus text-emerald-500'"></i> 
-            {{ isEditMode ? 'Edit Pengguna' : 'Tambah Pengguna Baru' }}
-          </h3>
-          <button @click="closeModal" class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center transition">
-            <i class="ph-bold ph-x text-lg"></i>
-          </button>
-        </div>
-        <form @submit.prevent="saveUser" class="p-6 space-y-4">
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Nama Lengkap</label>
-              <input type="text" v-model="form.name" required class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg px-4 py-2 focus:border-slate-400 outline-none transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-            </div>
-            <div>
-              <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Email</label>
-              <input type="email" v-model="form.email" class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg px-4 py-2 focus:border-slate-400 outline-none transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-            </div>
-          </div>
-          <div>
-            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Username</label>
-            <input type="text" v-model="form.username" required class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-semibold font-mono tracking-tight rounded-lg px-4 py-2 focus:border-slate-400 outline-none transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-          </div>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Password <span v-if="isEditMode" class="font-medium lowercase text-emerald-600 ml-1">(Opsional)</span></label>
-              <div class="relative">
-                <input :type="showPassword ? 'text' : 'password'" v-model="form.password" :required="!isEditMode" class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg pl-4 pr-10 py-2 focus:border-slate-400 outline-none transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-                <button type="button" @click="showPassword = !showPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                  <i :class="showPassword ? 'ph-bold ph-eye-slash' : 'ph-bold ph-eye'" class="text-lg"></i>
-                </button>
-              </div>
-            </div>
-            <div>
-              <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Konfirmasi Password</label>
-              <div class="relative">
-                <input :type="showConfirmPassword ? 'text' : 'password'" v-model="form.password_confirm" :required="form.password.length > 0" class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg pl-4 pr-10 py-2 focus:border-slate-400 outline-none transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-                <button type="button" @click="showConfirmPassword = !showConfirmPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
-                  <i :class="showConfirmPassword ? 'ph-bold ph-eye-slash' : 'ph-bold ph-eye'" class="text-lg"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-          <div>
-            <label class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Role Akses</label>
-            <select v-model="form.role" class="w-full bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg px-4 py-2 focus:border-slate-400 outline-none appearance-none cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-              <option value="Admin">Admin (Akses Web Penuh)</option>
-              <option value="Teknisi">Teknisi (Akses Mobile APP API)</option>
-              <option value="Kepala Bidang">Kepala Bidang (Read-Only Mobile API)</option>
-            </select>
-          </div>
-          
-          <!-- Conditional Field for Token Expiry -->
-          <div v-if="form.role === 'Teknisi' || form.role === 'Kepala Bidang'" class="bg-amber-50/50 p-4 rounded-xl border border-amber-200/60 mt-3 shadow-inner">
-            <label class="block text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-2">
-              <i class="ph-bold ph-key"></i> Masa Berlaku Token API Mobile
-            </label>
-            <input type="date" v-model="form.token_expires_at" required class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg px-4 py-2 focus:border-amber-400 outline-none transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-            <p v-if="isEditMode" class="text-[11px] text-emerald-600 mt-2 font-medium">Ubah tanggal ini untuk me-renew (memperpanjang) masa aktif token.</p>
-            <p v-else class="text-[11px] text-slate-500 mt-2 font-medium">Sistem akan men-generate API Token unik saat pengguna disimpan.</p>
-          </div>
-
-          <div class="pt-4 border-t border-slate-100 flex justify-end gap-3 mt-6">
-            <button type="button" @click="closeModal" class="px-5 py-2 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">Batal</button>
-            <button type="submit" class="px-5 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex items-center gap-2" :disabled="isSaving">
-              <i v-if="isSaving" class="ph-bold ph-spinner animate-spin"></i>
-              {{ isSaving ? 'Menyimpan...' : (isEditMode ? 'Simpan Perubahan' : 'Simpan Pengguna') }}
+    <Teleport to="body">
+      <div v-if="showTokenModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans" @click.self="closeTokenModal">
+        <div class="bg-white border border-slate-200/80 shadow-xl rounded-2xl w-full max-w-lg overflow-hidden transform transition-all relative">
+          <div class="flex justify-between items-center p-6 bg-slate-50/50 border-b border-slate-200/80">
+            <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <i class="ph-bold ph-key text-amber-500"></i> Manajemen Token Mobile
+            </h3>
+            <button @click="closeTokenModal" class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center transition">
+              <i class="ph-bold ph-x text-lg"></i>
             </button>
           </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- MODAL KONFIRMASI HAPUS -->
-    <div v-if="showDeleteModal" class="fixed inset-0 z-[50] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans">
-      <div class="bg-white border border-slate-200/80 shadow-xl rounded-2xl w-full max-w-md overflow-hidden transform transition-all relative">
-        <div class="p-6 pt-7">
-          <div class="flex items-start gap-4">
-            <div class="flex-shrink-0 w-12 h-12 bg-rose-50 border border-rose-100 rounded-full flex items-center justify-center text-rose-600 mt-0.5">
-              <i class="ph-bold ph-warning-circle text-2xl"></i>
+          <div class="p-6 space-y-6">
+            <p class="text-sm text-slate-600 leading-relaxed font-medium">
+              API Token untuk pengguna <span class="font-bold text-slate-900 font-mono tracking-tight">@{{ activeTokenUser?.username }}</span>. Gunakan kunci ini pada aplikasi Mobile untuk otentifikasi.
+            </p>
+            <div v-if="isLoadingToken" class="flex flex-col items-center justify-center py-6 text-slate-500">
+              <i class="ph-bold ph-spinner animate-spin text-2xl text-slate-400 mb-2"></i>
+              <p class="text-xs font-medium">Memuat token API...</p>
             </div>
-            <div>
-              <h3 class="text-lg font-bold text-slate-900 mb-2">Hapus Akses Pengguna?</h3>
-              <p class="text-sm text-slate-600 font-medium leading-relaxed">
-                Anda akan menghapus akun <span class="font-bold text-slate-900 font-mono tracking-tight">@{{ userToDelete?.username }}</span> (<span class="text-slate-700 font-semibold">{{ userToDelete?.name }}</span>) secara permanen. <br><br>
-                Pengguna ini tidak akan bisa lagi mengakses API daemon maupun ProxView.
-              </p>
+            <div v-else>
+              <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Access Token</label>
+              <div class="flex gap-2">
+                <div class="relative flex-1">
+                  <input 
+                    :type="showApiToken ? 'text' : 'password'" 
+                    :value="apiTokenString" 
+                    readonly 
+                    class="w-full bg-slate-50 border border-slate-200 text-slate-900 text-sm font-semibold rounded-lg pl-4 pr-10 py-2.5 outline-none font-mono tracking-tight selection:bg-amber-100 shadow-inner" 
+                  >
+                  <button type="button" @click="showApiToken = !showApiToken" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition">
+                    <i :class="showApiToken ? 'ph-bold ph-eye-slash' : 'ph-bold ph-eye'" class="text-lg"></i>
+                  </button>
+                </div>
+                <button @click="copyToken" class="px-4 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-lg transition flex items-center justify-center gap-2 shadow-sm" title="Salin Token">
+                  <i class="ph-bold ph-copy"></i>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="bg-slate-50/50 px-6 py-4 flex justify-end gap-3 border-t border-slate-200/80">
-          <button @click="closeDeleteModal" class="px-5 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-            Batal
-          </button>
-          <button @click="executeDeleteUser" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-2" :disabled="isDeleting">
-            <i class="ph-bold ph-trash" v-if="!isDeleting"></i>
-            <i class="ph-bold ph-spinner animate-spin" v-if="isDeleting"></i>
-            {{ isDeleting ? 'Menghapus...' : 'Ya, Hapus Permanen' }}
-          </button>
+          <div class="bg-slate-50/50 px-6 py-4 flex justify-between items-center border-t border-slate-200/80">
+            <button @click="confirmResetToken" class="px-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200/60 rounded-lg text-xs font-bold transition flex items-center gap-2">
+              <i class="ph-bold ph-arrows-clockwise"></i> Generate Ulang Token
+            </button>
+            <button @click="closeTokenModal" class="px-5 py-2.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 bg-white border border-slate-200 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+              Tutup
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </Teleport>
+
+    <!-- MODAL KONFIRMASI GENERATE ULANG TOKEN -->
+    <Teleport to="body">
+      <div v-if="showConfirmResetTokenModal" class="fixed inset-0 z-[1050] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans" @click.self="closeConfirmResetTokenModal">
+        <div class="bg-white border border-slate-200/80 shadow-xl rounded-2xl w-full max-w-md overflow-hidden transform transition-all relative">
+          <div class="p-6 pt-7">
+            <div class="flex items-start gap-4">
+              <div class="flex-shrink-0 w-12 h-12 bg-amber-50 border border-amber-100 rounded-full flex items-center justify-center text-amber-600 mt-0.5">
+                <i class="ph-bold ph-arrows-clockwise text-2xl"></i>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">Generate Token Baru?</h3>
+                <p class="text-sm text-slate-600 font-medium leading-relaxed">
+                  Anda akan mereset API Token untuk <span class="font-bold text-slate-900 font-mono tracking-tight">@{{ activeTokenUser?.username }}</span>. <br><br>
+                  Token lama akan langsung <span class="text-amber-600 font-bold">hangus</span> dan semua perangkat mobile yang menggunakan token tersebut akan terputus dari server.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-slate-50/50 px-6 py-4 flex justify-end gap-3 border-t border-slate-200/80">
+            <button @click="closeConfirmResetTokenModal" class="px-5 py-2.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+              Batal
+            </button>
+            <button @click="executeResetToken" class="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-2" :disabled="isResettingToken">
+              <i class="ph-bold" :class="isResettingToken ? 'ph-spinner animate-spin' : 'ph-arrows-clockwise'"></i>
+              {{ isResettingToken ? 'Memproses...' : 'Ya, Generate Baru' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- MODAL FORM PENGGUNA (TAMBAH / EDIT) -->
+    <Teleport to="body">
+      <div v-if="showModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans" @click.self="closeModal">
+        <div class="bg-white border border-slate-200/80 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden">
+          <div class="flex justify-between items-center p-6 bg-slate-50/50 border-b border-slate-200/80">
+            <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <i class="ph-bold" :class="isEditMode ? 'ph-pencil-simple text-blue-500' : 'ph-user-plus text-emerald-500'"></i> 
+              {{ isEditMode ? 'Edit Pengguna' : 'Tambah Pengguna Baru' }}
+            </h3>
+            <button @click="closeModal" class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center transition">
+              <i class="ph-bold ph-x text-lg"></i>
+            </button>
+          </div>
+          <form @submit.prevent="saveUser" class="p-6 space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Nama Lengkap</label>
+                <input type="text" v-model="form.name" required class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg px-4 py-2 focus:border-slate-400 outline-none transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+              </div>
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Email</label>
+                <input type="email" v-model="form.email" class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg px-4 py-2 focus:border-slate-400 outline-none transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Username</label>
+              <input type="text" v-model="form.username" required class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-semibold font-mono tracking-tight rounded-lg px-4 py-2 focus:border-slate-400 outline-none transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Password <span v-if="isEditMode" class="font-medium lowercase text-emerald-600 ml-1">(Opsional)</span></label>
+                <div class="relative">
+                  <input :type="showPassword ? 'text' : 'password'" v-model="form.password" :required="!isEditMode" class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg pl-4 pr-10 py-2 focus:border-slate-400 outline-none transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                  <button type="button" @click="showPassword = !showPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                    <i :class="showPassword ? 'ph-bold ph-eye-slash' : 'ph-bold ph-eye'" class="text-lg"></i>
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Konfirmasi Password</label>
+                <div class="relative">
+                  <input :type="showConfirmPassword ? 'text' : 'password'" v-model="form.password_confirm" :required="form.password.length > 0" class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg pl-4 pr-10 py-2 focus:border-slate-400 outline-none transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                  <button type="button" @click="showConfirmPassword = !showConfirmPassword" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                    <i :class="showConfirmPassword ? 'ph-bold ph-eye-slash' : 'ph-bold ph-eye'" class="text-lg"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Role Akses</label>
+              <select v-model="form.role" class="w-full bg-white border border-slate-200 text-slate-700 text-sm font-medium rounded-lg px-4 py-2 focus:border-slate-400 outline-none appearance-none cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                <option value="Admin">Admin (Akses Web Penuh)</option>
+                <option value="Teknisi">Teknisi (Akses Mobile APP API)</option>
+                <option value="Kepala Bidang">Kepala Bidang (Read-Only Mobile API)</option>
+              </select>
+            </div>
+            
+            <!-- Conditional Field for Token Expiry -->
+            <div v-if="form.role === 'Teknisi' || form.role === 'Kepala Bidang'" class="bg-amber-50/50 p-4 rounded-xl border border-amber-200/60 mt-3 shadow-inner">
+              <label class="block text-[10px] font-bold text-amber-700 uppercase tracking-wider mb-2">
+                <i class="ph-bold ph-key"></i> Masa Berlaku Token API Mobile
+              </label>
+              <input type="date" v-model="form.token_expires_at" required class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg px-4 py-2 focus:border-amber-400 outline-none transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+              <p v-if="isEditMode" class="text-[11px] text-emerald-600 mt-2 font-medium">Ubah tanggal ini untuk me-renew (memperpanjang) masa aktif token.</p>
+              <p v-else class="text-[11px] text-slate-500 mt-2 font-medium">Sistem akan men-generate API Token unik saat pengguna disimpan.</p>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 flex justify-end gap-3 mt-6">
+              <button type="button" @click="closeModal" class="px-5 py-2.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">Batal</button>
+              <button type="submit" class="px-5 py-2.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 disabled:opacity-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex items-center gap-2" :disabled="isSaving">
+                <i v-if="isSaving" class="ph-bold ph-spinner animate-spin"></i>
+                <i v-else class="ph-bold ph-floppy-disk"></i>
+                {{ isSaving ? 'Menyimpan...' : (isEditMode ? 'Simpan Perubahan' : 'Simpan Pengguna') }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
+
+    <!-- MODAL KONFIRMASI HAPUS -->
+    <Teleport to="body">
+      <div v-if="showDeleteModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans" @click.self="closeDeleteModal">
+        <div class="bg-white border border-slate-200/80 shadow-xl rounded-2xl w-full max-w-md overflow-hidden transform transition-all relative">
+          <div class="p-6 pt-7">
+            <div class="flex items-start gap-4">
+              <div class="flex-shrink-0 w-12 h-12 bg-rose-50 border border-rose-100 rounded-full flex items-center justify-center text-rose-600 mt-0.5">
+                <i class="ph-bold ph-warning-circle text-2xl"></i>
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-slate-900 mb-2">Hapus Akses Pengguna?</h3>
+                <p class="text-sm text-slate-600 font-medium leading-relaxed">
+                  Anda akan menghapus akun <span class="font-bold text-slate-900 font-mono tracking-tight">@{{ userToDelete?.username }}</span> (<span class="text-slate-700 font-semibold">{{ userToDelete?.name }}</span>) secara permanen. <br><br>
+                  Pengguna ini tidak akan bisa lagi mengakses API daemon maupun ProxView.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="bg-slate-50/50 px-6 py-4 flex justify-end gap-3 border-t border-slate-200/80">
+            <button @click="closeDeleteModal" class="px-5 py-2.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+              Batal
+            </button>
+            <button @click="executeDeleteUser" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-2" :disabled="isDeleting">
+              <i class="ph-bold ph-trash" v-if="!isDeleting"></i>
+              <i class="ph-bold ph-spinner animate-spin" v-if="isDeleting"></i>
+              {{ isDeleting ? 'Menghapus...' : 'Ya, Hapus Permanen' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <!-- TOAST NOTIFICATION -->
-    <div v-if="toast.show" class="fixed top-8 right-8 z-[100] w-[400px] bg-white border border-slate-200 shadow-xl rounded-xl p-4 flex gap-4 animate-slide-in font-sans">
-      <div class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center border"
-           :class="toast.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-rose-50 border-rose-100 text-rose-600'">
-        <i class="text-xl ph-bold" :class="toast.type === 'success' ? 'ph-check-circle' : 'ph-warning-circle'"></i>
-      </div>
-      <div class="flex-1">
-        <div class="flex justify-between items-start">
-          <h3 class="text-slate-900 font-bold text-sm leading-none mb-1.5">{{ toast.title }}</h3>
-          <button @click="toast.show = false" class="text-slate-400 hover:text-slate-600 transition">
-            <i class="ph-bold ph-x text-sm"></i>
-          </button>
+    <Teleport to="body">
+      <div v-if="toast.show" class="fixed top-8 right-8 z-[1100] w-[400px] bg-white border border-slate-200 shadow-xl rounded-xl p-4 flex gap-4 animate-slide-in font-sans">
+        <div class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center border"
+             :class="toast.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-rose-50 border-rose-100 text-rose-600'">
+          <i class="text-xl ph-bold" :class="toast.type === 'success' ? 'ph-check-circle' : 'ph-warning-circle'"></i>
         </div>
-        <p class="text-slate-600 text-xs font-medium leading-relaxed">{{ toast.message }}</p>
+        <div class="flex-1">
+          <div class="flex justify-between items-start">
+            <h3 class="text-slate-900 font-bold text-sm leading-none mb-1.5">{{ toast.title }}</h3>
+            <button @click="toast.show = false" class="text-slate-400 hover:text-slate-600 transition">
+              <i class="ph-bold ph-x text-sm"></i>
+            </button>
+          </div>
+          <p class="text-slate-600 text-xs font-medium leading-relaxed">{{ toast.message }}</p>
+        </div>
       </div>
-    </div>
+    </Teleport>
   </main>
 </template>
 
@@ -651,44 +663,31 @@ const getInitials = (name) => {
 };
 
 const getAvatarStyle = (role) => {
-  if (role === 'Admin') return 'bg-emerald-500/20 text-emerald-400';
-  if (role === 'Kepala Bidang') return 'bg-purple-500/20 text-purple-400';
-  return 'bg-blue-500/20 text-blue-400';
+  if (role === 'Admin') return 'bg-emerald-50 border-emerald-200 text-emerald-700';
+  if (role === 'Kepala Bidang') return 'bg-purple-50 border-purple-200 text-purple-700';
+  return 'bg-blue-50 border-blue-200 text-blue-700';
 };
 
 const getRoleStyle = (role) => {
-  if (role === 'Admin') return { class: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400', icon: 'ph-bold ph-shield-star' };
-  if (role === 'Kepala Bidang') return { class: 'bg-purple-500/10 border-purple-500/20 text-purple-400', icon: 'ph-bold ph-medal' };
-  return { class: 'bg-blue-500/10 border-blue-500/20 text-blue-400', icon: 'ph-bold ph-wrench' };
+  if (role === 'Admin') return { class: 'bg-emerald-50 border-emerald-200/60 text-emerald-700', icon: 'ph-bold ph-shield-star' };
+  if (role === 'Kepala Bidang') return { class: 'bg-purple-50 border-purple-200/60 text-purple-700', icon: 'ph-bold ph-medal' };
+  return { class: 'bg-blue-50 border-blue-200/60 text-blue-700', icon: 'ph-bold ph-wrench' };
 };
 
 const getTokenStatus = (user) => {
-  if (user.role === 'Admin') return { text: 'Akses Web Penuh', color: 'text-slate-400', dot: 'hidden' };
-  if (!user.token_expires_at) return { text: 'Token Tidak Aktif', color: 'text-slate-500', dot: 'bg-slate-500' };
+  if (user.role === 'Admin') return { text: 'Akses Web Penuh', color: 'text-slate-500', dot: 'hidden' };
+  if (!user.token_expires_at) return { text: 'Token Tidak Aktif', color: 'text-slate-500', dot: 'bg-slate-400' };
   
   // Token berlaku sampai akhir hari kedaluwarsa (WIB)
   if (isTokenExpired(user.token_expires_at)) {
-    return { text: 'Kedaluwarsa', color: 'text-rose-500', dot: 'bg-rose-500' };
+    return { text: 'Kedaluwarsa', color: 'text-rose-600', dot: 'bg-rose-500' };
   }
   const formattedDate = toWibDateInput(user.token_expires_at);
-  return { text: `Aktif (Exp: ${formattedDate})`, color: 'text-blue-400', dot: 'bg-blue-500' };
+  return { text: `Aktif (Exp: ${formattedDate})`, color: 'text-blue-600', dot: 'bg-blue-500' };
 };
 
 onMounted(() => { fetchUsers(); });
 </script>
 
 <style scoped>
-@keyframes slide-in {
-  0% { transform: translateX(100%); opacity: 0; }
-  100% { transform: translateX(0); opacity: 1; }
-}
-.animate-slide-in { animation: slide-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-.animate-fade-in { animation: fade-in 0.2s ease-out forwards; }
-@keyframes bounce-in {
-  0% { transform: scale(0.9); opacity: 0; }
-  50% { transform: scale(1.02); opacity: 1; }
-  100% { transform: scale(1); opacity: 1; }
-}
-.animate-bounce-in { animation: bounce-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
 </style>
