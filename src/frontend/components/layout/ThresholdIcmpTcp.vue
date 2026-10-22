@@ -2,29 +2,135 @@
   <div class="animate-fade-in relative min-h-[80vh] font-sans">
     
     <!-- Action Bar Child -->
-    <div class="flex justify-end gap-3 mb-6">
-      <button 
-        @click="openAddModal" 
-        class="px-4 h-[42px] bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-lg flex items-center gap-2 text-xs font-semibold transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
-      >
-        <i class="ph-bold ph-plus text-base"></i> Tambah Target Network
-      </button>
-      <button 
-        v-if="hasUnsavedChanges && !isSaving" 
-        @click="discardChanges" 
-        class="px-4 h-[42px] bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg flex items-center gap-2 text-xs font-semibold transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
-      >
-        Batal
-      </button>
-      <button 
-        @click="saveChanges" 
-        :disabled="!hasUnsavedChanges || isSaving" 
-        class="px-5 h-[42px] rounded-lg flex items-center gap-2 text-xs font-bold transition-all duration-300 shadow-sm" 
-        :class="hasUnsavedChanges ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)] cursor-pointer' : 'bg-slate-50 text-slate-400 border border-slate-200 cursor-not-allowed'"
-      >
-        <i class="text-base" :class="isSaving ? 'ph-bold ph-spinner animate-spin' : 'ph-bold ph-floppy-disk'"></i> 
-        {{ isSaving ? 'Menyimpan...' : 'Simpan Perubahan' }}
-      </button>
+    <div class="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 mb-6">
+      
+      <!-- Sisi Kiri: Search & Filter Select Box -->
+      <div class="flex items-center gap-2.5 flex-1 max-w-lg">
+        <!-- Search Input -->
+        <div class="relative flex-1 h-[42px]">
+          <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-sm"></i>
+          <input 
+            type="text" 
+            v-model="searchQuery" 
+            placeholder="Cari nama atau host/IP..." 
+            class="pl-9 pr-8 h-full w-full border border-slate-200 bg-white text-slate-900 rounded-lg text-xs font-medium hover:bg-slate-50 focus:bg-white focus:border-slate-400 focus:ring-1 focus:ring-slate-300 transition outline-none placeholder:text-slate-400 shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+          >
+          <button v-if="searchQuery" @click="searchQuery = ''" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition">
+            <i class="ph-bold ph-x text-xs"></i>
+          </button>
+        </div>
+
+        <!-- Filter Protokol Select Box -->
+        <div class="relative h-[42px] min-w-[150px]">
+          <select 
+            v-model="filterType" 
+            title="Filter Protokol" 
+            class="w-full h-full bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg pl-8 pr-8 hover:bg-slate-50 focus:border-slate-400 focus:ring-1 focus:ring-slate-300 transition outline-none appearance-none cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+          >
+            <option value="ALL">Semua Protokol</option>
+            <option value="ICMP">ICMP (Ping)</option>
+            <option value="TCP">TCP Port</option>
+          </select>
+          <i class="ph-bold ph-funnel text-xs absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none transition-colors" :class="filterType !== 'ALL' ? 'text-emerald-500' : 'text-slate-400'"></i>
+          <i class="ph-bold ph-caret-down text-xs absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+        </div>
+      </div>
+
+      <!-- Sisi Kanan: Preset Dropdown Menu & Tombol Aksi -->
+      <div class="flex items-center gap-2.5 shrink-0 justify-end">
+        <!-- Preset Ambang Batas Dropdown Menu -->
+        <div class="relative" ref="presetDropdownRef">
+          <button 
+            type="button" 
+            @click="showPresetMenu = !showPresetMenu" 
+            class="px-3.5 h-[42px] bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-lg flex items-center gap-2 text-xs font-semibold transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+            title="Terapkan preset ke target yang ditampilkan"
+          >
+            <i class="ph-bold ph-sliders-horizontal text-sm text-slate-500"></i>
+            <span>Preset Nilai</span>
+            <i class="ph-bold ph-caret-down text-xs transition-transform duration-200 text-slate-400" :class="showPresetMenu ? 'rotate-180' : ''"></i>
+          </button>
+
+          <!-- Dropdown Menu Item -->
+          <div 
+            v-if="showPresetMenu" 
+            class="absolute right-0 top-full mt-2 w-64 bg-white border border-slate-200/80 rounded-xl shadow-xl py-1.5 z-50 overflow-hidden animate-fade-in font-sans"
+          >
+            <div class="px-3.5 py-2 bg-slate-50/80 border-b border-slate-100">
+              <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Terapkan Preset Cepat</p>
+              <p class="text-[11px] text-slate-400 mt-0.5">Berlaku untuk target yang difilter</p>
+            </div>
+            <button 
+              type="button" 
+              @click="applyPreset('standard')"
+              class="w-full px-3.5 py-2.5 text-left hover:bg-slate-50 flex items-start gap-2.5 transition text-xs group"
+            >
+              <div class="w-6 h-6 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 mt-0.5 border border-blue-100">
+                <i class="ph-bold ph-check text-xs"></i>
+              </div>
+              <div>
+                <p class="font-bold text-slate-800 group-hover:text-slate-900">Standar / Rekomendasi</p>
+                <p class="text-[11px] text-slate-500">Warning: 50ms | Critical: 150ms</p>
+              </div>
+            </button>
+            <button 
+              type="button" 
+              @click="applyPreset('aggressive')"
+              class="w-full px-3.5 py-2.5 text-left hover:bg-slate-50 flex items-start gap-2.5 transition text-xs group"
+            >
+              <div class="w-6 h-6 rounded-md bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 mt-0.5 border border-rose-100">
+                <i class="ph-bold ph-lightning text-xs"></i>
+              </div>
+              <div>
+                <p class="font-bold text-slate-800 group-hover:text-slate-900">Ketat / Agresif</p>
+                <p class="text-[11px] text-slate-500">Warning: 30ms | Critical: 80ms</p>
+              </div>
+            </button>
+            <button 
+              type="button" 
+              @click="applyPreset('relaxed')"
+              class="w-full px-3.5 py-2.5 text-left hover:bg-slate-50 flex items-start gap-2.5 transition text-xs group"
+            >
+              <div class="w-6 h-6 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5 border border-emerald-100">
+                <i class="ph-bold ph-shield-check text-xs"></i>
+              </div>
+              <div>
+                <p class="font-bold text-slate-800 group-hover:text-slate-900">Longgar / Toleran</p>
+                <p class="text-[11px] text-slate-500">Warning: 100ms | Critical: 300ms</p>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Tambah Target Button -->
+        <button 
+          @click="openAddModal" 
+          class="px-3.5 h-[42px] bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-lg flex items-center gap-2 text-xs font-semibold transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] whitespace-nowrap"
+        >
+          <i class="ph-bold ph-plus text-sm"></i> Tambah Target
+        </button>
+
+        <!-- Batal Button -->
+        <button 
+          v-if="hasUnsavedChanges && !isSaving" 
+          @click="discardChanges" 
+          class="px-3.5 h-[42px] bg-white border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg flex items-center gap-2 text-xs font-semibold transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+        >
+          Batal
+        </button>
+
+        <!-- Simpan Button -->
+        <button 
+          @click="saveChanges" 
+          :disabled="!hasUnsavedChanges || isSaving" 
+          class="px-4 h-[42px] rounded-lg flex items-center gap-2 text-xs font-bold transition-all duration-300 shadow-sm whitespace-nowrap" 
+          :class="hasUnsavedChanges ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)] cursor-pointer' : 'bg-slate-50 text-slate-400 border border-slate-200 cursor-not-allowed'"
+        >
+          <i class="text-sm" :class="isSaving ? 'ph-bold ph-spinner animate-spin' : 'ph-bold ph-floppy-disk'"></i> 
+          {{ isSaving ? 'Menyimpan...' : 'Simpan' }}
+        </button>
+      </div>
+
     </div>
 
     <!-- State Loading -->
@@ -33,17 +139,29 @@
       <p class="font-medium text-xs">Memuat konfigurasi jaringan...</p>
     </div>
 
+    <!-- State Kosong Pencarian / Filter -->
+    <div v-else-if="filteredTargets.length === 0" class="flex flex-col items-center justify-center py-16 bg-white border border-slate-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] text-slate-500">
+      <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+        <i class="ph-bold ph-magnifying-glass text-xl"></i>
+      </div>
+      <p class="font-bold text-sm text-slate-800">Tidak Ada Target Jaringan yang Sesuai</p>
+      <p class="font-medium text-xs text-slate-500 mt-1">Coba ubah kata kunci pencarian atau pilihan filter protokol.</p>
+      <button @click="searchQuery = ''; filterType = 'ALL'" class="mt-4 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition">
+        Reset Filter
+      </button>
+    </div>
+
     <!-- Grid Konfigurasi Per Target ICMP/TCP -->
     <div v-else class="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
       
       <div 
-        v-for="(target, index) in networkTargets" 
+        v-for="target in filteredTargets" 
         :key="target.id" 
-        class="bg-white border border-slate-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col transition-all hover:border-slate-300 hover:shadow-md"
+        class="bg-white border border-slate-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-visible flex flex-col transition-all hover:border-slate-300 hover:shadow-md"
       >
         
         <!-- Target Header -->
-        <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-200/80 flex justify-between items-center">
+        <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-200/80 flex justify-between items-center rounded-t-xl">
           <div class="flex items-center gap-3">
             <div>
               <h3 class="text-slate-900 font-bold flex items-center gap-2 text-base tracking-tight">
@@ -61,9 +179,65 @@
               </p>
             </div>
           </div>
-          <button @click="removeTarget(index)" class="p-1.5 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="Hapus Notifikasi">
-            <i class="ph-bold ph-trash text-lg"></i>
-          </button>
+          
+          <!-- Actions & Dropdown Menu Per Target -->
+          <div class="flex items-center gap-1.5">
+            <!-- Dropdown Menu Opsi Preset Card -->
+            <div class="relative card-menu-container">
+              <button 
+                type="button" 
+                @click="toggleCardMenu(target.id)" 
+                class="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition" 
+                title="Opsi Preset Target Ini"
+              >
+                <i class="ph-bold ph-dots-three-vertical text-lg"></i>
+              </button>
+              
+              <!-- Dropdown Menu Popup -->
+              <div 
+                v-if="activeCardMenuId === target.id" 
+                class="absolute right-0 top-full mt-1 w-48 bg-white border border-slate-200/90 rounded-xl shadow-lg py-1 z-30 animate-fade-in font-sans"
+              >
+                <div class="px-3 py-1.5 bg-slate-50 border-b border-slate-100">
+                  <p class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Preset Target Ini</p>
+                </div>
+                <button 
+                  type="button" 
+                  @click="applySinglePreset(target, 'standard')" 
+                  class="w-full px-3 py-1.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 flex items-center gap-2 transition"
+                >
+                  <i class="ph-bold ph-check text-blue-600 text-xs"></i> Standar (50/150ms)
+                </button>
+                <button 
+                  type="button" 
+                  @click="applySinglePreset(target, 'aggressive')" 
+                  class="w-full px-3 py-1.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 flex items-center gap-2 transition"
+                >
+                  <i class="ph-bold ph-lightning text-rose-600 text-xs"></i> Ketat (30/80ms)
+                </button>
+                <button 
+                  type="button" 
+                  @click="applySinglePreset(target, 'relaxed')" 
+                  class="w-full px-3 py-1.5 text-left text-[11px] font-semibold text-slate-700 hover:bg-slate-50 hover:text-slate-900 flex items-center gap-2 transition"
+                >
+                  <i class="ph-bold ph-shield-check text-emerald-600 text-xs"></i> Longgar (100/300ms)
+                </button>
+                <div class="border-t border-slate-100 my-1"></div>
+                <button 
+                  type="button" 
+                  @click="removeTarget(target); activeCardMenuId = null;" 
+                  class="w-full px-3 py-1.5 text-left text-[11px] font-semibold text-rose-600 hover:bg-rose-50 flex items-center gap-2 transition"
+                >
+                  <i class="ph-bold ph-trash text-xs"></i> Hapus Notifikasi
+                </button>
+              </div>
+            </div>
+
+            <!-- Tombol Hapus Cepat -->
+            <button @click="removeTarget(target)" class="p-1.5 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="Hapus Notifikasi">
+              <i class="ph-bold ph-trash text-lg"></i>
+            </button>
+          </div>
         </div>
         
         <div class="p-6 space-y-6 flex-1">
@@ -162,14 +336,17 @@
                   <span class="text-[10px] font-medium text-slate-500">kali</span>
                 </div>
                 <div class="w-1/3 flex justify-end pl-2">
-                  <select 
-                    v-model="target.alertSettings.warning.type" 
-                    @change="triggerChange" 
-                    class="w-full bg-white border border-slate-200 text-slate-700 font-medium text-[11px] rounded-md py-1.5 pl-2 pr-6 outline-none cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
-                  >
-                    <option value="Pesan">Teks Pesan</option>
-                    <option value="Call">Panggilan</option>
-                  </select>
+                  <div class="relative w-full">
+                    <select 
+                      v-model="target.alertSettings.warning.type" 
+                      @change="triggerChange" 
+                      class="w-full bg-white border border-slate-200/90 hover:border-slate-300 text-slate-700 font-semibold text-[11px] rounded-lg py-1.5 pl-2.5 pr-6 outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 appearance-none cursor-pointer transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                    >
+                      <option value="Pesan">Teks Pesan</option>
+                      <option value="Call">Panggilan</option>
+                    </select>
+                    <i class="ph-bold ph-caret-down text-[10px] text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                  </div>
                 </div>
               </div>
               
@@ -190,14 +367,17 @@
                   <span class="text-[10px] font-medium text-slate-500">kali</span>
                 </div>
                 <div class="w-1/3 flex justify-end pl-2">
-                  <select 
-                    v-model="target.alertSettings.critical.type" 
-                    @change="triggerChange" 
-                    class="w-full bg-white border border-slate-200 text-slate-700 font-medium text-[11px] rounded-md py-1.5 pl-2 pr-6 outline-none cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
-                  >
-                    <option value="Pesan">Teks Pesan</option>
-                    <option value="Call">Panggilan</option>
-                  </select>
+                  <div class="relative w-full">
+                    <select 
+                      v-model="target.alertSettings.critical.type" 
+                      @change="triggerChange" 
+                      class="w-full bg-white border border-slate-200/90 hover:border-slate-300 text-slate-700 font-semibold text-[11px] rounded-lg py-1.5 pl-2.5 pr-6 outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 appearance-none cursor-pointer transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                    >
+                      <option value="Pesan">Teks Pesan</option>
+                      <option value="Call">Panggilan</option>
+                    </select>
+                    <i class="ph-bold ph-caret-down text-[10px] text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                  </div>
                 </div>
               </div>
               
@@ -218,14 +398,17 @@
                   <span class="text-[10px] font-medium text-slate-500">kali</span>
                 </div>
                 <div class="w-1/3 flex justify-end pl-2">
-                  <select 
-                    v-model="target.alertSettings.down.type" 
-                    @change="triggerChange" 
-                    class="w-full bg-white border border-slate-200 text-slate-700 font-medium text-[11px] rounded-md py-1.5 pl-2 pr-6 outline-none cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
-                  >
-                    <option value="Pesan">Teks Pesan</option>
-                    <option value="Call">Panggilan</option>
-                  </select>
+                  <div class="relative w-full">
+                    <select 
+                      v-model="target.alertSettings.down.type" 
+                      @change="triggerChange" 
+                      class="w-full bg-white border border-slate-200/90 hover:border-slate-300 text-slate-700 font-semibold text-[11px] rounded-lg py-1.5 pl-2.5 pr-6 outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 appearance-none cursor-pointer transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                    >
+                      <option value="Pesan">Teks Pesan</option>
+                      <option value="Call">Panggilan</option>
+                    </select>
+                    <i class="ph-bold ph-caret-down text-[10px] text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+                  </div>
                 </div>
               </div>
               
@@ -259,14 +442,15 @@
               <div class="relative">
                 <select 
                   v-model="selectedTargetId" 
-                  class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg pl-4 pr-10 py-2.5 outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 appearance-none cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                  class="w-full bg-white border border-slate-200 text-slate-900 text-xs font-semibold rounded-lg pl-9 pr-10 py-2.5 outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 appearance-none cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
                 >
                   <option value="" disabled>-- Pilih Target Jaringan --</option>
                   <option v-for="target in availableTargets" :key="target.id" :value="target.id">
                     {{ target.name }} ({{ target.host }}) - {{ target.type }}
                   </option>
                 </select>
-                <i class="ph-bold ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                <i class="ph-bold ph-activity absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-sm"></i>
+                <i class="ph-bold ph-caret-down absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-xs"></i>
               </div>
               <p v-if="availableTargets.length === 0" class="text-xs font-medium text-amber-600 mt-2">Semua target yang terdaftar sudah diaktifkan notifikasinya.</p>
             </div>
@@ -348,16 +532,34 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 
 const networkTargets = ref([]);
 const catalogTargets = ref([]); // Data mentah katalog dari API
-const availableTargets = ref([]); // Data untuk ditampilkan di dropdown dropdown
+const availableTargets = ref([]); // Data untuk ditampilkan di dropdown
 const selectedTargetId = ref('');
+
+const searchQuery = ref('');
+const filterType = ref('ALL');
+const showPresetMenu = ref(false);
+const presetDropdownRef = ref(null);
+const activeCardMenuId = ref(null);
 
 const hasUnsavedChanges = ref(false);
 const isSaving = ref(false);
 const isLoading = ref(true);
+
+// === COMPUTED FILTERED TARGETS ===
+const filteredTargets = computed(() => {
+  return networkTargets.value.filter(target => {
+    const query = searchQuery.value.trim().toLowerCase();
+    const matchesQuery = !query || 
+      (target.name && target.name.toLowerCase().includes(query)) ||
+      (target.host && target.host.toLowerCase().includes(query));
+    const matchesType = filterType.value === 'ALL' || target.type === filterType.value;
+    return matchesQuery && matchesType;
+  });
+});
 
 // === STATE MODAL & TOAST ===
 const showAddModal = ref(false);
@@ -440,8 +642,7 @@ const discardChanges = () => {
   };
 };
 
-const removeTarget = (index) => {
-  const target = networkTargets.value[index];
+const removeTarget = (target) => {
   confirmModal.value = {
     show: true,
     type: 'danger',
@@ -449,13 +650,89 @@ const removeTarget = (index) => {
     message: `Anda akan menghapus target "${target?.name}" dari pemantauan Threshold. Jangan khawatir, tekan Simpan Perubahan untuk menerapkan.`,
     confirmText: 'Ya, Hapus',
     onConfirm: () => {
-      const removedTarget = networkTargets.value.splice(index, 1)[0]; 
-      catalogTargets.value.push({
-        id: removedTarget.id, name: removedTarget.name, type: removedTarget.type, host: removedTarget.host, port: removedTarget.port
-      });
-      triggerChange();
+      const idx = networkTargets.value.findIndex(t => t.id === target.id);
+      if (idx !== -1) {
+        const removedTarget = networkTargets.value.splice(idx, 1)[0]; 
+        catalogTargets.value.push({
+          id: removedTarget.id, name: removedTarget.name, type: removedTarget.type, host: removedTarget.host, port: removedTarget.port
+        });
+        triggerChange();
+      }
     }
   };
+};
+
+// === PRESET ACTIONS (DROPDOWN MENU) ===
+const applyPreset = (presetKey) => {
+  showPresetMenu.value = false;
+  if (!networkTargets.value || networkTargets.value.length === 0) {
+    showToast('error', 'Tidak Ada Target', 'Belum ada target yang dikonfigurasi untuk menerapkan preset.');
+    return;
+  }
+
+  const targetsToUpdate = filteredTargets.value;
+  if (targetsToUpdate.length === 0) {
+    showToast('error', 'Tidak Ada Target Sesuai', 'Tidak ada target yang cocok dengan filter saat ini.');
+    return;
+  }
+
+  targetsToUpdate.forEach(t => {
+    if (presetKey === 'standard') {
+      t.latency.warning = 50;
+      t.latency.critical = 150;
+      t.rtoTolerance = 3;
+    } else if (presetKey === 'aggressive') {
+      t.latency.warning = 30;
+      t.latency.critical = 80;
+      t.rtoTolerance = 2;
+    } else if (presetKey === 'relaxed') {
+      t.latency.warning = 100;
+      t.latency.critical = 300;
+      t.rtoTolerance = 5;
+    }
+  });
+
+  const presetName = presetKey === 'standard' ? 'Standar' : (presetKey === 'aggressive' ? 'Ketat' : 'Longgar');
+  showToast('success', `Preset ${presetName} Diterapkan`, `Preset berhasil diterapkan ke ${targetsToUpdate.length} target jaringan.`);
+  triggerChange();
+};
+
+const applySinglePreset = (target, presetKey) => {
+  activeCardMenuId.value = null;
+  if (presetKey === 'standard') {
+    target.latency.warning = 50;
+    target.latency.critical = 150;
+    target.rtoTolerance = 3;
+  } else if (presetKey === 'aggressive') {
+    target.latency.warning = 30;
+    target.latency.critical = 80;
+    target.rtoTolerance = 2;
+  } else if (presetKey === 'relaxed') {
+    target.latency.warning = 100;
+    target.latency.critical = 300;
+    target.rtoTolerance = 5;
+  }
+  const presetName = presetKey === 'standard' ? 'Standar' : (presetKey === 'aggressive' ? 'Ketat' : 'Longgar');
+  showToast('success', `Preset ${presetName} Diterapkan`, `Preset berhasil diterapkan ke "${target.name}".`);
+  triggerChange();
+};
+
+const toggleCardMenu = (targetId) => {
+  activeCardMenuId.value = activeCardMenuId.value === targetId ? null : targetId;
+};
+
+const handleDocumentClick = (e) => {
+  if (presetDropdownRef.value && !presetDropdownRef.value.contains(e.target)) {
+    showPresetMenu.value = false;
+  }
+  if (activeCardMenuId.value) {
+    const cardMenuEls = document.querySelectorAll('.card-menu-container');
+    let clickedInside = false;
+    cardMenuEls.forEach(el => {
+      if (el.contains(e.target)) clickedInside = true;
+    });
+    if (!clickedInside) activeCardMenuId.value = null;
+  }
 };
 
 const openAddModal = () => {
@@ -498,7 +775,14 @@ watch(networkTargets, (newTargets) => {
   });
 }, { deep: true });
 
-onMounted(() => { fetchThresholds(); });
+onMounted(() => { 
+  fetchThresholds(); 
+  document.addEventListener('click', handleDocumentClick);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleDocumentClick);
+});
 </script>
 
 <style scoped>
