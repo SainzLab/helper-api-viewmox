@@ -2,7 +2,7 @@
   <aside class="w-64 bg-white h-screen fixed left-0 top-0 border-r border-slate-200/80 flex flex-col z-20 font-sans shadow-[1px_0_2px_rgba(0,0,0,0.02)]">
     
     <!-- Logo -->
-    <div class="p-5 border-b border-slate-200/80">
+    <div class="p-5">
       <h1 class="text-xl font-bold flex items-center gap-2 text-slate-900">
         <i class="ph-bold ph-activity text-slate-700 text-2xl"></i> ProxView
       </h1>
@@ -24,8 +24,6 @@
               ]"
             >
               <div class="flex items-center gap-3"><i class="ph ph-squares-four text-lg"></i> Dashboard</div>
-              <!-- Aksen Dot Hijau untuk menu aktif -->
-              <span v-if="route.name === 'dashboard'" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
             </router-link>
           </li>
           <li>
@@ -36,7 +34,6 @@
               ]"
             >
               <div class="flex items-center gap-3"><i class="ph ph-users text-lg"></i> Kelola Pengguna</div>
-              <span v-if="route.name === 'kelola-pengguna'" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
             </router-link>
           </li>
           <li>
@@ -52,7 +49,6 @@
                 <span v-if="downCount > 0" class="text-[10px] px-1.5 py-0.5 rounded-md border bg-rose-50 text-rose-700 border-rose-200/60 font-bold font-mono animate-pulse">
                   {{ downCount }}
                 </span>
-                <span v-if="route.name === 'target-monitoring'" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
               </div>
             </router-link>
           </li>
@@ -66,7 +62,6 @@
               <div class="flex items-center gap-3"><i class="ph ph-ticket text-lg"></i> Rekap Gangguan</div>
               <div class="flex items-center gap-2">
                 <span v-if="downCount > 0" class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
-                <span v-if="route.name === 'rekap-gangguan'" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
               </div>
             </router-link>
           </li>
@@ -78,7 +73,6 @@
               ]"
             >
               <div class="flex items-center gap-3"><i class="ph ph-sliders text-lg"></i> Threshold Config</div>
-              <span v-if="route.name === 'threshold-config'" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
             </router-link>
           </li>
           <li>
@@ -89,7 +83,6 @@
               ]"
             >
               <div class="flex items-center gap-3"><i class="ph ph-hard-drives text-lg"></i> Proxmox API Config</div>
-              <span v-if="route.name === 'proxmox-config'" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
             </router-link>
           </li>
           <li>
@@ -100,45 +93,11 @@
               ]"
             >
               <div class="flex items-center gap-3"><i class="ph ph-terminal text-lg"></i> Log Sistem</div>
-              <span v-if="route.name === 'Log'" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
             </router-link>
           </li>
         </ul>
       </nav>
 
-      <!-- Konektivitas Node Dinamis -->
-      <nav class="px-4">
-        <p class="text-[11px] text-slate-400 mb-3 font-semibold tracking-wider uppercase">Konektivitas Node</p>
-        <div class="bg-slate-50 border border-slate-100 rounded-xl p-3">
-          <ul class="space-y-3">
-            <!-- Proxmox -->
-            <li class="flex items-center justify-between text-sm">
-              <div class="flex items-center gap-2.5 text-slate-600 font-medium">
-                <div class="w-2 h-2 rounded-full transition-colors" :class="nodeStatus.proxmox === 'ACTIVE' ? 'bg-emerald-500' : 'bg-rose-500'"></div>
-                Proxmox Cluster
-              </div>
-              <span class="text-[11px] tracking-wider font-bold font-mono transition-colors" :class="nodeStatus.proxmox === 'ACTIVE' ? 'text-emerald-600' : 'text-rose-600'">{{ nodeStatus.proxmox }}</span>
-            </li>
-            <!-- ICMP -->
-            <li class="flex items-center justify-between text-sm">
-              <div class="flex items-center gap-2.5 text-slate-600 font-medium">
-                <div class="w-2 h-2 rounded-full transition-colors" :class="nodeStatus.icmp === 'ACTIVE' ? 'bg-emerald-500' : 'bg-rose-500'"></div>
-                ICMP / Ping
-              </div>
-              <span class="text-[11px] tracking-wider font-bold font-mono transition-colors" :class="nodeStatus.icmp === 'ACTIVE' ? 'text-emerald-600' : 'text-rose-600'">{{ nodeStatus.icmp }}</span>
-            </li>
-            <!-- TCP -->
-            <li class="flex items-center justify-between text-sm">
-              <div class="flex items-center gap-2.5 text-slate-600 font-medium">
-                <div class="w-2 h-2 rounded-full transition-colors" :class="nodeStatus.tcp === 'ACTIVE' ? 'bg-emerald-500' : 'bg-rose-500'"></div>
-                TCP Port
-              </div>
-              <span class="text-[11px] tracking-wider font-bold font-mono transition-colors" :class="nodeStatus.tcp === 'ACTIVE' ? 'text-emerald-600' : 'text-rose-600'">{{ nodeStatus.tcp }}</span>
-            </li>
-          </ul>
-        </div>
-      </nav>
-      
     </div>
 
     <!-- User Profile & Logout -->
@@ -173,21 +132,18 @@ const router = useRouter();
 // State Sidebar
 const targetCount = ref(0);
 const downCount = ref(0);
-const nodeStatus = ref({ proxmox: '...', icmp: '...', tcp: '...' });
-
 const userProfile = ref({
   name: 'Administrator',
   email: 'admin@diskominfo.go.id',
   role: 'Admin',
   initials: 'AD'
 });
-
 let pollTimer = null;
 
 // Fungsi Mengambil Data Sidebar
 const fetchSidebarData = async () => {
   try {
-    // 1. Ambil jumlah target dan deteksi target yang DOWN
+    // Ambil jumlah target dan deteksi target yang DOWN
     const resTargets = await fetch('/api/targets');
     if (resTargets.ok) {
       const dataTargets = await resTargets.json();
@@ -196,21 +152,8 @@ const fetchSidebarData = async () => {
         downCount.value = dataTargets.data.filter(t => t.status === 'DOWN').length;
       }
     }
-
-    // 2. Ambil status Konektivitas Node
-    const resStatus = await fetch('/api/system/status');
-    if (resStatus.ok) {
-      const dataStatus = await resStatus.json();
-      if (dataStatus.success) {
-        nodeStatus.value = dataStatus.data;
-      }
-    } else {
-      throw new Error("Server error");
-    }
   } catch (error) {
-    // Jika koneksi API / Server terputus
-    nodeStatus.value.icmp = 'DOWN';
-    nodeStatus.value.tcp = 'DOWN';
+    console.error('Gagal mengambil data target:', error);
   }
 };
 
@@ -231,7 +174,6 @@ onMounted(() => {
   }
 
   fetchSidebarData();
-  
   pollTimer = setInterval(fetchSidebarData, 10000);
 });
 
@@ -241,6 +183,11 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 </style>

@@ -34,7 +34,6 @@
           <div class="px-4 py-3 bg-slate-50/50 border-b border-slate-100 flex items-center justify-between">
             <h4 class="text-sm font-bold text-slate-900 flex items-center gap-2">
               <i class="ph-bold ph-bell-ringing text-slate-500"></i> Notifikasi Gangguan
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" title="Realtime Sync"></span>
             </h4>
             <span class="text-[10px] font-semibold text-slate-500 uppercase tracking-wider bg-white px-1.5 py-0.5 rounded border border-slate-200">{{ alerts.length }} aktif</span>
           </div>
