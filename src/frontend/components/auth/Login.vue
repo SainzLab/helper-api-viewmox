@@ -39,12 +39,20 @@
             <div class="relative">
               <i class="ph-bold ph-lock-key absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
               <input 
-                type="password" 
+                :type="showPassword ? 'text' : 'password'" 
                 v-model="form.password" 
                 placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" 
-                class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-400" 
+                class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg pl-10 pr-10 py-2.5 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-400" 
                 required 
               >
+              <button 
+                type="button" 
+                @click="showPassword = !showPassword" 
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition flex items-center justify-center p-1"
+                :title="showPassword ? 'Sembunyikan password' : 'Lihat password'"
+              >
+                <i :class="showPassword ? 'ph-bold ph-eye-slash' : 'ph-bold ph-eye'" class="text-lg"></i>
+              </button>
             </div>
           </div>
           
@@ -154,6 +162,8 @@ const form = ref({
   password: '',
   captchaInput: ''
 });
+
+const showPassword = ref(false);
 
 const captchaCanvas = ref(null);
 const actualCaptchaText = ref('');

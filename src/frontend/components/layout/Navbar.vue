@@ -120,7 +120,7 @@
                   <div>
                     <div class="flex items-center gap-2">
                       <i class="ph-bold ph-terminal-window text-slate-500 text-base"></i>
-                      <h4 class="text-sm font-bold text-slate-900">1. Cronjob Log Sistem</h4>
+                      <h4 class="text-sm font-bold text-slate-900">Cronjob Log Sistem</h4>
                     </div>
                     <p class="text-[11px] text-slate-500 mt-0.5">Tabel <code class="text-slate-700 bg-slate-50 border border-slate-200 px-1 rounded">system_logs</code> (<span class="font-mono font-bold">{{ cleanupForm.system_logs.current_count }}</span> baris)</p>
                   </div>
@@ -193,7 +193,7 @@
                   <div>
                     <div class="flex items-center gap-2">
                       <i class="ph-bold ph-clock-counter-clockwise text-slate-500 text-base"></i>
-                      <h4 class="text-sm font-bold text-slate-900">2. Cronjob Riwayat Gangguan</h4>
+                      <h4 class="text-sm font-bold text-slate-900">Cronjob Riwayat Gangguan</h4>
                     </div>
                     <p class="text-[11px] text-slate-500 mt-0.5">Tiket Selesai &amp; Down History (<span class="font-mono font-bold">{{ cleanupForm.incident_history.current_count }}</span> riwayat)</p>
                   </div>

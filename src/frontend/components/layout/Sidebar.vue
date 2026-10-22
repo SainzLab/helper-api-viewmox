@@ -112,7 +112,7 @@
         </div>
       </div>
       <button 
-        @click="handleLogout" 
+        @click="showLogoutModal = true" 
         class="w-full flex items-center justify-center gap-2 bg-white border border-slate-200 text-rose-600 hover:bg-rose-50 hover:border-rose-200 py-2 rounded-lg text-xs font-semibold transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
       >
         <i class="ph-bold ph-sign-out text-base"></i> Keluar Sistem
@@ -120,6 +120,51 @@
     </div>
 
   </aside>
+
+  <!-- Modal Konfirmasi Logout -->
+  <Teleport to="body">
+    <div 
+      v-if="showLogoutModal" 
+      class="fixed inset-0 z-[1050] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans" 
+      @click.self="showLogoutModal = false"
+    >
+      <div class="bg-white border border-slate-200/80 shadow-xl rounded-2xl w-full max-w-md overflow-hidden transform transition-all relative">
+        <div class="p-6 pt-7">
+          <div class="flex items-start gap-4">
+            <div class="flex-shrink-0 w-12 h-12 bg-rose-50 border border-rose-100 rounded-full flex items-center justify-center text-rose-600 mt-0.5">
+              <i class="ph-bold ph-sign-out text-2xl"></i>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-slate-900 mb-2">Konfirmasi Keluar</h3>
+              <p class="text-sm text-slate-600 font-medium leading-relaxed">
+                Apakah Anda yakin ingin keluar dari sistem? Sesi aktif Anda akan diakhiri dan Anda harus masuk kembali untuk mengakses sistem.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="bg-slate-50/50 px-6 py-4 flex justify-end gap-3 border-t border-slate-200/80">
+          <button 
+            type="button"
+            @click="showLogoutModal = false" 
+            class="px-5 py-2.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+            :disabled="isLoggingOut"
+          >
+            Batal
+          </button>
+          <button 
+            type="button"
+            @click="handleLogout" 
+            class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition shadow-sm flex items-center gap-2 disabled:opacity-50"
+            :disabled="isLoggingOut"
+          >
+            <i v-if="isLoggingOut" class="ph-bold ph-spinner animate-spin text-base"></i>
+            <i v-else class="ph-bold ph-sign-out text-base"></i>
+            <span>{{ isLoggingOut ? 'Memproses...' : 'Ya, Keluar' }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup>
@@ -130,6 +175,8 @@ const route = useRoute();
 const router = useRouter();
 
 // State Sidebar
+const showLogoutModal = ref(false);
+const isLoggingOut = ref(false);
 const targetCount = ref(0);
 const downCount = ref(0);
 const userProfile = ref({
@@ -157,10 +204,19 @@ const fetchSidebarData = async () => {
   }
 };
 
-const handleLogout = () => {
-  localStorage.removeItem('isLoggedIn');
-  localStorage.removeItem('userData');
-  router.push('/login');
+const handleLogout = async () => {
+  isLoggingOut.value = true;
+  try {
+    await fetch('/api/auth/logout', { method: 'POST' });
+  } catch (error) {
+    console.error('Logout error:', error);
+  } finally {
+    isLoggingOut.value = false;
+    showLogoutModal.value = false;
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userData');
+    router.push('/login');
+  }
 };
 
 onMounted(() => {
