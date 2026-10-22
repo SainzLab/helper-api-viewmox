@@ -1,19 +1,19 @@
-<template>
-  <main class="p-8 pb-12 overflow-x-hidden relative">
+<template> 
+  <main class="bg-[#f8f9fa] min-h-screen font-sans p-8 pb-12 overflow-x-hidden relative"> 
     
-    <!-- Render ICMP/TCP Component -->
+    <!-- Render ICMP/TCP Component --> 
     <IcmpTcpMonitor 
       v-if="viewMode === 'icmp'" 
       @change-view="viewMode = $event" 
-    />
+    /> 
     
-    <!-- Render Proxmox Component -->
+    <!-- Render Proxmox Component --> 
     <ProxmoxMonitor 
       v-else-if="viewMode === 'proxmox'" 
       @change-view="viewMode = $event" 
-    />
-
-  </main>
+    /> 
+    
+  </main> 
 </template>
 
 <script setup>

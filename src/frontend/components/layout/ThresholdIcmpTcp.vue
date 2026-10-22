@@ -1,68 +1,106 @@
 <template>
-  <div class="animate-fade-in relative min-h-[80vh]">
+  <div class="animate-fade-in relative min-h-[80vh] font-sans">
+    
     <!-- Action Bar Child -->
     <div class="flex justify-end gap-3 mb-6">
-      <button @click="openAddModal" class="px-4 py-2 bg-slate-800 border border-slate-700 text-white rounded-lg flex items-center gap-2 hover:bg-slate-700 text-sm font-bold transition shadow">
-        <i class="ph-bold ph-plus text-lg"></i> Tambah Target Network
+      <button 
+        @click="openAddModal" 
+        class="px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-slate-900 rounded-lg flex items-center gap-2 text-xs font-semibold transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+      >
+        <i class="ph-bold ph-plus text-base"></i> Tambah Target Network
       </button>
-      
-      <button v-if="hasUnsavedChanges && !isSaving" @click="discardChanges" class="px-4 py-2 text-slate-400 hover:text-white rounded-lg flex items-center gap-2 text-sm font-bold transition">
+      <button 
+        v-if="hasUnsavedChanges && !isSaving" 
+        @click="discardChanges" 
+        class="px-4 py-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg flex items-center gap-2 text-xs font-semibold transition"
+      >
         Batal
       </button>
-
       <button 
         @click="saveChanges" 
-        :disabled="!hasUnsavedChanges || isSaving"
-        class="px-5 py-2 rounded-lg flex items-center gap-2 text-sm font-bold transition-all duration-300"
-        :class="hasUnsavedChanges ? 'bg-blue-500 text-white hover:bg-blue-400 shadow-[0_4px_12px_rgba(59,130,246,0.4)] cursor-pointer' : 'bg-slate-800/50 text-slate-600 border border-slate-700/50 cursor-not-allowed'">
-        <i class="text-lg" :class="isSaving ? 'ph-bold ph-spinner animate-spin' : 'ph-bold ph-floppy-disk'"></i> 
+        :disabled="!hasUnsavedChanges || isSaving" 
+        class="px-5 py-2 rounded-lg flex items-center gap-2 text-xs font-bold transition-all duration-300 shadow-sm" 
+        :class="hasUnsavedChanges ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-[0_1px_2px_rgba(0,0,0,0.04)] cursor-pointer' : 'bg-slate-50 text-slate-400 border border-slate-200 cursor-not-allowed'"
+      >
+        <i class="text-base" :class="isSaving ? 'ph-bold ph-spinner animate-spin' : 'ph-bold ph-floppy-disk'"></i> 
         {{ isSaving ? 'Menyimpan...' : 'Simpan Perubahan' }}
       </button>
     </div>
 
     <!-- State Loading -->
-    <div v-if="isLoading" class="flex flex-col items-center justify-center py-20 text-slate-400">
-      <i class="ph-bold ph-spinner animate-spin text-4xl text-blue-500 mb-4"></i>
-      <p>Memuat konfigurasi jaringan...</p>
+    <div v-if="isLoading" class="flex flex-col items-center justify-center py-20 bg-white border border-slate-200/80 rounded-xl shadow-sm">
+      <i class="ph-bold ph-spinner animate-spin text-4xl text-slate-400 mb-4"></i>
+      <p class="text-slate-500 font-medium text-sm">Memuat konfigurasi jaringan...</p>
     </div>
 
     <!-- Grid Konfigurasi Per Target ICMP/TCP -->
     <div v-else class="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-      <div v-for="(target, index) in networkTargets" :key="target.id" class="bg-moxcard border border-slate-800 rounded-xl shadow-lg overflow-hidden flex flex-col transition-all hover:border-slate-700">
+      
+      <div 
+        v-for="(target, index) in networkTargets" 
+        :key="target.id" 
+        class="bg-white border border-slate-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col transition-all hover:border-slate-300 hover:shadow-md"
+      >
         
         <!-- Target Header -->
-        <div class="px-6 py-4 bg-slate-800/40 border-b border-slate-700/80 flex justify-between items-center">
+        <div class="px-6 py-4 bg-slate-50/80 border-b border-slate-200/80 flex justify-between items-center">
           <div class="flex items-center gap-3">
             <div>
-              <h3 class="text-white font-bold flex items-center gap-2">
+              <h3 class="text-slate-900 font-bold flex items-center gap-2 text-base tracking-tight">
                 {{ target.name }}
-                <span class="px-2 py-0.5 rounded text-[10px] uppercase font-bold border" :class="target.type === 'ICMP' ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'">
+                <!-- Badge Tipe Pastel -->
+                <span 
+                  class="px-2 py-0.5 rounded-md text-[9px] uppercase font-bold tracking-wider border" 
+                  :class="target.type === 'ICMP' ? 'bg-cyan-50 text-cyan-700 border-cyan-200/60' : 'bg-indigo-50 text-indigo-700 border-indigo-200/60'"
+                >
                   {{ target.type }}
                 </span>
               </h3>
-              <p class="text-slate-400 text-xs font-mono">{{ target.host }} <span v-if="target.port">:: {{ target.port }}</span></p>
+              <p class="text-slate-500 text-[11px] font-mono tracking-tight font-medium mt-0.5">
+                {{ target.host }} <span v-if="target.port" class="text-slate-400">:: {{ target.port }}</span>
+              </p>
             </div>
           </div>
-          <button @click="removeTarget(index)" class="text-slate-500 hover:text-rose-500 transition" title="Hapus Notifikasi"><i class="ph-bold ph-trash text-lg"></i></button>
+          <button @click="removeTarget(index)" class="p-1.5 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition" title="Hapus Notifikasi">
+            <i class="ph-bold ph-trash text-lg"></i>
+          </button>
         </div>
-
+        
         <div class="p-6 space-y-6 flex-1">
           
           <!-- Latency (Ping) Configuration -->
           <div>
             <div class="flex justify-between items-end mb-3">
-              <label class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5"><i class="ph-fill ph-chart-line-up text-slate-400"></i> Latensi Jaringan (ms)</label>
+              <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <i class="ph-fill ph-chart-line-up text-slate-400 text-sm"></i> Latensi Jaringan (ms)
+              </label>
             </div>
-            <div class="space-y-3 bg-slate-900/50 p-4 rounded-lg border border-slate-700/50">
+            <div class="space-y-4 bg-slate-50/50 p-4 rounded-xl border border-slate-100 shadow-inner">
+              <!-- Warning Slider -->
               <div class="flex items-center gap-4">
-                <div class="w-20 text-xs font-bold text-amber-400">WARNING</div>
-                <input type="range" min="10" max="999" v-model="target.latency.warning" @input="triggerChange" class="w-full accent-amber-500 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer">
-                <div class="w-16 text-right text-sm font-bold text-white">{{ target.latency.warning }}<span class="text-[10px] text-slate-400 ml-1">ms</span></div>
+                <div class="w-20 text-[10px] font-bold text-amber-600 tracking-wider">WARNING</div>
+                <input 
+                  type="range" min="10" max="999" 
+                  v-model="target.latency.warning" 
+                  @input="triggerChange" 
+                  class="w-full accent-amber-500 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                >
+                <div class="w-16 text-right text-sm font-black text-slate-900 font-mono tracking-tight">
+                  {{ target.latency.warning }}<span class="text-[9px] text-slate-400 ml-0.5 font-sans font-medium">ms</span>
+                </div>
               </div>
+              <!-- Critical Slider -->
               <div class="flex items-center gap-4">
-                <div class="w-20 text-xs font-bold text-rose-500">CRITICAL</div>
-                <input type="range" min="20" max="1000" v-model="target.latency.critical" @input="triggerChange" class="w-full accent-rose-500 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer">
-                <div class="w-16 text-right text-sm font-bold text-white">{{ target.latency.critical }}<span class="text-[10px] text-slate-400 ml-1">ms</span></div>
+                <div class="w-20 text-[10px] font-bold text-rose-600 tracking-wider">CRITICAL</div>
+                <input 
+                  type="range" min="20" max="1000" 
+                  v-model="target.latency.critical" 
+                  @input="triggerChange" 
+                  class="w-full accent-rose-500 h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                >
+                <div class="w-16 text-right text-sm font-black text-slate-900 font-mono tracking-tight">
+                  {{ target.latency.critical }}<span class="text-[9px] text-slate-400 ml-0.5 font-sans font-medium">ms</span>
+                </div>
               </div>
             </div>
           </div>
@@ -70,112 +108,191 @@
           <!-- RTO Configuration (Offline Trigger) -->
           <div>
             <div class="flex justify-between items-end mb-3">
-              <label class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5"><i class="ph-bold ph-power text-slate-400"></i> Pemicu Offline (RTO/Timeout)</label>
+              <label class="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <i class="ph-bold ph-power text-slate-400 text-sm"></i> Pemicu Offline (RTO/Timeout)
+              </label>
             </div>
-            <div class="flex items-center gap-4 bg-slate-900/50 p-4 rounded-lg border border-rose-500/20">
-              <span class="text-xs font-bold text-rose-500">STATUS DOWN JIKA:</span>
-              <input type="number" v-model="target.rtoTolerance" @input="triggerChange" class="w-16 bg-slate-800 border border-rose-500/50 text-rose-400 font-bold text-center rounded-lg px-2 py-1.5 outline-none focus:border-rose-500 transition appearance-none">
-              <span class="text-xs text-slate-400">Paket loss / RTO berturut-turut.</span>
+            <div class="flex items-center gap-4 bg-rose-50/50 p-4 rounded-xl border border-rose-100">
+              <span class="text-[10px] font-bold text-rose-700 tracking-wider">STATUS DOWN JIKA:</span>
+              <input 
+                type="number" 
+                v-model="target.rtoTolerance" 
+                @input="triggerChange" 
+                class="w-16 bg-white border border-rose-200 text-rose-700 font-mono font-bold text-center rounded-lg px-2 py-1.5 outline-none focus:border-rose-400 focus:ring-1 focus:ring-rose-200 transition shadow-sm"
+              >
+              <span class="text-[11px] font-medium text-rose-600">Paket loss / RTO berturut-turut.</span>
             </div>
           </div>
 
           <!-- Aturan Notifikasi -->
-          <div class="pt-5 border-t border-slate-700/80">
+          <div class="pt-5 border-t border-slate-100">
             <div class="flex justify-between items-end mb-4">
-              <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                <i class="ph-fill ph-bell-ringing text-slate-400"></i> Aturan Notifikasi
+              <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                <i class="ph-fill ph-bell-ringing text-slate-400 text-sm"></i> Aturan Notifikasi
               </label>
-              <!-- Interval Polling (Lebih cepat untuk ICMP) -->
-              <div class="flex items-center gap-2 bg-slate-900/50 px-3 py-1.5 rounded-lg border border-slate-700/50">
-                <span class="text-[10px] font-bold text-slate-400 uppercase">Cek Ping/TCP per:</span>
-                <input type="number" v-model="target.alertSettings.checkInterval" @input="triggerChange" class="w-10 bg-transparent text-white font-bold text-center outline-none border-b border-slate-600 focus:border-blue-500 transition appearance-none">
-                <span class="text-[10px] text-slate-400">detik</span>
+              
+              <!-- Interval Polling -->
+              <div class="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Cek Ping/TCP per:</span>
+                <input 
+                  type="number" 
+                  v-model="target.alertSettings.checkInterval" 
+                  @input="triggerChange" 
+                  class="w-10 bg-transparent text-slate-900 font-mono font-bold text-center outline-none border-b border-slate-300 focus:border-slate-500 transition"
+                >
+                <span class="text-[9px] font-medium text-slate-500">detik</span>
               </div>
             </div>
-            <div class="space-y-2.5">
-              <div class="flex items-center justify-between bg-slate-900/50 p-3 rounded-lg border border-amber-500/20">
-                <div class="flex items-center gap-2 w-1/3"><i class="ph-fill ph-warning text-amber-500"></i><span class="text-[11px] font-bold text-amber-400 uppercase">Warning</span></div>
-                <div class="flex items-center justify-center gap-2 w-1/3 border-x border-slate-700/50 px-2">
-                  <span class="text-[10px] text-slate-400">Ulangi</span>
-                  <input type="number" v-model="target.alertSettings.warning.maxCount" @input="triggerChange" class="w-12 bg-slate-800 border border-slate-600 text-white font-bold text-center rounded text-[11px] py-1 outline-none">
-                  <span class="text-[10px] text-slate-400">kali</span>
+            
+            <div class="space-y-3">
+              <!-- Warning Rule -->
+              <div class="flex items-center justify-between bg-amber-50/30 p-3 rounded-xl border border-amber-200/60 shadow-sm">
+                <div class="flex items-center gap-2 w-1/3">
+                  <i class="ph-fill ph-warning text-amber-500 text-base"></i>
+                  <span class="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Warning</span>
+                </div>
+                <div class="flex items-center justify-center gap-2 w-1/3 border-x border-slate-200/60 px-2">
+                  <span class="text-[10px] font-medium text-slate-500">Ulangi</span>
+                  <input 
+                    type="number" 
+                    v-model="target.alertSettings.warning.maxCount" 
+                    @input="triggerChange" 
+                    class="w-12 bg-white border border-slate-200 text-slate-900 font-mono font-bold text-center rounded-md text-[11px] py-1 outline-none shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                  >
+                  <span class="text-[10px] font-medium text-slate-500">kali</span>
                 </div>
                 <div class="w-1/3 flex justify-end pl-2">
-                  <select v-model="target.alertSettings.warning.type" @change="triggerChange" class="w-full bg-slate-800 border border-slate-600 text-white text-[11px] rounded py-1 pl-2 pr-6 outline-none cursor-pointer">
+                  <select 
+                    v-model="target.alertSettings.warning.type" 
+                    @change="triggerChange" 
+                    class="w-full bg-white border border-slate-200 text-slate-700 font-medium text-[11px] rounded-md py-1.5 pl-2 pr-6 outline-none cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                  >
                     <option value="Pesan">Teks Pesan</option>
                     <option value="Call">Panggilan</option>
                   </select>
                 </div>
               </div>
-              <div class="flex items-center justify-between bg-slate-900/50 p-3 rounded-lg border border-orange-500/20">
-                <div class="flex items-center gap-2 w-1/3"><i class="ph-fill ph-warning-circle text-orange-500"></i><span class="text-[11px] font-bold text-orange-500 uppercase">Critical</span></div>
-                <div class="flex items-center justify-center gap-2 w-1/3 border-x border-slate-700/50 px-2">
-                  <span class="text-[10px] text-slate-400">Ulangi</span>
-                  <input type="number" v-model="target.alertSettings.critical.maxCount" @input="triggerChange" class="w-12 bg-slate-800 border border-slate-600 text-white font-bold text-center rounded text-[11px] py-1 outline-none">
-                  <span class="text-[10px] text-slate-400">kali</span>
+              
+              <!-- Critical Rule -->
+              <div class="flex items-center justify-between bg-orange-50/30 p-3 rounded-xl border border-orange-200/60 shadow-sm">
+                <div class="flex items-center gap-2 w-1/3">
+                  <i class="ph-fill ph-warning-circle text-orange-500 text-base"></i>
+                  <span class="text-[10px] font-bold text-orange-700 uppercase tracking-wider">Critical</span>
+                </div>
+                <div class="flex items-center justify-center gap-2 w-1/3 border-x border-slate-200/60 px-2">
+                  <span class="text-[10px] font-medium text-slate-500">Ulangi</span>
+                  <input 
+                    type="number" 
+                    v-model="target.alertSettings.critical.maxCount" 
+                    @input="triggerChange" 
+                    class="w-12 bg-white border border-slate-200 text-slate-900 font-mono font-bold text-center rounded-md text-[11px] py-1 outline-none shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                  >
+                  <span class="text-[10px] font-medium text-slate-500">kali</span>
                 </div>
                 <div class="w-1/3 flex justify-end pl-2">
-                  <select v-model="target.alertSettings.critical.type" @change="triggerChange" class="w-full bg-slate-800 border border-slate-600 text-white text-[11px] rounded py-1 pl-2 pr-6 outline-none cursor-pointer">
+                  <select 
+                    v-model="target.alertSettings.critical.type" 
+                    @change="triggerChange" 
+                    class="w-full bg-white border border-slate-200 text-slate-700 font-medium text-[11px] rounded-md py-1.5 pl-2 pr-6 outline-none cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                  >
                     <option value="Pesan">Teks Pesan</option>
                     <option value="Call">Panggilan</option>
                   </select>
                 </div>
               </div>
-              <div class="flex items-center justify-between bg-slate-900/50 p-3 rounded-lg border border-rose-500/20">
-                <div class="flex items-center gap-2 w-1/3"><i class="ph-bold ph-power text-rose-500"></i><span class="text-[11px] font-bold text-rose-500 uppercase">Down</span></div>
-                <div class="flex items-center justify-center gap-2 w-1/3 border-x border-slate-700/50 px-2">
-                  <span class="text-[10px] text-slate-400">Ulangi</span>
-                  <input type="number" v-model="target.alertSettings.down.maxCount" @input="triggerChange" class="w-12 bg-slate-800 border border-slate-600 text-white font-bold text-center rounded text-[11px] py-1 outline-none">
-                  <span class="text-[10px] text-slate-400">kali</span>
+              
+              <!-- Down Rule -->
+              <div class="flex items-center justify-between bg-rose-50/30 p-3 rounded-xl border border-rose-200/60 shadow-sm">
+                <div class="flex items-center gap-2 w-1/3">
+                  <i class="ph-bold ph-power text-rose-500 text-base"></i>
+                  <span class="text-[10px] font-bold text-rose-700 uppercase tracking-wider">Down</span>
+                </div>
+                <div class="flex items-center justify-center gap-2 w-1/3 border-x border-slate-200/60 px-2">
+                  <span class="text-[10px] font-medium text-slate-500">Ulangi</span>
+                  <input 
+                    type="number" 
+                    v-model="target.alertSettings.down.maxCount" 
+                    @input="triggerChange" 
+                    class="w-12 bg-white border border-slate-200 text-slate-900 font-mono font-bold text-center rounded-md text-[11px] py-1 outline-none shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                  >
+                  <span class="text-[10px] font-medium text-slate-500">kali</span>
                 </div>
                 <div class="w-1/3 flex justify-end pl-2">
-                  <select v-model="target.alertSettings.down.type" @change="triggerChange" class="w-full bg-slate-800 border border-slate-600 text-white text-[11px] rounded py-1 pl-2 pr-6 outline-none cursor-pointer">
+                  <select 
+                    v-model="target.alertSettings.down.type" 
+                    @change="triggerChange" 
+                    class="w-full bg-white border border-slate-200 text-slate-700 font-medium text-[11px] rounded-md py-1.5 pl-2 pr-6 outline-none cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                  >
                     <option value="Pesan">Teks Pesan</option>
                     <option value="Call">Panggilan</option>
                   </select>
                 </div>
               </div>
+              
             </div>
           </div>
         </div>
       </div>
+      
     </div>
 
     <!-- ========================================== -->
     <!-- MODAL PILIH TARGET NETWORK DARI DB         -->
     <!-- ========================================== -->
-    <div v-if="showAddModal" class="fixed inset-0 z-[60] flex items-center justify-center bg-moxdark/90 backdrop-blur-sm p-4 animate-fade-in">
-      <div class="bg-moxcard border border-slate-700 shadow-2xl rounded-xl w-full max-w-md overflow-hidden transform transition-all">
-        <div class="flex justify-between items-center p-5 border-b border-slate-800 bg-slate-900">
-          <h3 class="text-lg font-bold text-white flex items-center gap-2">
-            <i class="ph-bold ph-plus-circle text-blue-500"></i> Aktifkan Notifikasi Target
-          </h3>
-          <button @click="closeAddModal" class="text-slate-400 hover:text-white"><i class="ph ph-x text-xl"></i></button>
-        </div>
-        
-        <div class="p-6 space-y-4">
-          <!-- Pilih dari Database -->
-          <div>
-            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Pilih Target Dari Katalog</label>
-            <div class="relative">
-              <select v-model="selectedTargetId" class="w-full bg-slate-900/50 border border-slate-700 text-white text-sm rounded-lg pl-4 pr-10 py-2.5 outline-none focus:border-blue-500 appearance-none cursor-pointer">
-                <option value="" disabled>-- Pilih Target Jaringan --</option>
-                <option v-for="target in availableTargets" :key="target.id" :value="target.id">
-                  {{ target.name }} ({{ target.host }}) - {{ target.type }}
-                </option>
-              </select>
-              <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none"></i>
+    <Teleport to="body">
+      <div v-if="showAddModal" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans">
+        <div class="bg-white border border-slate-200/80 shadow-xl rounded-2xl w-full max-w-md overflow-hidden transform transition-all">
+          
+          <div class="flex justify-between items-center p-6 border-b border-slate-200/80 bg-slate-50/50">
+            <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+              <i class="ph-bold ph-plus-circle text-slate-500"></i> Aktifkan Notifikasi Target
+            </h3>
+            <button @click="closeAddModal" class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center transition">
+              <i class="ph-bold ph-x text-lg"></i>
+            </button>
+          </div>
+          
+          <div class="p-6 space-y-4">
+            <!-- Pilih dari Database -->
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Pilih Target Dari Katalog</label>
+              <div class="relative">
+                <select 
+                  v-model="selectedTargetId" 
+                  class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg pl-4 pr-10 py-2.5 outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 appearance-none cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+                >
+                  <option value="" disabled>-- Pilih Target Jaringan --</option>
+                  <option v-for="target in availableTargets" :key="target.id" :value="target.id">
+                    {{ target.name }} ({{ target.host }}) - {{ target.type }}
+                  </option>
+                </select>
+                <i class="ph-bold ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+              </div>
+              <p v-if="availableTargets.length === 0" class="text-xs font-medium text-amber-600 mt-2">Semua target yang terdaftar sudah diaktifkan notifikasinya.</p>
             </div>
-            <p v-if="availableTargets.length === 0" class="text-xs text-amber-500 mt-2">Semua target yang terdaftar sudah diaktifkan notifikasinya.</p>
+            
+            <div class="pt-4 border-t border-slate-100 flex justify-end gap-3 mt-4">
+              <button 
+                type="button" 
+                @click="closeAddModal" 
+                class="px-5 py-2.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 hover:bg-slate-50 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]"
+              >
+                Batal
+              </button>
+              <button 
+                @click="submitNewTarget" 
+                :disabled="!selectedTargetId" 
+                class="px-5 py-2.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition shadow-[0_1px_2px_rgba(0,0,0,0.04)] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Tambahkan
+              </button>
+            </div>
           </div>
-
-          <div class="pt-4 border-t border-slate-800 flex justify-end gap-3 mt-2">
-            <button type="button" @click="closeAddModal" class="px-5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-800 transition">Batal</button>
-            <button @click="submitNewTarget" :disabled="!selectedTargetId" class="px-5 py-2.5 bg-blue-500 text-white rounded-lg text-sm font-bold hover:bg-blue-400 transition shadow disabled:opacity-50 disabled:cursor-not-allowed">Tambahkan</button>
-          </div>
+          
         </div>
       </div>
-    </div>
+    </Teleport>
+
   </div>
 </template>
 

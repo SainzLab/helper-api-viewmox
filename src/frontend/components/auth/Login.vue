@@ -1,106 +1,121 @@
 <template>
-  <div class="min-h-screen bg-moxdark flex items-center justify-center p-6 relative overflow-hidden">
+  <div class="min-h-screen bg-[#f8f9fa] flex items-center justify-center p-6 relative overflow-hidden font-sans">
     
-    <!-- Efek Latar Belakang Ambien (Opsional untuk estetika) -->
-    <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-moxgreen/20 blur-[120px] rounded-full pointer-events-none"></div>
-    <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-500/10 blur-[120px] rounded-full pointer-events-none"></div>
+    <!-- Efek Latar Belakang Ambien (Sangat Halus untuk Light Theme) -->
+    <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-500/5 blur-[120px] rounded-full pointer-events-none"></div>
 
     <!-- Login Container -->
-    <div class="flex max-w-5xl w-full h-[550px] bg-moxcard rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.5)] overflow-hidden border border-slate-700/50 relative z-10">
+    <div class="flex max-w-5xl w-full h-[550px] bg-white rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden border border-slate-200/80 relative z-10">
       
       <!-- Panel Form Kiri -->
-      <div class="w-full md:w-[450px] p-10 flex flex-col justify-center bg-moxcard relative z-20">
+      <div class="w-full md:w-[450px] p-10 flex flex-col justify-center bg-white relative z-20">
+        
+        <!-- Logo / Title Mobile Fallback (Opsional, jika sebelumnya ada) -->
+        <div class="md:hidden mb-8 text-center">
+          <h2 class="text-2xl font-bold text-slate-900">Infrastructure Control</h2>
+          <p class="text-xs text-slate-500 mt-1">Otorisasi Administrator Proxmox VE</p>
+        </div>
 
         <form @submit.prevent="handleLogin" class="space-y-5">
           <!-- Username -->
           <div>
-            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Username</label>
+            <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Username</label>
             <div class="relative">
-              <i class="ph ph-user absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg"></i>
+              <i class="ph-bold ph-user absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
               <input 
                 type="text" 
-                v-model="form.username"
-                placeholder="Masukkan username admin"
-                class="w-full bg-slate-900/50 border border-slate-700 text-white text-sm rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-moxgreen transition shadow-inner"
-                required
+                v-model="form.username" 
+                placeholder="Masukkan username admin" 
+                class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-400" 
+                required 
               >
             </div>
           </div>
-
+          
           <!-- Password -->
           <div>
-            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Password</label>
+            <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Password</label>
             <div class="relative">
-              <i class="ph ph-lock-key absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-lg"></i>
+              <i class="ph-bold ph-lock-key absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
               <input 
                 type="password" 
-                v-model="form.password"
-                placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
-                class="w-full bg-slate-900/50 border border-slate-700 text-white text-sm rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-moxgreen transition shadow-inner"
-                required
+                v-model="form.password" 
+                placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" 
+                class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-medium rounded-lg pl-10 pr-4 py-2.5 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-400" 
+                required 
               >
             </div>
           </div>
-
+          
           <!-- Captcha Display & Input -->
           <div class="pt-2">
-            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Verifikasi Keamanan</label>
+            <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Verifikasi Keamanan</label>
             <div class="flex items-center gap-3 mb-3">
               <!-- Canvas Container -->
-              <div class="bg-slate-50 p-1 rounded-lg border border-slate-700 w-[140px] h-[45px] overflow-hidden shadow-inner">
+              <div class="bg-slate-50/50 p-1 rounded-lg border border-slate-200 w-[140px] h-[45px] overflow-hidden shadow-inner">
                 <canvas ref="captchaCanvas" width="130" height="35" class="w-full h-full cursor-crosshair"></canvas>
               </div>
-              <button type="button" @click="generateCaptcha" class="w-10 h-10 flex items-center justify-center bg-slate-800 border border-slate-700 text-slate-400 hover:text-moxgreen hover:border-moxgreen/50 rounded-lg transition" title="Refresh CAPTCHA">
+              <button 
+                type="button" 
+                @click="generateCaptcha" 
+                class="w-10 h-10 flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition shadow-[0_1px_2px_rgba(0,0,0,0.02)]" 
+                title="Refresh CAPTCHA"
+              >
                 <i class="ph-bold ph-arrows-clockwise text-lg"></i>
               </button>
             </div>
-            
             <input 
               type="text" 
-              v-model="form.captchaInput"
-              placeholder="Ketik kode di atas"
-              class="w-full bg-slate-900/50 border border-slate-700 text-white text-sm rounded-lg px-4 py-2.5 focus:outline-none focus:border-moxgreen transition shadow-inner uppercase font-mono"
-              required
+              v-model="form.captchaInput" 
+              placeholder="Ketik kode di atas" 
+              class="w-full bg-white border border-slate-200 text-slate-900 text-sm font-bold tracking-tight rounded-lg px-4 py-2.5 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] uppercase font-mono placeholder:text-slate-400 placeholder:font-sans placeholder:font-medium placeholder:tracking-normal" 
+              required 
             >
-            <p v-if="captchaError" class="text-rose-500 text-xs mt-2 font-medium flex items-center gap-1.5">
-              <i class="ph-fill ph-warning-circle"></i> Kode CAPTCHA tidak cocok, coba lagi.
+            <p v-if="captchaError" class="text-rose-600 text-xs mt-2 font-medium flex items-center gap-1.5">
+              <i class="ph-bold ph-warning-circle"></i> Kode CAPTCHA tidak cocok, coba lagi.
             </p>
           </div>
-
+          
           <!-- Login Button -->
           <div class="pt-4">
             <button 
               type="submit" 
-              class="w-full bg-moxgreen text-moxdark hover:bg-emerald-400 font-bold py-3 rounded-lg transition shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] flex justify-center items-center gap-2"
+              class="w-full bg-slate-900 text-white hover:bg-slate-800 font-bold text-sm py-3 rounded-lg transition shadow-[0_1px_2px_rgba(0,0,0,0.05)] hover:shadow-md flex justify-center items-center gap-2" 
             >
               <i class="ph-bold ph-sign-in text-lg"></i> Masuk Sistem
             </button>
           </div>
         </form>
 
-        <div class="mt-auto pt-8 text-xs text-slate-500 font-medium">
+        <!-- Footer Copyright -->
+        <div class="mt-auto pt-8 text-xs text-slate-400 font-medium">
           &copy; {{ new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta', year: 'numeric' }) }} Diskominfo Kabupaten Subang.
         </div>
       </div>
 
       <!-- Panel Akses Kanan (Hero Graphic) -->
-      <div class="hidden md:flex flex-1 bg-slate-900 relative items-center justify-center overflow-hidden border-l border-slate-800">
-        <!-- Grid Pattern Overlay -->
-        <div class="absolute inset-0 opacity-10 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+      <div class="hidden md:flex flex-1 bg-slate-50 relative items-center justify-center overflow-hidden border-l border-slate-200/80">
         
-        <!-- Glowing Center -->
-        <div class="absolute w-96 h-96 bg-moxgreen/10 blur-[100px] rounded-full"></div>
+        <!-- Grid Pattern Overlay (Mode Terang) -->
+        <div class="absolute inset-0 opacity-50 bg-[linear-gradient(rgba(0,0,0,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.03)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
         
-        <!-- Icon Graphic -->
-        <i class="ph-duotone ph-shield-check text-[18rem] text-slate-800/80 absolute -right-16 -bottom-16 rotate-12"></i>
+        <!-- Glowing Center (Sangat halus) -->
+        <div class="absolute w-96 h-96 bg-white blur-[100px] rounded-full"></div>
+        
+        <!-- Icon Graphic (Watermark) -->
+        <i class="ph-duotone ph-shield-check text-[18rem] text-slate-200/60 absolute -right-16 -bottom-16 rotate-12"></i>
         
         <div class="text-center z-10 px-12 relative">
-          <h2 class="text-3xl font-bold text-white mb-4">Infrastructure Control</h2>
-          <p class="text-slate-400 text-sm leading-relaxed max-w-sm mx-auto">
-            Sistem pemantauan terpusat untuk Proxmox VE Diskominfo.
-            Hanya untuk personel dengan otorisasi Administrator.
+          <div class="w-16 h-16 bg-white border border-slate-200 rounded-2xl flex items-center justify-center shadow-sm mx-auto mb-6">
+            <i class="ph-bold ph-activity text-3xl text-slate-700"></i>
+          </div>
+          <h2 class="text-3xl font-black text-slate-900 mb-4 tracking-tight">Infrastructure Control</h2>
+          <p class="text-slate-500 text-sm font-medium leading-relaxed max-w-sm mx-auto">
+            Sistem pemantauan terpusat untuk Proxmox VE Diskominfo. Hanya untuk personel dengan otorisasi Administrator.
           </p>
         </div>
+
       </div>
 
     </div>

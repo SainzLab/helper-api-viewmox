@@ -1,5 +1,5 @@
 <template>
-  <main class="p-8 pb-12 overflow-x-hidden relative">
+  <main class="bg-[#f8f9fa] min-h-screen font-sans p-8 pb-12 overflow-x-hidden relative">
     
     <!-- Render System Log Component -->
     <SystemLog 

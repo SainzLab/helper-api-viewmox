@@ -1,21 +1,22 @@
 <template>
-  <div class="animate-fade-in space-y-4 relative">
+  <div class="animate-fade-in space-y-4 relative font-sans">
+    
     <!-- Header Khusus Proxmox Log -->
     <div class="flex justify-between items-end mb-4">
       <div>
-        <h2 class="text-2xl font-bold text-white mb-1 flex items-center gap-3">
-          <i class="ph-bold ph-hard-drives text-emerald-400"></i> Log Aktivitas Proxmox
+        <h2 class="text-2xl font-bold text-slate-900 mb-1 flex items-center gap-3">
+          <i class="ph-bold ph-hard-drives text-slate-700"></i> Log Aktivitas Proxmox
         </h2>
-        <p class="text-slate-400 text-sm">Riwayat tugas (Tasks) dan rekam jejak aksi (Cluster Log) Proxmox VE.</p>
+        <p class="text-slate-500 text-sm font-medium">Riwayat tugas (Tasks) dan rekam jejak aksi (Cluster Log) Proxmox VE.</p>
       </div>
       
       <div class="flex gap-4 items-center">
         <!-- TOGGLE MODE BUTTON -->
-        <div class="flex bg-slate-900 border border-slate-700 p-1 rounded-lg shadow-inner">
-          <button @click="$emit('change-view', 'system')" class="px-4 py-2 rounded-md text-xs font-bold transition-all duration-300 flex items-center gap-2 text-slate-400 hover:text-white">
+        <div class="flex bg-slate-50 border border-slate-200/80 p-1 rounded-lg shadow-inner">
+          <button @click="$emit('change-view', 'system')" class="px-4 py-2 rounded-md text-xs font-semibold transition-all duration-300 flex items-center gap-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-transparent">
             <i class="ph-bold ph-terminal-window"></i> LOG SISTEM
           </button>
-          <button class="px-4 py-2 rounded-md text-xs font-bold transition-all duration-300 flex items-center gap-2 bg-emerald-500 text-moxdark shadow">
+          <button class="px-4 py-2 rounded-md text-xs font-bold transition-all duration-300 flex items-center gap-2 bg-white text-slate-900 border border-slate-200 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
             <i class="ph-bold ph-hard-drives"></i> LOG PROXMOX
           </button>
         </div>
@@ -23,8 +24,13 @@
         <!-- SEARCH BAR -->
         <div class="relative">
           <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
-          <input type="text" v-model="searchQuery" :placeholder="activeTab === 'tasks' ? 'Cari deskripsi, user...' : 'Cari pesan, service...'" class="pl-9 pr-4 py-2.5 w-64 border border-slate-700 bg-slate-800/50 text-white rounded-lg text-sm font-medium hover:bg-slate-700 focus:bg-slate-900 focus:border-emerald-400 transition outline-none">
-          <button v-if="searchQuery" @click="searchQuery = ''" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition">
+          <input 
+            type="text" 
+            v-model="searchQuery" 
+            :placeholder="activeTab === 'tasks' ? 'Cari deskripsi, user...' : 'Cari pesan, service...'" 
+            class="pl-9 pr-4 py-2 w-64 bg-white border border-slate-200 text-slate-900 rounded-lg text-sm font-medium focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-400"
+          >
+          <button v-if="searchQuery" @click="searchQuery = ''" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition">
              <i class="ph-bold ph-x"></i>  
           </button>
         </div>
@@ -32,71 +38,76 @@
     </div>
 
     <!-- SUB-TABS (TASKS vs CLUSTER LOG) -->
-    <div class="flex gap-6 border-b border-slate-700/80 px-2">
+    <div class="flex gap-6 border-b border-slate-200/80 px-2 mt-2">
       <button 
         @click="activeTab = 'tasks'" 
         class="pb-3 text-sm font-bold transition-all relative"
-        :class="activeTab === 'tasks' ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'"
+        :class="activeTab === 'tasks' ? 'text-slate-900' : 'text-slate-500 hover:text-slate-700'"
       >
-        <i class="ph-fill ph-list-checks mr-1.5"></i> Tasks
-        <span v-if="activeTab === 'tasks'" class="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-400 rounded-t-md shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span>
+        <i class="ph-bold ph-list-checks mr-1.5" :class="activeTab === 'tasks' ? 'text-emerald-500' : ''"></i> Tasks
+        <span v-if="activeTab === 'tasks'" class="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-500 rounded-t-md"></span>
       </button>
       <button 
         @click="activeTab = 'cluster'" 
         class="pb-3 text-sm font-bold transition-all relative"
-        :class="activeTab === 'cluster' ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'"
+        :class="activeTab === 'cluster' ? 'text-slate-900' : 'text-slate-500 hover:text-slate-700'"
       >
-        <i class="ph-fill ph-list-dashes mr-1.5"></i> Cluster log
-        <span v-if="activeTab === 'cluster'" class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-400 rounded-t-md shadow-[0_0_8px_rgba(96,165,250,0.8)]"></span>
+        <i class="ph-bold ph-list-dashes mr-1.5" :class="activeTab === 'cluster' ? 'text-blue-500' : ''"></i> Cluster log
+        <span v-if="activeTab === 'cluster'" class="absolute bottom-0 left-0 w-full h-0.5 bg-blue-500 rounded-t-md"></span>
       </button>
     </div>
 
     <!-- WRAPPER TABEL -->
-    <div class="bg-moxcard border border-slate-800 rounded-xl shadow-lg overflow-hidden flex flex-col mb-4">
+    <div class="bg-white border border-slate-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col mb-4">
       
-      <!-- ================= TAB 1: TASKS LOG (Hanya dirender saat tab tasks dibuka) ================= -->
+      <!-- ================= TAB 1: TASKS LOG ================= -->
       <div v-if="activeTab === 'tasks'" class="overflow-x-auto animate-fade-in">
         <table class="w-full text-left border-collapse">
           <thead>
-            <tr class="bg-slate-800/40 border-b border-slate-700 text-[11px] uppercase tracking-wider text-slate-400">
-              <th class="px-6 py-4 font-semibold w-40">Waktu Mulai</th>
-              <th class="px-6 py-4 font-semibold w-40">Waktu Selesai</th>
-              <th class="px-6 py-4 font-semibold w-24">Node</th>
-              <th class="px-6 py-4 font-semibold w-32">User name</th>
-              <th class="px-6 py-4 font-semibold">Deskripsi (Action)</th>
-              <th class="px-6 py-4 font-semibold w-32">Status</th>
+            <tr class="bg-slate-50/50 border-b border-slate-100 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              <th class="px-6 py-3.5 w-40">Waktu Mulai</th>
+              <th class="px-6 py-3.5 w-40">Waktu Selesai</th>
+              <th class="px-6 py-3.5 w-24">Node</th>
+              <th class="px-6 py-3.5 w-32">User name</th>
+              <th class="px-6 py-3.5">Deskripsi (Action)</th>
+              <th class="px-6 py-3.5 w-32">Status</th>
             </tr>
           </thead>
-          <tbody class="text-sm font-sans">
+          <tbody class="text-sm">
             <template v-if="isLoadingTasks && proxmoxTasks.length === 0">
-              <tr class="border-b border-slate-800/50">
-                <td colspan="6" class="px-6 py-12 text-center text-slate-400">
-                  <i class="ph-bold ph-spinner animate-spin text-2xl text-emerald-400 mb-2 inline-block"></i>
-                  <p>Menarik data Tasks Log dari API Proxmox...</p>
+              <tr class="border-b border-slate-100">
+                <td colspan="6" class="px-6 py-12 text-center text-slate-500">
+                  <i class="ph-bold ph-spinner animate-spin text-2xl text-emerald-500 mb-2 inline-block"></i>
+                  <p class="text-xs font-medium">Menarik data Tasks Log dari API Proxmox...</p>
                 </td>
               </tr>
             </template>
             <template v-else-if="displayedTasks.length === 0">
-              <tr class="border-b border-slate-800/50">
+              <tr class="border-b border-slate-100">
                 <td colspan="6" class="px-6 py-12 text-center text-slate-500">
-                  <span v-if="searchQuery">Tidak ada log Tasks yang cocok dengan pencarian "{{ searchQuery }}".</span>
-                  <span v-else>Tidak ada data log Tasks yang ditemukan.</span>
+                  <span v-if="searchQuery" class="font-medium text-sm">Tidak ada log Tasks yang cocok dengan pencarian "<span class="text-slate-900 font-bold">{{ searchQuery }}</span>".</span>
+                  <span v-else class="font-medium text-sm">Tidak ada data log Tasks yang ditemukan.</span>
                 </td>
               </tr>
             </template>
             <template v-else>
-              <!-- MENGGUNAKAN displayedTasks (Hasil Slice Unlimited Scroll) -->
-              <tr v-for="log in displayedTasks" :key="log.upid" @click="openLogDetail(log)" class="border-b border-slate-800/50 hover:bg-slate-800/50 transition cursor-pointer group">
-                <td class="px-6 py-4 text-slate-400 text-xs whitespace-nowrap">{{ log.starttime }}</td>
-                <td class="px-6 py-4 text-slate-300 text-xs whitespace-nowrap group-hover:text-emerald-400 transition">{{ log.endtime }}</td>
-                <td class="px-6 py-4 text-slate-300 text-xs font-mono">{{ log.node }}</td>
-                <td class="px-6 py-4 text-slate-400 text-xs">{{ log.user }}</td>
-                <td class="px-6 py-4 text-emerald-400 text-xs font-bold">{{ log.description }}</td>
-                <td class="px-6 py-4 flex items-center justify-between">
-                  <span v-if="log.status === 'OK'" class="text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded text-[10px] font-bold uppercase border border-emerald-500/20">OK</span>
-                  <span v-else-if="log.status === 'RUNNING'" class="text-cyan-400 bg-cyan-500/10 px-2 py-1 rounded text-[10px] font-bold uppercase border border-cyan-500/20 animate-pulse">RUNNING</span>
-                  <span v-else class="text-rose-400 bg-rose-500/10 px-2 py-1 rounded text-[10px] font-bold uppercase border border-rose-500/20">{{ log.status }}</span>
-                  <i class="ph-bold ph-caret-right text-slate-600 group-hover:text-emerald-400 transition transform group-hover:translate-x-1"></i>
+              <tr 
+                v-for="log in displayedTasks" 
+                :key="log.upid" 
+                @click="openLogDetail(log)" 
+                class="border-b border-slate-100 hover:bg-slate-50 transition cursor-pointer group"
+              >
+                <td class="px-6 py-3.5 text-slate-500 font-mono tracking-tight text-[11px] whitespace-nowrap">{{ log.starttime }}</td>
+                <td class="px-6 py-3.5 text-slate-600 font-mono tracking-tight text-[11px] whitespace-nowrap group-hover:text-emerald-600 transition">{{ log.endtime }}</td>
+                <td class="px-6 py-3.5 text-slate-900 font-bold font-mono tracking-tight text-xs">{{ log.node }}</td>
+                <td class="px-6 py-3.5 text-slate-600 font-medium text-xs">{{ log.user }}</td>
+                <td class="px-6 py-3.5 text-slate-800 text-xs font-semibold">{{ log.description }}</td>
+                <td class="px-6 py-3.5 flex items-center justify-between">
+                  <span v-if="log.status === 'OK'" class="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border border-emerald-200/60">OK</span>
+                  <span v-else-if="log.status === 'RUNNING'" class="text-cyan-700 bg-cyan-50 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border border-cyan-200/60 animate-pulse">RUNNING</span>
+                  <span v-else class="text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider border border-rose-200/60">{{ log.status }}</span>
+                  
+                  <i class="ph-bold ph-caret-right text-slate-400 group-hover:text-emerald-500 transition transform group-hover:translate-x-1"></i>
                 </td>
               </tr>
             </template>
@@ -104,51 +115,53 @@
         </table>
       </div>
 
-      <!-- ================= TAB 2: CLUSTER LOG (Hanya dirender saat tab cluster dibuka) ================= -->
+      <!-- ================= TAB 2: CLUSTER LOG ================= -->
       <div v-if="activeTab === 'cluster'" class="overflow-x-auto animate-fade-in">
         <table class="w-full text-left border-collapse">
           <thead>
-            <tr class="bg-slate-800/40 border-b border-slate-700 text-[11px] uppercase tracking-wider text-slate-400">
-              <th class="px-6 py-4 font-semibold w-40">Time</th>
-              <th class="px-6 py-4 font-semibold w-24">Node</th>
-              <th class="px-6 py-4 font-semibold w-32">Service</th>
-              <th class="px-6 py-4 font-semibold w-24">PID</th>
-              <th class="px-6 py-4 font-semibold w-32">User name</th>
-              <th class="px-6 py-4 font-semibold w-24">Severity</th>
-              <th class="px-6 py-4 font-semibold">Message</th>
+            <tr class="bg-slate-50/50 border-b border-slate-100 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              <th class="px-6 py-3.5 w-40">Time</th>
+              <th class="px-6 py-3.5 w-24">Node</th>
+              <th class="px-6 py-3.5 w-32">Service</th>
+              <th class="px-6 py-3.5 w-24">PID</th>
+              <th class="px-6 py-3.5 w-32">User name</th>
+              <th class="px-6 py-3.5 w-24">Severity</th>
+              <th class="px-6 py-3.5">Message</th>
             </tr>
           </thead>
-          <tbody class="text-sm font-sans">
+          <tbody class="text-sm">
             <template v-if="isLoadingCluster && proxmoxClusterLogs.length === 0">
-              <tr class="border-b border-slate-800/50">
-                <td colspan="7" class="px-6 py-12 text-center text-slate-400">
-                  <i class="ph-bold ph-spinner animate-spin text-2xl text-blue-400 mb-2 inline-block"></i>
-                  <p>Menarik data Cluster Log dari API Proxmox...</p>
+              <tr class="border-b border-slate-100">
+                <td colspan="7" class="px-6 py-12 text-center text-slate-500">
+                  <i class="ph-bold ph-spinner animate-spin text-2xl text-blue-500 mb-2 inline-block"></i>
+                  <p class="text-xs font-medium">Menarik data Cluster Log dari API Proxmox...</p>
                 </td>
               </tr>
             </template>
             <template v-else-if="displayedClusterLogs.length === 0">
-              <tr class="border-b border-slate-800/50">
+              <tr class="border-b border-slate-100">
                 <td colspan="7" class="px-6 py-12 text-center text-slate-500">
-                  <span v-if="searchQuery">Tidak ada Cluster log yang cocok dengan pencarian "{{ searchQuery }}".</span>
-                  <span v-else>Tidak ada data Cluster log yang ditemukan.</span>
+                  <span v-if="searchQuery" class="font-medium text-sm">Tidak ada Cluster log yang cocok dengan pencarian "<span class="text-slate-900 font-bold">{{ searchQuery }}</span>".</span>
+                  <span v-else class="font-medium text-sm">Tidak ada data Cluster log yang ditemukan.</span>
                 </td>
               </tr>
             </template>
             <template v-else>
-              <!-- MENGGUNAKAN displayedClusterLogs (Hasil Slice Unlimited Scroll) -->
-              <tr v-for="(cLog, idx) in displayedClusterLogs" :key="`${cLog.rawTime}-${cLog.pid}-${idx}`" class="border-b border-slate-800/30 hover:bg-slate-800/50 transition">
-                <td class="px-6 py-2.5 text-slate-400 text-[11px] font-mono whitespace-nowrap">{{ cLog.time }}</td>
-                <td class="px-6 py-2.5 text-slate-300 text-xs">{{ cLog.node }}</td>
-                <td class="px-6 py-2.5 text-slate-400 text-xs">{{ cLog.service }}</td>
-                <td class="px-6 py-2.5 text-slate-400 text-xs font-mono">{{ cLog.pid }}</td>
-                <td class="px-6 py-2.5 text-slate-400 text-xs">{{ cLog.user }}</td>
-                <td class="px-6 py-2.5">
-                  <span :class="cLog.severity === 'info' ? 'text-blue-400' : cLog.severity === 'error' ? 'text-rose-400' : 'text-amber-400'" class="text-[10px] font-bold uppercase tracking-wider">
+              <tr v-for="(cLog, idx) in displayedClusterLogs" :key="`${cLog.rawTime}-${cLog.pid}-${idx}`" class="border-b border-slate-100 hover:bg-slate-50 transition">
+                <td class="px-6 py-3 text-slate-500 font-mono tracking-tight text-[11px] whitespace-nowrap">{{ cLog.time }}</td>
+                <td class="px-6 py-3 text-slate-900 font-mono tracking-tight font-bold text-xs">{{ cLog.node }}</td>
+                <td class="px-6 py-3 text-slate-600 font-medium text-xs">{{ cLog.service }}</td>
+                <td class="px-6 py-3 text-slate-600 font-mono tracking-tight text-xs">{{ cLog.pid }}</td>
+                <td class="px-6 py-3 text-slate-600 font-medium text-xs">{{ cLog.user }}</td>
+                <td class="px-6 py-3">
+                  <span 
+                    :class="cLog.severity === 'info' ? 'text-blue-600 bg-blue-50 border-blue-200/60' : cLog.severity === 'error' ? 'text-rose-600 bg-rose-50 border-rose-200/60' : 'text-amber-700 bg-amber-50 border-amber-200/60'" 
+                    class="px-2 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider border"
+                  >
                     {{ cLog.severity }}
                   </span>
                 </td>
-                <td class="px-6 py-2.5 text-slate-300 text-xs font-mono break-all">{{ cLog.message }}</td>
+                <td class="px-6 py-3 text-slate-700 font-mono tracking-tight text-xs break-all leading-relaxed">{{ cLog.message }}</td>
               </tr>
             </template>
           </tbody>
@@ -157,48 +170,56 @@
     </div>
 
     <!-- SENTINEL TRIGGER INFINITE / UNLIMITED SCROLL -->
-    <div ref="loadMoreTrigger" class="h-10 w-full flex items-center justify-center text-xs text-slate-500 gap-2">
+    <div ref="loadMoreTrigger" class="h-10 w-full flex items-center justify-center text-[11px] font-medium text-slate-500 gap-2">
       <template v-if="hasMoreToRender">
-        <i class="ph-bold ph-spinner animate-spin text-emerald-400 text-base"></i>
-        <span>Memuat baris berikutnya ({{ currentDisplayedCount }} / {{ currentTotalFilteredCount }})...</span>
+        <i class="ph-bold ph-spinner animate-spin text-emerald-500 text-lg"></i>
+        <span>Memuat baris berikutnya (<span class="font-mono">{{ currentDisplayedCount }}</span> / <span class="font-mono">{{ currentTotalFilteredCount }}</span>)...</span>
       </template>
       <template v-else-if="currentDisplayedCount > 0">
-        <span>Menampilkan seluruh {{ currentDisplayedCount }} baris log.</span>
+        <span>Menampilkan seluruh <span class="font-mono font-bold">{{ currentDisplayedCount }}</span> baris log.</span>
       </template>
     </div>
 
-    <!-- MODAL LOG DETAIL (Hanya dirender saat dibuka) -->
+    <!-- MODAL LOG DETAIL (Task Viewer) -->
     <Teleport to="body">
-      <div v-if="showDetailModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/90 backdrop-blur-sm p-4 animate-fade-in" @click.self="closeDetailModal">
-        <div class="bg-[#111827] border border-slate-700 rounded-xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col h-[80vh]">
-          <div class="flex justify-between items-center px-5 py-3 border-b border-slate-800 bg-slate-900">
-            <h3 class="font-bold text-slate-200 flex items-center gap-2 text-sm">
-              <i class="ph-bold ph-terminal text-emerald-400 text-lg"></i> 
-              Task viewer: <span class="text-blue-400">{{ selectedLog?.description }}</span>
+      <div v-if="showDetailModal" class="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-fade-in font-sans" @click.self="closeDetailModal">
+        <div class="bg-white border border-slate-200/80 rounded-2xl w-full max-w-4xl shadow-xl overflow-hidden flex flex-col h-[80vh]">
+          
+          <div class="flex justify-between items-center px-6 py-4 border-b border-slate-200/80 bg-slate-50/50">
+            <h3 class="font-bold text-slate-900 flex items-center gap-2 text-sm">
+              <i class="ph-bold ph-terminal text-emerald-500 text-lg"></i> 
+              Task viewer: <span class="text-blue-600">{{ selectedLog?.description }}</span>
             </h3>
-            <button @click="closeDetailModal" class="text-slate-400 hover:text-white transition"><i class="ph ph-x text-xl"></i></button>
+            <button @click="closeDetailModal" class="text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full w-8 h-8 flex items-center justify-center transition"><i class="ph-bold ph-x text-lg"></i></button>
           </div>
-          <div class="px-5 py-3 bg-slate-800/30 border-b border-slate-800 flex flex-wrap gap-x-8 gap-y-2 text-xs">
-            <div><span class="text-slate-500 font-bold">Node:</span> <span class="text-slate-300">{{ selectedLog?.node }}</span></div>
-            <div><span class="text-slate-500 font-bold">User name:</span> <span class="text-slate-300">{{ selectedLog?.user }}</span></div>
-            <div><span class="text-slate-500 font-bold">Status:</span> <span :class="selectedLog?.status === 'OK' ? 'text-emerald-400' : (selectedLog?.status === 'RUNNING' ? 'text-cyan-400' : 'text-rose-400')">{{ selectedLog?.status }}</span></div>
-            <div><span class="text-slate-500 font-bold">Start Time:</span> <span class="text-slate-300">{{ selectedLog?.starttime }}</span></div>
-            <div><span class="text-slate-500 font-bold">End Time:</span> <span class="text-slate-300">{{ selectedLog?.endtime }}</span></div>
-            <div class="w-full mt-1"><span class="text-slate-500 font-bold">Unique task ID:</span> <span class="font-mono text-[10px] text-slate-400 bg-slate-900/50 px-2 py-0.5 rounded border border-slate-700/50">{{ selectedLog?.upid }}</span></div>
-          </div>
-          <div class="flex-1 overflow-y-auto p-5 bg-[#0a0f18] font-mono text-xs text-slate-300 whitespace-pre-wrap leading-relaxed no-scrollbar relative">
-            <div v-if="isLoadingDetail && detailedLogText.length === 0" class="absolute inset-0 flex flex-col items-center justify-center bg-[#0a0f18]/80 backdrop-blur-sm z-10 text-slate-400">
-              <i class="ph-bold ph-spinner animate-spin text-3xl mb-3 text-emerald-400"></i>
-              <p>Menarik detail log langsung dari daemon pveproxy node {{ selectedLog?.node }}...</p>
+          
+          <div class="px-6 py-4 bg-white border-b border-slate-100 flex flex-wrap gap-x-8 gap-y-3 text-xs">
+            <div class="flex flex-col"><span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-0.5">Node</span> <span class="text-slate-900 font-bold font-mono">{{ selectedLog?.node }}</span></div>
+            <div class="flex flex-col"><span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-0.5">User name</span> <span class="text-slate-700 font-medium">{{ selectedLog?.user }}</span></div>
+            <div class="flex flex-col"><span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-0.5">Status</span> <span class="font-bold tracking-wider" :class="selectedLog?.status === 'OK' ? 'text-emerald-600' : (selectedLog?.status === 'RUNNING' ? 'text-cyan-600 animate-pulse' : 'text-rose-600')">{{ selectedLog?.status }}</span></div>
+            <div class="flex flex-col"><span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-0.5">Start Time</span> <span class="text-slate-700 font-mono tracking-tight">{{ selectedLog?.starttime }}</span></div>
+            <div class="flex flex-col"><span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-0.5">End Time</span> <span class="text-slate-700 font-mono tracking-tight">{{ selectedLog?.endtime }}</span></div>
+            <div class="w-full mt-1 flex flex-col items-start gap-1">
+              <span class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Unique task ID</span> 
+              <span class="font-mono text-[11px] text-slate-600 bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200 tracking-tight">{{ selectedLog?.upid }}</span>
             </div>
-            <div v-else>
+          </div>
+
+          <!-- Terminal Area (Light Console Style) -->
+          <div class="flex-1 overflow-y-auto p-6 bg-slate-50 font-mono text-xs text-slate-700 whitespace-pre-wrap leading-relaxed no-scrollbar relative border-t border-slate-100 shadow-inner">
+            <div v-if="isLoadingDetail && detailedLogText.length === 0" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-50/80 backdrop-blur-sm z-10 text-slate-500 font-sans">
+              <i class="ph-bold ph-spinner animate-spin text-3xl mb-3 text-emerald-500"></i>
+              <p class="font-medium text-sm">Menarik detail log langsung dari daemon pveproxy node <span class="font-mono font-bold">{{ selectedLog?.node }}</span>...</p>
+            </div>
+            <div v-else class="space-y-1">
               <template v-for="(line, idx) in detailedLogText" :key="idx">
-                <div :class="line.toLowerCase().includes('error') || line.toLowerCase().includes('failed') ? 'text-rose-400' : ''">
+                <div :class="line.toLowerCase().includes('error') || line.toLowerCase().includes('failed') ? 'text-rose-600 font-semibold' : ''">
                   {{ line }}
                 </div>
               </template>
             </div>
           </div>
+
         </div>
       </div>
     </Teleport>

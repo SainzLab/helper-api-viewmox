@@ -1,134 +1,147 @@
 <template>
-  <main class="p-8 pb-12 overflow-x-hidden">
+  <main class="bg-[#f8f9fa] p-8 pb-12 overflow-x-hidden min-h-screen font-sans">
+    
     <!-- Header Dashboard -->
     <div class="flex justify-between items-end mb-8">
       <div>
-        <h2 class="text-2xl font-bold text-white mb-1 flex items-center gap-2.5">
-          <i class="ph-bold ph-squares-four text-moxgreen"></i> Ringkasan Infrastruktu
+        <h2 class="text-2xl font-bold text-slate-900 mb-1 flex items-center gap-2.5">
+          <i class="ph-bold ph-squares-four text-slate-700"></i> Ringkasan Infrastruktur
         </h2>
-        <p class="text-slate-400 text-sm">Pemantauan performa cluster Proxmox VE dan konektivitas jaringan secara langsung.</p>
+        <p class="text-slate-500 text-sm">Pemantauan performa cluster Proxmox VE dan konektivitas jaringan secara langsung.</p>
       </div>
       <div class="flex gap-3 items-center">
-        <button
-          @click="fetchDashboardData(true)"
-          class="px-4 py-2 border border-slate-700 bg-slate-800/50 text-slate-300 rounded-lg flex items-center gap-2 hover:bg-slate-700 hover:text-emerald-400 text-sm font-medium transition shadow-sm"
+        <button 
+          @click="fetchDashboardData(true)" 
+          class="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-2.5 py-1.5 rounded-lg flex items-center gap-2 text-xs font-medium transition shadow-[0_1px_2px_rgba(0,0,0,0.04)]" 
           title="Segarkan Data Secara Manual"
         >
-          <i class="ph-bold ph-arrows-clockwise text-base" :class="{ 'animate-spin text-emerald-400': isRefreshing }"></i>
+          <i class="ph-bold ph-arrows-clockwise text-base" :class="{ 'animate-spin text-slate-900': isRefreshing }"></i>
         </button>
-        <button
-          @click="exportDashboardPdf"
-          :disabled="isExporting"
-          class="px-4 py-2 bg-moxgreen text-moxdark rounded-lg flex items-center gap-2 hover:bg-emerald-400 disabled:opacity-50 text-sm font-bold transition shadow-lg shadow-emerald-500/20"
+        <button 
+          @click="exportDashboardPdf" 
+          :disabled="isExporting" 
+          class="bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 px-3 py-1.5 rounded-lg flex items-center gap-2 text-xs font-medium transition shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
         >
           <i class="ph-bold" :class="isExporting ? 'ph-spinner animate-spin' : 'ph-download-simple'"></i>
           {{ isExporting ? 'Menyiapkan PDF...' : 'Ekspor Laporan' }}
         </button>
       </div>
     </div>
-    
+
     <!-- Widgets Grid (4 Kartu Utama) -->
     <div class="grid grid-cols-4 gap-5 mb-6">
+      
       <!-- Widget 1: Total Pengguna -->
-      <div class="bg-moxcard border border-slate-800 p-5 rounded-xl shadow-lg">
+      <div class="bg-white border border-slate-200/80 p-5 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
         <div class="flex justify-between items-start mb-2">
-          <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Pengguna</p>
-          <div class="p-1.5 bg-slate-800/80 rounded-md text-indigo-400"><i class="ph ph-users text-lg"></i></div>
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Pengguna</p>
+          <div class="p-1.5 bg-slate-50 border border-slate-100 rounded-md text-slate-500"><i class="ph ph-users text-lg"></i></div>
         </div>
-        <h3 class="text-2xl font-bold text-white mb-1">
-          {{ summary.users.total }} <span class="text-sm font-normal text-slate-400">Akun Terdaftar</span>
+        <h3 class="text-3xl font-black text-slate-900 mb-1 font-mono tracking-tight flex items-baseline gap-2">
+          {{ summary.users.total }} 
+          <span class="text-sm font-medium text-slate-500 font-sans tracking-normal">Akun Terdaftar</span>
         </h3>
-        <div class="flex items-center gap-1.5 text-xs text-moxgreen font-medium mt-4">
-          <i class="ph-fill ph-check-circle"></i>
-          {{ summary.users.active }} Akun Aktif ({{ summary.users.active_roles }} Role Terverifikasi)
+        <div class="flex items-center gap-1.5 text-xs text-slate-600 font-medium mt-4">
+          <i class="ph-fill ph-check-circle text-emerald-500"></i> 
+          {{ summary.users.active }} Akun Aktif ({{ summary.users.active_roles }} Role)
         </div>
       </div>
 
       <!-- Widget 2: Server Proxmox VE -->
-      <div class="bg-moxcard border border-slate-800 p-5 rounded-xl shadow-lg">
+      <div class="bg-white border border-slate-200/80 p-5 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
         <div class="flex justify-between items-start mb-2">
-          <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Server Proxmox VE</p>
-          <div class="p-1.5 bg-slate-800/80 rounded-md text-moxgreen"><i class="ph ph-hard-drives text-lg"></i></div>
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Server Proxmox VE</p>
+          <div class="p-1.5 bg-slate-50 border border-slate-100 rounded-md text-slate-500"><i class="ph ph-hard-drives text-lg"></i></div>
         </div>
-        <h3 class="text-2xl font-bold mb-1" :class="summary.proxmox.online_nodes > 0 && summary.proxmox.offline_nodes === 0 ? 'text-moxgreen' : (summary.proxmox.online_nodes > 0 ? 'text-amber-400' : 'text-rose-500')">
-          {{ summary.proxmox.online_nodes }} / {{ summary.proxmox.total_nodes }}
-          <span class="text-sm font-normal text-slate-400">Node Online</span>
+        <h3 
+          class="text-3xl font-black mb-1 font-mono tracking-tight flex items-baseline gap-2" 
+          :class="summary.proxmox.online_nodes > 0 && summary.proxmox.offline_nodes === 0 ? 'text-slate-900' : (summary.proxmox.online_nodes > 0 ? 'text-amber-600' : 'text-rose-600')"
+        >
+          {{ summary.proxmox.online_nodes }} / {{ summary.proxmox.total_nodes }} 
+          <span class="text-sm font-medium text-slate-500 font-sans tracking-normal">Node Online</span>
         </h3>
         <div class="flex items-center justify-between text-xs font-medium mt-4">
-          <span class="flex items-center gap-1.5" :class="summary.proxmox.health_percent === 100 ? 'text-moxgreen' : (summary.proxmox.health_percent > 0 ? 'text-amber-400' : 'text-rose-500')">
-            <span class="w-1.5 h-1.5 rounded-full" :class="summary.proxmox.health_percent === 100 ? 'bg-moxgreen' : (summary.proxmox.health_percent > 0 ? 'bg-amber-400' : 'bg-rose-500')"></span>
-            {{ summary.proxmox.health_percent }}% Cluster Healthy
+          <!-- Pastel Badges Pill -->
+          <span 
+            class="flex items-center gap-1.5 px-2 py-0.5 rounded-md border" 
+            :class="summary.proxmox.health_percent === 100 ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60' : (summary.proxmox.health_percent > 0 ? 'bg-amber-50 text-amber-700 border-amber-200/60' : 'bg-rose-50 text-rose-700 border-rose-200/60')"
+          >
+            <span class="w-1.5 h-1.5 rounded-full" :class="summary.proxmox.health_percent === 100 ? 'bg-emerald-500' : (summary.proxmox.health_percent > 0 ? 'bg-amber-500' : 'bg-rose-500')"></span>
+            <span class="font-mono font-semibold">{{ summary.proxmox.health_percent }}%</span> Healthy
           </span>
-          <span class="text-[11px] text-slate-400">{{ summary.proxmox.running_vms }}/{{ summary.proxmox.total_vms }} VM/CT</span>
+          <span class="text-slate-500"><span class="font-mono">{{ summary.proxmox.running_vms }}/{{ summary.proxmox.total_vms }}</span> VM/CT</span>
         </div>
       </div>
 
       <!-- Widget 3: Target Ping (ICMP) -->
-      <div class="bg-moxcard border border-slate-800 p-5 rounded-xl shadow-lg">
+      <div class="bg-white border border-slate-200/80 p-5 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
         <div class="flex justify-between items-start mb-2">
-          <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Target Ping (ICMP)</p>
-          <div class="p-1.5 bg-slate-800/80 rounded-md text-amber-500"><i class="ph ph-waves text-lg"></i></div>
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Target Ping (ICMP)</p>
+          <div class="p-1.5 bg-slate-50 border border-slate-100 rounded-md text-slate-500"><i class="ph ph-waves text-lg"></i></div>
         </div>
-        <h3 class="text-2xl font-bold text-white mb-1">
+        <h3 class="text-3xl font-black text-slate-900 mb-1 font-mono tracking-tight flex items-baseline gap-2">
           {{ summary.icmp.total }}
-          <span v-if="summary.icmp.down > 0" class="text-sm font-bold text-rose-500">({{ summary.icmp.down }} RTO)</span>
-          <span v-else class="text-sm font-normal text-slate-400">Target ({{ summary.icmp.up }} UP)</span>
+          <span v-if="summary.icmp.down > 0" class="text-sm font-bold text-rose-600 font-sans tracking-normal">({{ summary.icmp.down }} RTO)</span>
+          <span v-else class="text-sm font-medium text-slate-500 font-sans tracking-normal">Target ({{ summary.icmp.up }} UP)</span>
         </h3>
-        <div class="flex items-center gap-1.5 text-xs text-slate-400 mt-4">
-          <i class="ph ph-clock-counter-clockwise"></i> Avg Latency:
-          <span class="text-white font-medium">{{ summary.icmp.avg_latency_ms }} ms</span>
+        <div class="flex items-center gap-1.5 text-xs text-slate-500 mt-4">
+          <i class="ph ph-clock-counter-clockwise"></i> Avg Latency: <span class="text-slate-900 font-semibold font-mono tracking-tight">{{ summary.icmp.avg_latency_ms }} ms</span>
         </div>
       </div>
 
       <!-- Widget 4: Target TCP Port -->
-      <div class="bg-moxcard border border-slate-800 p-5 rounded-xl shadow-lg">
+      <div class="bg-white border border-slate-200/80 p-5 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
         <div class="flex justify-between items-start mb-2">
-          <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Target TCP Port</p>
-          <div class="p-1.5 bg-slate-800/80 rounded-md text-purple-400"><i class="ph ph-cpu text-lg"></i></div>
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Target TCP Port</p>
+          <div class="p-1.5 bg-slate-50 border border-slate-100 rounded-md text-slate-500"><i class="ph ph-cpu text-lg"></i></div>
         </div>
-        <h3 class="text-2xl font-bold text-white mb-1">
+        <h3 class="text-3xl font-black text-slate-900 mb-1 font-mono tracking-tight flex items-baseline gap-2">
           {{ summary.tcp.total }}
-          <span v-if="summary.tcp.down > 0" class="text-sm font-bold text-rose-500">({{ summary.tcp.down }} Down)</span>
-          <span v-else class="text-sm font-normal text-slate-400">Port Aktif</span>
+          <span v-if="summary.tcp.down > 0" class="text-sm font-bold text-rose-600 font-sans tracking-normal">({{ summary.tcp.down }} Down)</span>
+          <span v-else class="text-sm font-medium text-slate-500 font-sans tracking-normal">Port Aktif</span>
         </h3>
         <div class="flex items-center justify-between text-xs mt-4">
-          <span v-if="summary.tcp.down === 0 && summary.tcp.active > 0" class="flex items-center gap-1.5 text-moxgreen font-medium">
+          <span v-if="summary.tcp.down === 0 && summary.tcp.active > 0" class="flex items-center gap-1.5 text-emerald-600 font-semibold">
             <i class="ph-bold ph-check"></i> OK ({{ summary.tcp.up }} UP)
           </span>
-          <span v-else-if="summary.tcp.down > 0" class="flex items-center gap-1.5 text-rose-500 font-medium">
+          <span v-else-if="summary.tcp.down > 0" class="flex items-center gap-1.5 text-rose-600 font-semibold">
             <i class="ph-bold ph-warning"></i> {{ summary.tcp.down }} Port Terputus
           </span>
           <span v-else class="text-slate-500">Belum ada target aktif</span>
-          <span class="text-slate-400">Avg: <strong class="text-white">{{ summary.tcp.avg_latency_ms }} ms</strong></span>
+          <span class="text-slate-500">Avg: <strong class="text-slate-900 font-mono tracking-tight">{{ summary.tcp.avg_latency_ms }} ms</strong></span>
         </div>
       </div>
+
     </div>
 
-    <!-- Chart Area 1: Rata-rata Penggunaan CPU, RAM & IO Delay Proxmox VE -->
-    <div class="bg-moxcard border border-slate-800 p-6 rounded-xl shadow-lg mb-6">
+    <!-- Chart Area 1: Rata-rata Penggunaan CPU, RAM & IO Delay -->
+    <div class="bg-white border border-slate-200/80 p-6 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] mb-6">
       <div class="flex justify-between items-center mb-6">
         <div>
-          <h3 class="text-md font-bold text-white flex items-center gap-2">
-            <i class="ph-bold ph-trend-up text-moxgreen"></i> Rata-rata Penggunaan CPU, RAM &amp; IO Delay ({{ timeframeLabel }})
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <i class="ph-bold ph-trend-up text-slate-500"></i> Rata-rata Penggunaan CPU, RAM &amp; IO Delay ({{ timeframeLabel }})
           </h3>
-          <p class="text-xs text-slate-400 mt-1">
-            Agregasi performa {{ summary.proxmox.total_nodes }} Node Proxmox VE
-            <span v-if="summary.proxmox.node_names.length" class="text-slate-500">({{ summary.proxmox.node_names.join(', ') }})</span>
-            &bull; Saat ini: CPU <span class="text-moxgreen font-bold">{{ summary.proxmox.avg_cpu }}%</span> | RAM <span class="text-blue-400 font-bold">{{ summary.proxmox.avg_ram }}%</span> | IO Delay <span class="text-amber-400 font-bold">{{ summary.proxmox.avg_io }}%</span>
+          <p class="text-xs text-slate-500 mt-1">
+            Agregasi performa <span class="font-mono">{{ summary.proxmox.total_nodes }}</span> Node Proxmox VE 
+            <span v-if="summary.proxmox.node_names.length" class="text-slate-400">({{ summary.proxmox.node_names.join(', ') }})</span> 
+            &bull; Saat ini: 
+            CPU <span class="text-emerald-600 font-bold font-mono">{{ summary.proxmox.avg_cpu }}%</span> | 
+            RAM <span class="text-blue-600 font-bold font-mono">{{ summary.proxmox.avg_ram }}%</span> | 
+            IO Delay <span class="text-amber-600 font-bold font-mono">{{ summary.proxmox.avg_io }}%</span>
           </p>
         </div>
         <div class="flex items-center gap-6">
-          <div class="flex gap-4 text-xs font-medium">
-            <span class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-moxgreen"></div> CPU Usage (%)</span>
-            <span class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-blue-400"></div> RAM Usage (%)</span>
-            <span class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-amber-400"></div> IO Delay (%)</span>
+          <div class="flex gap-4 text-xs font-medium text-slate-600">
+            <span class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-emerald-500"></div> CPU</span>
+            <span class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-blue-500"></div> RAM</span>
+            <span class="flex items-center gap-2"><div class="w-3 h-3 rounded bg-amber-500"></div> IO Delay</span>
           </div>
           <div class="flex items-center gap-2 text-xs">
-            <span class="text-slate-400">Rekap:</span>
-            <select
-              v-model="selectedTimeframe"
-              @change="fetchDashboardData(true)"
-              class="bg-slate-800 border border-slate-700 text-white rounded px-2.5 py-1.5 outline-none focus:border-moxgreen cursor-pointer"
+            <span class="text-slate-500 font-medium">Rekap:</span>
+            <select 
+              v-model="selectedTimeframe" 
+              @change="fetchDashboardData(true)" 
+              class="bg-white border border-slate-200 text-slate-700 rounded-lg px-2.5 py-1.5 outline-none focus:border-slate-400 text-xs font-medium cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
             >
               <option value="1h">1 Jam</option>
               <option value="24h">24 Jam</option>
@@ -143,89 +156,84 @@
       </div>
     </div>
 
-    <!-- Chart Area 2: Grafik & Ringkasan Total Uptime, Total Downtime, MTTR & Availability -->
-    <div class="bg-moxcard border border-slate-800 p-6 rounded-xl shadow-lg mb-6">
+    <!-- Chart Area 2: Grafik & Ringkasan Total Uptime, Downtime, MTTR & Availability -->
+    <div class="bg-white border border-slate-200/80 p-6 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] mb-6">
       <div class="flex flex-wrap justify-between items-center gap-4 mb-5">
         <div>
-          <h3 class="text-md font-bold text-white flex items-center gap-2">
-            <i class="ph-bold ph-chart-bar text-moxgreen"></i> Analitik Kinerja SLA (Uptime, Downtime, MTTR &amp; Availability)
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <i class="ph-bold ph-chart-bar text-slate-500"></i> Analitik Kinerja SLA (Uptime, Downtime, MTTR &amp; Availability)
           </h3>
-          <p class="text-xs text-slate-400 mt-1">
+          <p class="text-xs text-slate-500 mt-1">
             Rekap keandalan sistem &bull; {{ slaFilterLabel }}
           </p>
         </div>
-
         <div class="flex flex-wrap items-center gap-3">
           <!-- Filter Level Severity SLA -->
-          <div class="flex bg-slate-900/60 border border-slate-800 rounded-lg p-1">
-            <button @click="setSlaSeverity('ALL')" class="px-3 py-1 rounded-md text-xs font-bold transition" :class="slaSeverity === 'ALL' ? 'bg-slate-700 text-white shadow' : 'text-slate-400 hover:text-white'">Semua</button>
-            <button @click="setSlaSeverity('DOWN')" class="px-3 py-1 rounded-md text-xs font-bold transition" :class="slaSeverity === 'DOWN' ? 'bg-rose-600 text-white shadow' : 'text-slate-400 hover:text-rose-400'">Down</button>
-            <button @click="setSlaSeverity('CRITICAL')" class="px-3 py-1 rounded-md text-xs font-bold transition" :class="slaSeverity === 'CRITICAL' ? 'bg-orange-500 text-white shadow' : 'text-slate-400 hover:text-orange-400'">Critical</button>
-            <button @click="setSlaSeverity('WARNING')" class="px-3 py-1 rounded-md text-xs font-bold transition" :class="slaSeverity === 'WARNING' ? 'bg-amber-400 text-moxdark shadow' : 'text-slate-400 hover:text-amber-400'">Warning</button>
+          <div class="flex bg-slate-50 border border-slate-200 rounded-lg p-1">
+            <button @click="setSlaSeverity('ALL')" class="px-3 py-1 rounded-md text-xs font-semibold transition border" :class="slaSeverity === 'ALL' ? 'bg-white text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.04)] border-slate-200' : 'text-slate-500 hover:text-slate-900 border-transparent'">Semua</button>
+            <button @click="setSlaSeverity('DOWN')" class="px-3 py-1 rounded-md text-xs font-semibold transition border" :class="slaSeverity === 'DOWN' ? 'bg-white text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.04)] border-slate-200' : 'text-slate-500 hover:text-slate-900 border-transparent'">Down</button>
+            <button @click="setSlaSeverity('CRITICAL')" class="px-3 py-1 rounded-md text-xs font-semibold transition border" :class="slaSeverity === 'CRITICAL' ? 'bg-white text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.04)] border-slate-200' : 'text-slate-500 hover:text-slate-900 border-transparent'">Critical</button>
+            <button @click="setSlaSeverity('WARNING')" class="px-3 py-1 rounded-md text-xs font-semibold transition border" :class="slaSeverity === 'WARNING' ? 'bg-white text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.04)] border-slate-200' : 'text-slate-500 hover:text-slate-900 border-transparent'">Warning</button>
           </div>
           <!-- Filter Periode SLA -->
-          <div class="flex bg-slate-900/60 border border-slate-800 rounded-lg p-1">
-            <button @click="setSlaPeriod('24h')" class="px-3.5 py-1 rounded-md text-xs font-bold transition" :class="slaPeriod === '24h' ? 'bg-moxgreen text-moxdark' : 'text-slate-400 hover:text-white'">24 Jam</button>
-            <button @click="setSlaPeriod('7d')" class="px-3.5 py-1 rounded-md text-xs font-bold transition" :class="slaPeriod === '7d' ? 'bg-moxgreen text-moxdark' : 'text-slate-400 hover:text-white'">7 Hari</button>
-            <button @click="setSlaPeriod('30d')" class="px-3.5 py-1 rounded-md text-xs font-bold transition" :class="slaPeriod === '30d' ? 'bg-moxgreen text-moxdark' : 'text-slate-400 hover:text-white'">30 Hari</button>
+          <div class="flex bg-slate-50 border border-slate-200 rounded-lg p-1">
+            <button @click="setSlaPeriod('24h')" class="px-3.5 py-1 rounded-md text-xs font-semibold transition border" :class="slaPeriod === '24h' ? 'bg-white text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.04)] border-slate-200' : 'text-slate-500 hover:text-slate-900 border-transparent'">24 Jam</button>
+            <button @click="setSlaPeriod('7d')" class="px-3.5 py-1 rounded-md text-xs font-semibold transition border" :class="slaPeriod === '7d' ? 'bg-white text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.04)] border-slate-200' : 'text-slate-500 hover:text-slate-900 border-transparent'">7 Hari</button>
+            <button @click="setSlaPeriod('30d')" class="px-3.5 py-1 rounded-md text-xs font-semibold transition border" :class="slaPeriod === '30d' ? 'bg-white text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.04)] border-slate-200' : 'text-slate-500 hover:text-slate-900 border-transparent'">30 Hari</button>
           </div>
         </div>
       </div>
 
-      <!-- 4 Mini KPI Cards (Total Uptime, Total Downtime, MTTR, Availability) -->
+      <!-- 4 Mini KPI Cards -->
       <div class="grid grid-cols-4 gap-4 mb-5">
-        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <i class="ph-bold ph-arrow-circle-up text-emerald-400"></i> Total Uptime
+        <div class="bg-slate-50 border border-slate-100 rounded-xl p-4">
+          <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <i class="ph-bold ph-arrow-circle-up text-emerald-500"></i> Total Uptime
           </p>
-          <h4 class="text-xl font-bold text-white leading-none">{{ formatPreciseDuration(slaAnalytics.summary.total_uptime_sec) }}</h4>
-          <p class="text-[11px] text-slate-500 mt-1.5">Waktu sistem beroperasi normal</p>
+          <h4 class="text-2xl font-black text-slate-900 font-mono tracking-tight leading-none">{{ formatPreciseDuration(slaAnalytics.summary.total_uptime_sec) }}</h4>
+          <p class="text-[11px] text-slate-500 mt-2">Waktu sistem beroperasi normal</p>
         </div>
-
-        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <i class="ph-bold ph-arrow-circle-down text-rose-400"></i> Total Downtime
+        <div class="bg-slate-50 border border-slate-100 rounded-xl p-4">
+          <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <i class="ph-bold ph-arrow-circle-down text-rose-500"></i> Total Downtime
           </p>
-          <h4 class="text-xl font-bold text-white leading-none">{{ formatPreciseDuration(slaAnalytics.summary.total_downtime_sec) }}</h4>
-          <p class="text-[11px] text-slate-500 mt-1.5">Akumulasi durasi gangguan ({{ slaAnalytics.summary.incident_count }} insiden)</p>
+          <h4 class="text-2xl font-black text-slate-900 font-mono tracking-tight leading-none">{{ formatPreciseDuration(slaAnalytics.summary.total_downtime_sec) }}</h4>
+          <p class="text-[11px] text-slate-500 mt-2">Gangguan (<span class="font-mono font-semibold">{{ slaAnalytics.summary.incident_count }}</span> insiden)</p>
         </div>
-
-        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <i class="ph-bold ph-timer text-cyan-400"></i> MTTR
+        <div class="bg-slate-50 border border-slate-100 rounded-xl p-4">
+          <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <i class="ph-bold ph-timer text-cyan-500"></i> MTTR
           </p>
-          <h4 class="text-xl font-bold text-white leading-none">{{ formatPreciseDuration(slaAnalytics.summary.mttr_sec) }}</h4>
-          <p class="text-[11px] text-slate-500 mt-1.5">Rata-rata waktu pemulihan</p>
+          <h4 class="text-2xl font-black text-slate-900 font-mono tracking-tight leading-none">{{ formatPreciseDuration(slaAnalytics.summary.mttr_sec) }}</h4>
+          <p class="text-[11px] text-slate-500 mt-2">Rata-rata waktu pemulihan</p>
         </div>
-
-        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
-          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <i class="ph-bold ph-shield-check text-moxgreen"></i> Availability
+        <div class="bg-slate-50 border border-slate-100 rounded-xl p-4">
+          <p class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <i class="ph-bold ph-shield-check text-emerald-500"></i> Availability
           </p>
-          <h4 class="text-xl font-bold leading-none" :class="slaAvailabilityColor">
-            {{ slaAnalytics.summary.availability }}<span class="text-xs font-medium ml-0.5">%</span>
+          <h4 class="text-2xl font-black font-mono tracking-tight leading-none" :class="slaAvailabilityColor">
+            {{ slaAnalytics.summary.availability }}<span class="text-sm font-semibold ml-0.5">%</span>
           </h4>
-          <div class="w-full h-1.5 bg-slate-800 rounded-full mt-2.5 overflow-hidden">
+          <div class="w-full h-1.5 bg-slate-200 rounded-full mt-2.5 overflow-hidden">
             <div class="h-full rounded-full transition-all duration-700" :class="slaAvailabilityBar" :style="{ width: Math.min(100, slaAnalytics.summary.availability) + '%' }"></div>
           </div>
         </div>
       </div>
 
-      <!-- 2 Grafik Berdampingan: (1) Total Uptime, Total Downtime & MTTR | (2) Availability (%) -->
+      <!-- 2 Grafik Berdampingan -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div class="bg-slate-900/40 border border-slate-800 rounded-xl p-4">
+        <div class="bg-white border border-slate-100 rounded-xl p-4 shadow-sm">
           <div class="flex justify-between items-center mb-1">
-            <h4 class="text-xs font-bold text-white uppercase tracking-wider">Grafik Total Uptime, Downtime &amp; MTTR</h4>
-            <span class="text-[10px] text-slate-500">Satuan sumbu: {{ slaDurationUnit.name }}</span>
+            <h4 class="text-xs font-semibold text-slate-700 uppercase tracking-wider">Grafik Uptime, Downtime &amp; MTTR</h4>
+            <span class="text-[10px] text-slate-500 font-medium bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">Satuan: {{ slaDurationUnit.name }}</span>
           </div>
           <p class="text-[11px] text-slate-500 mb-2">Perbandingan durasi operasional vs gangguan per {{ slaPeriod === '24h' ? 'jam' : 'hari' }}</p>
           <apexchart type="bar" height="250" :options="slaDurationChartOptions" :series="slaDurationSeries" />
         </div>
-
-        <div class="bg-slate-900/40 border border-slate-800 rounded-xl p-4">
+        <div class="bg-white border border-slate-100 rounded-xl p-4 shadow-sm">
           <div class="flex justify-between items-center mb-1">
-            <h4 class="text-xs font-bold text-white uppercase tracking-wider">Grafik Availability (%) &amp; MTTR</h4>
-            <span class="text-[10px] text-emerald-400 font-semibold">Target SLA: 99.00%</span>
+            <h4 class="text-xs font-semibold text-slate-700 uppercase tracking-wider">Grafik Availability (%)</h4>
+            <span class="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">Target SLA: 99.00%</span>
           </div>
           <p class="text-[11px] text-slate-500 mb-2">Persentase ketersediaan sistem per {{ slaPeriod === '24h' ? 'jam' : 'hari' }}</p>
           <apexchart type="area" height="250" :options="slaAvailabilityChartOptions" :series="slaAvailabilitySeries" />
@@ -234,35 +242,34 @@
     </div>
 
     <!-- Table Area: Log Alert & Incident Terbaru -->
-    <div class="bg-moxcard border border-slate-800 p-6 rounded-xl shadow-lg">
-      <div class="flex justify-between items-center mb-6">
+    <div class="bg-white border border-slate-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden">
+      <div class="flex justify-between items-center p-6 pb-4">
         <div>
-          <h3 class="text-md font-bold text-white flex items-center gap-2">
+          <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
             <i class="ph-bold ph-warning text-rose-500"></i> Log Alert &amp; Incident Terbaru
           </h3>
-          <p class="text-xs text-slate-400 mt-1">Notifikasi otomatis berdasarkan batas threshold ambang batas</p>
+          <p class="text-xs text-slate-500 mt-1">Notifikasi otomatis berdasarkan batas threshold ambang batas</p>
         </div>
-        <router-link to="/rekap-gangguan" class="text-xs text-moxgreen hover:text-emerald-400 font-medium transition flex items-center gap-1">
+        <router-link to="/rekap-gangguan" class="text-xs text-slate-600 hover:text-slate-900 font-medium transition flex items-center gap-1">
           Lihat Semua Insiden <i class="ph-bold ph-arrow-right"></i>
         </router-link>
       </div>
-
+      
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
-            <tr class="border-b border-slate-700 text-[11px] uppercase tracking-wider text-slate-400">
-              <th class="pb-3 font-semibold w-44">Waktu (WIB)</th>
-              <th class="pb-3 font-semibold w-36">Severity</th>
-              <th class="pb-3 font-semibold w-56">Komponen Target</th>
-              <th class="pb-3 font-semibold">Deskripsi Peristiwa</th>
-              <th class="pb-3 font-semibold text-right w-36">Status</th>
+            <tr class="bg-slate-50/50 border-y border-slate-100 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <th class="py-2.5 px-6 w-44">Waktu (WIB)</th>
+              <th class="py-2.5 px-3 w-36">Severity</th>
+              <th class="py-2.5 px-3 w-64">Komponen Target</th>
+              <th class="py-2.5 px-3">Deskripsi Peristiwa</th>
+              <th class="py-2.5 px-6 text-right w-36">Status</th>
             </tr>
           </thead>
           <tbody class="text-sm">
             <tr v-if="isLoading && summary.recent_incidents.length === 0">
-              <td colspan="5" class="py-8 text-center text-slate-400 text-xs">
-                <i class="ph-bold ph-spinner animate-spin text-lg text-moxgreen block mb-1"></i>
-                Memuat data insiden terbaru...
+              <td colspan="5" class="py-8 text-center text-slate-500 text-xs">
+                <i class="ph-bold ph-spinner animate-spin text-lg block mb-1"></i> Memuat data insiden terbaru...
               </td>
             </tr>
             <tr v-else-if="summary.recent_incidents.length === 0">
@@ -270,29 +277,30 @@
                 Belum ada riwayat alert atau insiden yang tercatat.
               </td>
             </tr>
-            <tr
-              v-else
-              v-for="inc in summary.recent_incidents"
-              :key="inc.id"
-              class="border-b border-slate-800/50 last:border-b-0 hover:bg-slate-800/30 transition"
+            <tr 
+              v-else 
+              v-for="inc in summary.recent_incidents" 
+              :key="inc.id" 
+              class="border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition"
             >
-              <td class="py-4 text-slate-300 font-mono text-xs whitespace-nowrap">
+              <td class="py-2.5 px-6 text-slate-600 font-mono text-xs whitespace-nowrap">
                 {{ formatWibDateTime(inc.time) }}
               </td>
-              <td class="py-4">
-                <span
-                  class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold border"
-                  :class="getSeverityBadgeClass(inc.severity)"
-                >
+              <td class="py-2.5 px-3">
+                <!-- Pastikan fungsi getSeverityBadgeClass Anda di-update mereturn warna pastel (bg-rose-50 text-rose-700 dst) -->
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold border" :class="getSeverityBadgeClass(inc.severity)">
                   <span class="w-1.5 h-1.5 rounded-full" :class="getSeverityDotClass(inc.severity)"></span>
                   {{ inc.severity }}
                 </span>
               </td>
-              <td class="py-4 font-medium text-slate-200 text-xs">
-                <span class="text-slate-500 font-bold mr-1">[{{ inc.target_type }}]</span> {{ inc.target_name }}
+              <td class="py-2.5 px-3 text-xs">
+                <span class="text-slate-400 font-semibold mr-1">[{{ inc.target_type }}]</span>
+                <span class="font-mono text-slate-900 font-medium">{{ inc.target_name }}</span>
               </td>
-              <td class="py-4 text-slate-400 text-xs">{{ inc.message }}</td>
-              <td class="py-4 text-right font-bold text-xs" :class="getStatusTextClass(inc.status_label)">
+              <td class="py-2.5 px-3 text-slate-500 text-xs font-medium">
+                {{ inc.message }}
+              </td>
+              <td class="py-2.5 px-6 text-right text-xs font-semibold" :class="getStatusTextClass(inc.status_label)">
                 {{ inc.status_label }}
               </td>
             </tr>
@@ -300,6 +308,7 @@
         </table>
       </div>
     </div>
+    
   </main>
 </template>
 
@@ -481,11 +490,7 @@ const slaAvailabilityChartOptions = computed(() => {
     tooltip: {
       theme: 'dark',
       y: {
-        formatter: (v, { dataPointIndex }) => {
-          const row = slaAnalytics.value.chartData[dataPointIndex];
-          const mttrStr = row ? formatPreciseDuration(row.mttr_sec) : '0d';
-          return `${Number(v).toFixed(2)}% (MTTR: ${mttrStr})`;
-        }
+        formatter: (v) => `${Number(v).toFixed(2)}%`
       }
     },
     legend: { labels: { colors: '#cbd5e1' }, fontSize: '11px', position: 'top' }

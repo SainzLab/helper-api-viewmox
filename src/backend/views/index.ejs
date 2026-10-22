@@ -5,18 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ProxView</title>
     
+    <!-- Import Font Inter (Sesuai panduan tipografi Light Theme) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+
     <!-- Tailwind CSS (CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Tailwind Config untuk menyamakan warna dengan referensi desain -->
+    <!-- Tailwind Config untuk Tema Terang -->
     <script>
       tailwind.config = {
         theme: {
           extend: {
-            colors: {
-              moxdark: '#0f172a',
-              moxcard: '#1e293b',
-              moxgreen: '#10b981',
+            fontFamily: {
+              // Menjadikan Inter sebagai font default untuk class font-sans
+              sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
             }
+            // Catatan: config warna moxdark/moxcard/moxgreen sudah saya hapus 
+            // karena seluruh komponen sudah menggunakan palet slate/emerald standar Tailwind.
+            // (Kembalikan jika masih ada komponen lama yang belum di-refactor).
           }
         }
       }
@@ -34,7 +41,9 @@
         <% }); %>
     <% } %>
 </head>
-<body class="bg-moxdark text-white font-sans antialiased">
+<!-- UBAH BODY CLASS: Background terang, teks default hitam/gelap, dan warna seleksi teks hijau pastel -->
+<body class="bg-[#f8f9fa] text-slate-900 font-sans antialiased selection:bg-emerald-100 selection:text-emerald-900">
+    
     <!-- Vue Root Element -->
     <div id="app"></div>
 

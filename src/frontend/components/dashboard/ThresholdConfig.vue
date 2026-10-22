@@ -1,35 +1,39 @@
 <template>
-  <main class="p-8 pb-12 overflow-x-hidden min-h-screen">
+  <main class="bg-[#f8f9fa] min-h-screen font-sans p-8 pb-12 overflow-x-hidden relative">
+    
     <!-- Header Halaman & Toggle Tab -->
     <div class="flex justify-between items-end mb-6 pb-5">
       <div>
-        <h2 class="text-2xl font-bold text-white mb-1 flex items-center gap-3">
-          <i class="ph-bold ph-sliders text-moxgreen"></i> Konfigurasi Threshold
+        <h2 class="text-2xl font-bold text-slate-900 mb-1 flex items-center gap-3">
+          <i class="ph-bold ph-sliders text-slate-700"></i> Konfigurasi Threshold
         </h2>
-        <p class="text-slate-400 text-sm">Atur pemicu notifikasi alarm untuk infrastruktur Anda.</p>
+        <p class="text-slate-500 text-sm font-medium">Atur pemicu notifikasi alarm untuk infrastruktur Anda.</p>
       </div>
-      
+
       <!-- TOGGLE MODE BUTTON -->
-      <div class="flex bg-slate-900 border border-slate-700 p-1 rounded-lg shadow-inner">
+      <div class="flex bg-slate-50 border border-slate-200/80 p-1 rounded-lg shadow-inner">
         <button 
           @click="activeTab = 'proxmox'" 
-          class="px-5 py-2 rounded-md text-xs font-bold transition-all duration-300 flex items-center gap-2"
-          :class="activeTab === 'proxmox' ? 'bg-moxgreen text-moxdark shadow' : 'text-slate-400 hover:text-white'">
+          class="px-5 py-2 rounded-md text-xs font-semibold transition-all duration-300 flex items-center gap-2" 
+          :class="activeTab === 'proxmox' ? 'bg-white text-slate-900 border border-slate-200 shadow-sm' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-transparent'"
+        >
           <i class="ph-bold ph-hard-drives"></i> PROXMOX API
         </button>
         <button 
           @click="activeTab = 'network'" 
-          class="px-5 py-2 rounded-md text-xs font-bold transition-all duration-300 flex items-center gap-2"
-          :class="activeTab === 'network' ? 'bg-blue-500 text-white shadow' : 'text-slate-400 hover:text-white'">
+          class="px-5 py-2 rounded-md text-xs font-semibold transition-all duration-300 flex items-center gap-2" 
+          :class="activeTab === 'network' ? 'bg-white text-slate-900 border border-slate-200 shadow-sm' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-transparent'"
+        >
           <i class="ph-bold ph-activity"></i> ICMP / TCP
         </button>
       </div>
     </div>
 
     <!-- Render Komponen Berdasarkan Tab Aktif -->
-   <transition name="fade" mode="out-in">
+    <transition name="fade" mode="out-in">
       <component :is="activeTab === 'proxmox' ? ThresholdProxmox : ThresholdNetwork" />
     </transition>
+    
   </main>
 </template>
 

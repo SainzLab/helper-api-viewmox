@@ -1,45 +1,56 @@
 <template>
-  <div class="animate-fade-in space-y-6">
+  <div class="animate-fade-in space-y-6 font-sans">
+    
     <!-- Header Khusus System Log -->
     <div class="flex justify-between items-end mb-6">
       <div>
-        <h2 class="text-2xl font-bold text-white mb-1 flex items-center gap-3">
-          <i class="ph-bold ph-terminal-window text-emerald-400"></i> Log Sistem (Internal)
+        <h2 class="text-2xl font-bold text-slate-900 mb-1 flex items-center gap-3">
+          <i class="ph-bold ph-terminal-window text-slate-700"></i> Log Sistem (Internal)
         </h2>
-        <p class="text-slate-400 text-sm">Catatan aktivitas internal aplikasi, daemon dan autentifikasi.</p>
+        <p class="text-slate-500 text-sm font-medium">Catatan aktivitas internal aplikasi, daemon dan autentifikasi.</p>
       </div>
       
       <div class="flex gap-4 items-center">
         <!-- TOGGLE MODE BUTTON -->
-        <div class="flex bg-slate-900 border border-slate-700 p-1 rounded-lg shadow-inner">
-          <button class="px-4 py-2 rounded-md text-xs font-bold transition-all duration-300 flex items-center gap-2 bg-blue-500 text-white shadow">
+        <div class="flex bg-slate-50 border border-slate-200/80 p-1 rounded-lg shadow-inner">
+          <button class="px-4 py-2 rounded-md text-xs font-bold transition-all duration-300 flex items-center gap-2 bg-white text-slate-900 shadow-[0_1px_2px_rgba(0,0,0,0.02)] border border-slate-200">
             <i class="ph-bold ph-terminal-window"></i> LOG SISTEM
           </button>
-          <button @click="$emit('change-view', 'proxmox')" class="px-4 py-2 rounded-md text-xs font-bold transition-all duration-300 flex items-center gap-2 text-slate-400 hover:text-white">
+          <button @click="$emit('change-view', 'proxmox')" class="px-4 py-2 rounded-md text-xs font-semibold transition-all duration-300 flex items-center gap-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 border border-transparent">
             <i class="ph-bold ph-hard-drives"></i> LOG PROXMOX
           </button>
         </div>
 
         <!-- SEARCH BAR -->
-        <div class="relative">
-          <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
-          <input type="text" v-model="searchQuery" placeholder="Cari pesan atau sumber..." class="pl-9 pr-8 py-2.5 w-64 border border-slate-700 bg-slate-800/50 text-white rounded-lg text-sm font-medium hover:bg-slate-700 focus:bg-slate-900 focus:border-blue-400 transition outline-none">
+        <div class="relative flex items-center">
+          <i class="ph ph-magnifying-glass absolute left-3 text-slate-400 pointer-events-none"></i>
+          <input 
+            type="text" 
+            v-model="searchQuery" 
+            placeholder="Cari pesan atau sumber..." 
+            class="pl-9 pr-8 py-2.5 h-[42px] w-64 bg-white border border-slate-200 text-slate-900 rounded-lg text-sm font-medium focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-300 transition shadow-[0_1px_2px_rgba(0,0,0,0.02)] placeholder:text-slate-400"
+          >
           <!-- Tombol silang untuk reset pencarian -->
-          <button v-if="searchQuery" @click="searchQuery = ''" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition">
+          <button v-if="searchQuery" @click="searchQuery = ''" class="absolute right-3 text-slate-400 hover:text-slate-700 transition">
              <i class="ph-bold ph-x"></i>
           </button>
         </div>
 
         <!-- FILTER LEVEL LOG (ICON ONLY DROPDOWN) -->
         <div class="relative h-[42px] w-[42px] shrink-0">
-          <select v-model="filterLevel" title="Filter Level" class="w-full h-full border border-slate-700 bg-slate-800/50 text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-700 transition outline-none appearance-none cursor-pointer text-center opacity-0 absolute inset-0 z-10">
+          <select 
+            v-model="filterLevel" 
+            title="Filter Level" 
+            class="w-full h-full bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition outline-none appearance-none cursor-pointer text-center opacity-0 absolute inset-0 z-10"
+          >
             <option value="ALL">Semua Level</option>
             <option value="INFO">INFO</option>
             <option value="WARNING">WARNING</option>
             <option value="ERROR">ERROR</option>
           </select>
-          <div class="w-full h-full border border-slate-700 bg-slate-800/50 rounded-lg flex items-center justify-center text-slate-300 pointer-events-none transition hover:bg-slate-700">
-            <i class="ph-bold ph-funnel text-base" :class="{'text-emerald-400': filterLevel !== 'ALL'}"></i>
+          <div class="w-full h-full bg-white border border-slate-200 shadow-[0_1px_2px_rgba(0,0,0,0.02)] rounded-lg flex items-center justify-center text-slate-500 pointer-events-none transition group-hover:bg-slate-50">
+            <!-- Indikator menyala jika filter aktif -->
+            <i class="ph-bold ph-funnel text-base" :class="{'text-emerald-500': filterLevel !== 'ALL'}"></i>
           </div>
         </div>
 
@@ -47,55 +58,64 @@
     </div>
 
     <!-- TABEL LOG SISTEM -->
-    <div class="bg-slate-900/40 border border-slate-800 rounded-xl shadow-lg overflow-hidden flex flex-col">
+    <div class="bg-white border border-slate-200/80 rounded-xl shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-hidden flex flex-col">
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
-            <tr class="bg-slate-800/80 border-b border-slate-700 text-[11px] uppercase tracking-wider text-slate-400">
-              <th class="px-6 py-4 font-semibold w-48">Waktu (Timestamp)</th>
-              <th class="px-6 py-4 font-semibold w-32">Level</th>
-              <th class="px-6 py-4 font-semibold w-40">Sumber (Source)</th>
-              <th class="px-6 py-4 font-semibold">Pesan Aktivitas</th>
+            <tr class="bg-slate-50/50 border-b border-slate-100 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              <th class="px-6 py-3.5 w-48">Waktu (Timestamp)</th>
+              <th class="px-6 py-3.5 w-32">Level</th>
+              <th class="px-6 py-3.5 w-40">Sumber (Source)</th>
+              <th class="px-6 py-3.5">Pesan Aktivitas</th>
             </tr>
           </thead>
-          <tbody class="text-sm font-mono">
+          <tbody class="text-sm">
             <!-- STATE 1: LOADING AWAL -->
             <template v-if="isLoading && logs.length === 0">
-              <tr class="border-b border-slate-800/50">
-                <td colspan="4" class="px-6 py-12 text-center text-slate-400">
-                  <i class="ph-bold ph-spinner animate-spin text-2xl text-blue-400 mb-2 inline-block"></i>
-                  <p class="font-sans">Memuat log sistem...</p>
+              <tr class="border-b border-slate-100">
+                <td colspan="4" class="px-6 py-12 text-center text-slate-500">
+                  <i class="ph-bold ph-spinner animate-spin text-2xl text-blue-500 mb-2 inline-block"></i>
+                  <p class="font-medium text-xs">Memuat log sistem...</p>
                 </td>
               </tr>
             </template>
             
             <!-- STATE 2: DATA KOSONG -->
             <template v-else-if="displayedLogs.length === 0">
-              <tr class="border-b border-slate-800/50">
+              <tr class="border-b border-slate-100">
                 <td colspan="4" class="px-6 py-12 text-center text-slate-500 font-sans">
-                  <span v-if="searchQuery || filterLevel !== 'ALL'">
+                  <span v-if="searchQuery || filterLevel !== 'ALL'" class="font-medium text-sm">
                     Tidak ada log yang cocok dengan filter dan pencarian Anda.
                   </span>
-                  <span v-else>Tidak ada data log yang ditemukan.</span>
+                  <span v-else class="font-medium text-sm">Tidak ada data log yang ditemukan.</span>
                 </td>
               </tr>
             </template>
             
             <!-- STATE 3: DATA TERSEDIA (UNLIMITED SCROLL RENDER) -->
             <template v-else>
-              <tr v-for="log in displayedLogs" :key="log.id" class="border-b border-slate-800/50 hover:bg-slate-800/30 transition">
-                <td class="px-6 py-3 text-slate-400 text-xs whitespace-nowrap">{{ formatWibDateTime(log.timestamp) }}</td>
+              <tr 
+                v-for="log in displayedLogs" 
+                :key="log.id" 
+                class="border-b border-slate-100 hover:bg-slate-50 transition"
+              >
+                <!-- Timestamp diubah ke monospace agar rata -->
+                <td class="px-6 py-3 text-slate-500 text-[11px] font-mono tracking-tight whitespace-nowrap">{{ formatWibDateTime(log.timestamp) }}</td>
+                
                 <td class="px-6 py-3">
+                  <!-- Badges menggunakan warna Pastel berdasarkan level -->
                   <span :class="{
-                    'text-emerald-400 bg-emerald-500/10 border-emerald-500/20': log.level === 'INFO',
-                    'text-amber-400 bg-amber-500/10 border-amber-500/20': log.level === 'WARNING',
-                    'text-rose-400 bg-rose-500/10 border-rose-500/20': log.level === 'ERROR'
-                  }" class="px-2 py-0.5 rounded border text-[10px] font-bold tracking-wider">
+                    'text-blue-700 bg-blue-50 border-blue-200/60': log.level === 'INFO',
+                    'text-amber-700 bg-amber-50 border-amber-200/60': log.level === 'WARNING',
+                    'text-rose-700 bg-rose-50 border-rose-200/60': log.level === 'ERROR'
+                  }" class="px-2 py-0.5 rounded-md border text-[9px] font-bold uppercase tracking-wider">
                     {{ log.level }}
                   </span>
                 </td>
-                <td class="px-6 py-3 text-slate-300 text-xs">{{ log.source }}</td>
-                <td class="px-6 py-3 text-slate-300 text-xs">{{ log.message }}</td>
+                
+                <!-- Target / Pesan Log -->
+                <td class="px-6 py-3 text-slate-900 text-[11px] font-mono font-bold tracking-tight">{{ log.source }}</td>
+                <td class="px-6 py-3 text-slate-700 text-xs font-mono tracking-tight">{{ log.message }}</td>
               </tr>
             </template>
           </tbody>
@@ -104,15 +124,16 @@
     </div>
 
     <!-- SENTINEL TRIGGER INFINITE / UNLIMITED SCROLL -->
-    <div ref="loadMoreTrigger" class="h-10 w-full flex items-center justify-center text-xs text-slate-500 gap-2">
+    <div ref="loadMoreTrigger" class="h-10 w-full flex items-center justify-center text-[11px] font-medium text-slate-500 gap-2">
       <template v-if="hasMoreToRender">
-        <i class="ph-bold ph-spinner animate-spin text-blue-400 text-base"></i>
-        <span>Memuat baris log berikutnya ({{ displayedLogs.length }} / {{ filteredLogs.length }})...</span>
+        <i class="ph-bold ph-spinner animate-spin text-blue-500 text-lg"></i>
+        <span>Memuat baris log berikutnya (<span class="font-mono font-bold">{{ displayedLogs.length }}</span> / <span class="font-mono">{{ filteredLogs.length }}</span>)...</span>
       </template>
       <template v-else-if="displayedLogs.length > 0">
-        <span>Menampilkan seluruh {{ displayedLogs.length }} baris log.</span>
+        <span>Menampilkan seluruh <span class="font-mono font-bold">{{ displayedLogs.length }}</span> baris log.</span>
       </template>
     </div>
+    
   </div>
 </template>
 
