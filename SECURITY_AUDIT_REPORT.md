@@ -364,3 +364,22 @@ Audit keamanan independen telah dilaksanakan terhadap seluruh basis kode aplikas
 
 ---
 *Laporan ini disusun secara objektif berdasarkan audit statis arsitektur kode sumber untuk meningkatkan postur keamanan aplikasi ProxView.*
+
+*Progres Perbaikan*
+Perbaikan untuk Fase 1: Perbaikan Darurat (Immediate Action) sesuai SECURITY_AUDIT_REPORT.md telah selesai diterapkan:                                                                                                 
+                                                                                                                        
+  ### Ringkasan Perbaikan Fase 1                                                                                                                                                                                        
+  1. Middleware Otentikasi JWT/Cookie & RBAC pada Seluruh Rute /api/* Web (Temuan 1.1)                                                                                                                                   
+      • Menambahkan middleware verifyWebAuth, requireAdmin, dan attachWebUserIfPresent pada authMiddleware.js untuk memverifikasi tanda tangan JWT dari HTTP-Only cookie mox_token serta memeriksa status aktif akun di  
+      database.                                                                                                                                                                                                          
+      • Memperbarui attachMobileUserIfPresent agar mewajibkan otentikasi sesi Web (verifyWebAuth) apabila header Authorization: Bearer tidak disertakan, sehingga endpoint hybrid (/api/incidents*, /api/analytics) tidak
+      lagi dapat diakses tanpa otentikasi.
+      • Memasang verifyWebAuth dan requireAdmin pada seluruh rute Web API di server.js:61-129 (/api/users, /api/targets, /api/system/status, /api/dashboard/summary, /api/proxmox, /api/logs/system, /api/alerts,        
+      /api/settings/cleanup, /api/thresholds, /api/incidents, dan /api/analytics).
+  2. Penghapusan Berkas Berisiko fix-admin.js (Temuan 1.7)
+      • Menghapus berkas skrip reset password teks polos fix-admin.js dari repositori kerja.
+  3. Penguncian Endpoint Pembersihan Log ke Role Admin (Temuan 1.2)
+      • Mengunci rute GET /api/settings/cleanup, PUT /api/settings/cleanup, dan POST /api/settings/cleanup/run di server.js:110-113 menggunakan middleware verifyWebAuth, requireAdmin.
+      • Menambahkan validasi peran Admin secara eksplisit di dalam getCleanupSettings, saveCleanupSettings, dan runManualCleanup pada cleanupController.js, disertai pencatatan jejak audit identitas Admin yang
+      mengeksekusi pembersihan log.
+*Progres Perbaikan*

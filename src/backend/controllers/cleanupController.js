@@ -161,6 +161,13 @@ export const executeScheduledCleanupIfDue = async () => {
 
 // GET /api/settings/cleanup
 export const getCleanupSettings = async (req, res) => {
+    if (!req.user || req.user.role !== 'Admin') {
+        return res.status(403).json({
+            success: false,
+            message: 'Akses ditolak! Hanya role Admin yang diizinkan mengakses pengaturan pembersihan.'
+        });
+    }
+
     try {
         await ensureCleanupSettingsTable();
         const [rows] = await db.query('SELECT * FROM cleanup_settings');
@@ -219,6 +226,13 @@ export const getCleanupSettings = async (req, res) => {
 
 // PUT /api/settings/cleanup
 export const saveCleanupSettings = async (req, res) => {
+    if (!req.user || req.user.role !== 'Admin') {
+        return res.status(403).json({
+            success: false,
+            message: 'Akses ditolak! Hanya role Admin yang diizinkan mengubah pengaturan pembersihan.'
+        });
+    }
+
     try {
         await ensureCleanupSettingsTable();
         const { system_logs, incident_history } = req.body || {};
@@ -256,7 +270,7 @@ export const saveCleanupSettings = async (req, res) => {
 
         await db.query(
             'INSERT INTO system_logs (level, source, message) VALUES (?, ?, ?)',
-            ['INFO', 'CRON CONFIG', 'Pengaturan jadwal cronjob pembersihan otomatis (Log & Riwayat Gangguan) diperbarui.']
+            ['INFO', 'CRON CONFIG', `Pengaturan jadwal cronjob pembersihan otomatis (Log & Riwayat Gangguan) diperbarui oleh Admin '${req.user.username}'.`]
         );
 
         res.json({ success: true, message: 'Pengaturan cronjob pembersihan berhasil disimpan' });
@@ -268,6 +282,13 @@ export const saveCleanupSettings = async (req, res) => {
 
 // POST /api/settings/cleanup/run
 export const runManualCleanup = async (req, res) => {
+    if (!req.user || req.user.role !== 'Admin') {
+        return res.status(403).json({
+            success: false,
+            message: 'Akses ditolak! Hanya role Admin yang diizinkan menjalankan pembersihan log.'
+        });
+    }
+
     try {
         await ensureCleanupSettingsTable();
         const { target, mode } = req.body || {};
@@ -282,10 +303,15 @@ export const runManualCleanup = async (req, res) => {
 
         const deletedCount = await performCleanupByKey(target, effectiveMode, intervalSec, 'MANUAL');
 
-        if (target === 'incident_history') {
+        if (target === 'system_logs') {
             await db.query(
                 'INSERT INTO system_logs (level, source, message) VALUES (?, ?, ?)',
-                ['WARNING', 'CRON CLEANUP', `Pembersihan manual riwayat gangguan dijalankan (${deletedCount} tiket selesai dihapus).`]
+                ['WARNING', 'CRON CLEANUP', `Pembersihan manual Log Sistem dijalankan oleh Admin '${req.user.username}' (${deletedCount} baris dihapus, mode=${effectiveMode}).`]
+            );
+        } else if (target === 'incident_history') {
+            await db.query(
+                'INSERT INTO system_logs (level, source, message) VALUES (?, ?, ?)',
+                ['WARNING', 'CRON CLEANUP', `Pembersihan manual riwayat gangguan dijalankan oleh Admin '${req.user.username}' (${deletedCount} tiket selesai dihapus, mode=${effectiveMode}).`]
             );
         }
 

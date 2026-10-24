@@ -15,7 +15,7 @@ import { getSystemLogs } from './controllers/systemLogController.js';
 import { getNetworkThresholds, saveNetworkThresholds, getProxmoxThresholds, saveProxmoxThresholds, getNetworkCatalog, getProxmoxCatalog } from './controllers/thresholdController.js';
 import { getActiveAlerts, getAlertHistory } from './controllers/mobileAlertController.js';
 import { getTasksLog, getClusterLog, getTaskDetailLog } from './controllers/proxmoxLogController.js';
-import { verifyApiToken, attachMobileUserIfPresent } from './middlewares/authMiddleware.js';
+import { verifyApiToken, verifyWebAuth, requireAdmin, attachWebUserIfPresent, attachMobileUserIfPresent } from './middlewares/authMiddleware.js';
 import { getIncidents, joinIncident, resolveIncident, getAnalytics } from './controllers/incidentController.js';
 import { getCleanupSettings, saveCleanupSettings, runManualCleanup } from './controllers/cleanupController.js';
 import { getDashboardSummary } from './controllers/dashboardController.js';
@@ -60,65 +60,68 @@ app.use('/assets', express.static(path.join(process.cwd(), 'public', 'dist', 'as
 
 // Route Auth (Web)
 app.post('/api/auth/login', login);
-app.post('/api/auth/logout', logout);
+app.post('/api/auth/logout', attachWebUserIfPresent, logout);
+app.get('/api/auth/me', verifyWebAuth, (req, res) => {
+  res.json({ success: true, data: req.user });
+});
 
-// Route Users
-app.get('/api/users', getUsers);
-app.post('/api/users', createUser);
-app.put('/api/users/:id', updateUser);
-app.delete('/api/users/:id', deleteUser);
-app.get('/api/users/:id/token', getToken);          
-app.post('/api/users/:id/token/reset', resetToken);
-app.put('/api/users/:id/toggle-status', toggleUserStatus);
+// Route Users (Khusus Admin)
+app.get('/api/users', verifyWebAuth, requireAdmin, getUsers);
+app.post('/api/users', verifyWebAuth, requireAdmin, createUser);
+app.put('/api/users/:id', verifyWebAuth, requireAdmin, updateUser);
+app.delete('/api/users/:id', verifyWebAuth, requireAdmin, deleteUser);
+app.get('/api/users/:id/token', verifyWebAuth, requireAdmin, getToken);          
+app.post('/api/users/:id/token/reset', verifyWebAuth, requireAdmin, resetToken);
+app.put('/api/users/:id/toggle-status', verifyWebAuth, requireAdmin, toggleUserStatus);
 
 // Route Target Monitoring
-app.get('/api/targets', getTargets);
-app.post('/api/targets', createTarget);
-app.put('/api/targets/:id', updateTarget);
-app.delete('/api/targets/:id', deleteTarget);
-app.put('/api/targets/:id/toggle', toggleTargetStatus);
-app.get('/api/targets/:id/history', getTargetHistory);
+app.get('/api/targets', verifyWebAuth, getTargets);
+app.post('/api/targets', verifyWebAuth, requireAdmin, createTarget);
+app.put('/api/targets/:id', verifyWebAuth, requireAdmin, updateTarget);
+app.delete('/api/targets/:id', verifyWebAuth, requireAdmin, deleteTarget);
+app.put('/api/targets/:id/toggle', verifyWebAuth, requireAdmin, toggleTargetStatus);
+app.get('/api/targets/:id/history', verifyWebAuth, getTargetHistory);
 
 // Route Status Konektivitas Node & Ringkasan Dashboard
-app.get('/api/system/status', getSystemStatus);
-app.get('/api/dashboard/summary', getDashboardSummary);
+app.get('/api/system/status', verifyWebAuth, getSystemStatus);
+app.get('/api/dashboard/summary', verifyWebAuth, getDashboardSummary);
 
 // Route API Proxmox Logs
-app.get('/api/proxmox/logs/tasks', getTasksLog);
-app.get('/api/proxmox/logs/cluster', getClusterLog);
-app.get('/api/proxmox/logs/task-detail', getTaskDetailLog);
+app.get('/api/proxmox/logs/tasks', verifyWebAuth, getTasksLog);
+app.get('/api/proxmox/logs/cluster', verifyWebAuth, getClusterLog);
+app.get('/api/proxmox/logs/task-detail', verifyWebAuth, getTaskDetailLog);
 
 // Route API Proxmox (Node Config & Metrik)
-app.get('/api/proxmox', getProxmoxNodes);
-app.post('/api/proxmox', createProxmoxNode);
-app.put('/api/proxmox/:id', updateProxmoxNode);
-app.delete('/api/proxmox/:id', deleteProxmoxNode);
-app.post('/api/proxmox/:id/test', testProxmoxConnection);
-app.get('/api/proxmox/:id/resources', getProxmoxResources);
-app.get('/api/proxmox/:id/status', getProxmoxNodeStatus);
+app.get('/api/proxmox', verifyWebAuth, getProxmoxNodes);
+app.post('/api/proxmox', verifyWebAuth, requireAdmin, createProxmoxNode);
+app.put('/api/proxmox/:id', verifyWebAuth, requireAdmin, updateProxmoxNode);
+app.delete('/api/proxmox/:id', verifyWebAuth, requireAdmin, deleteProxmoxNode);
+app.post('/api/proxmox/:id/test', verifyWebAuth, requireAdmin, testProxmoxConnection);
+app.get('/api/proxmox/:id/resources', verifyWebAuth, getProxmoxResources);
+app.get('/api/proxmox/:id/status', verifyWebAuth, getProxmoxNodeStatus);
 
 // Route API System Log (Internal)
-app.get('/api/logs/system', getSystemLogs);
+app.get('/api/logs/system', verifyWebAuth, getSystemLogs);
 
 // Route Notifikasi Gangguan Aktif & Riwayat (Dashboard Web)
-app.get('/api/alerts/active', getActiveAlerts);
-app.get('/api/alerts/history', getAlertHistory);
+app.get('/api/alerts/active', verifyWebAuth, getActiveAlerts);
+app.get('/api/alerts/history', verifyWebAuth, getAlertHistory);
 
-// Route Pengaturan Cronjob Pembersihan Otomatis (Log & Riwayat Gangguan)
-app.get('/api/settings/cleanup', getCleanupSettings);
-app.put('/api/settings/cleanup', saveCleanupSettings);
-app.post('/api/settings/cleanup/run', runManualCleanup);
+// Route Pengaturan Cronjob Pembersihan Otomatis (Log & Riwayat Gangguan) - Dikunci khusus Admin
+app.get('/api/settings/cleanup', verifyWebAuth, requireAdmin, getCleanupSettings);
+app.put('/api/settings/cleanup', verifyWebAuth, requireAdmin, saveCleanupSettings);
+app.post('/api/settings/cleanup/run', verifyWebAuth, requireAdmin, runManualCleanup);
 
 // Route Threshold Network & Proxmox
-app.get('/api/thresholds/network/catalog', getNetworkCatalog);
-app.get('/api/thresholds/network', getNetworkThresholds);
-app.put('/api/thresholds/network', saveNetworkThresholds);
+app.get('/api/thresholds/network/catalog', verifyWebAuth, getNetworkCatalog);
+app.get('/api/thresholds/network', verifyWebAuth, getNetworkThresholds);
+app.put('/api/thresholds/network', verifyWebAuth, requireAdmin, saveNetworkThresholds);
 
-app.get('/api/thresholds/proxmox/catalog', getProxmoxCatalog);
-app.get('/api/thresholds/proxmox', getProxmoxThresholds);
-app.put('/api/thresholds/proxmox', saveProxmoxThresholds);
+app.get('/api/thresholds/proxmox/catalog', verifyWebAuth, getProxmoxCatalog);
+app.get('/api/thresholds/proxmox', verifyWebAuth, getProxmoxThresholds);
+app.put('/api/thresholds/proxmox', verifyWebAuth, requireAdmin, saveProxmoxThresholds);
 
-// Route Insiden & Analitik SLA (Mendukung Web maupun Bearer Token Mobile via attachMobileUserIfPresent)
+// Route Insiden & Analitik SLA (Mendukung Web Cookie maupun Bearer Token Mobile via attachMobileUserIfPresent)
 app.get('/api/incidents', attachMobileUserIfPresent, getIncidents);
 app.get('/api/analytics', attachMobileUserIfPresent, getAnalytics);
 app.post('/api/incidents/join', attachMobileUserIfPresent, joinIncident);

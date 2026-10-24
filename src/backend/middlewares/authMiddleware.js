@@ -1,6 +1,84 @@
+import jwt from 'jsonwebtoken';
 import db from '../config/database.js';
 import { getTokenExpiryMs } from '../config/timezone.js';
 
+// ==========================================
+// 1. MIDDLEWARE OTENTIKASI WEB (JWT COOKIE)
+// ==========================================
+export const verifyWebAuth = async (req, res, next) => {
+    const token = req.cookies?.mox_token;
+
+    if (!token) {
+        return res.status(401).json({
+            success: false,
+            message: 'Akses ditolak. Sesi otentikasi tidak ditemukan, silakan login kembali.'
+        });
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        const [users] = await db.query(
+            'SELECT id, name, username, role, is_active FROM users WHERE id = ? LIMIT 1',
+            [decoded.id]
+        );
+
+        if (users.length === 0) {
+            return res.status(401).json({
+                success: false,
+                message: 'Sesi tidak valid. Pengguna tidak ditemukan.'
+            });
+        }
+
+        const user = users[0];
+
+        if (!user.is_active) {
+            return res.status(403).json({
+                success: false,
+                message: 'Akses ditolak. Akun Anda telah dinonaktifkan oleh Admin.'
+            });
+        }
+
+        req.user = user;
+        next();
+    } catch (error) {
+        return res.status(401).json({
+            success: false,
+            message: 'Sesi Anda telah berakhir atau token tidak valid. Silakan login kembali.'
+        });
+    }
+};
+
+// ==========================================
+// 2. MIDDLEWARE OTORISASI ROLE ADMIN (RBAC)
+// ==========================================
+export const requireAdmin = (req, res, next) => {
+    if (!req.user || req.user.role !== 'Admin') {
+        return res.status(403).json({
+            success: false,
+            message: 'Akses ditolak! Hanya role Admin yang diizinkan mengakses endpoint ini.'
+        });
+    }
+    next();
+};
+
+// Helper opsional untuk melampirkan user dari cookie JWT jika ada (misal pada endpoint logout)
+export const attachWebUserIfPresent = async (req, res, next) => {
+    const token = req.cookies?.mox_token;
+    if (!token) return next();
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+    } catch {
+        // Abaikan jika token sudah kadaluarsa saat proses logout
+    }
+    next();
+};
+
+// ==========================================
+// 3. MIDDLEWARE OTENTIKASI MOBILE (BEARER TOKEN)
+// ==========================================
 export const verifyApiToken = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     
@@ -62,11 +140,11 @@ export const verifyApiToken = async (req, res, next) => {
 };
 
 // Middleware Hybrid: Jika request menyertakan Bearer Token (misal dari aplikasi Mobile ke endpoint umum),
-// validasi token tersebut dan isi req.user. Jika tidak ada header Bearer, lanjutkan (untuk Web).
+// validasi token tersebut via verifyApiToken. Jika tidak ada header Bearer, wajibkan otentikasi sesi Web (verifyWebAuth).
 export const attachMobileUserIfPresent = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
         return verifyApiToken(req, res, next);
     }
-    next();
+    return verifyWebAuth(req, res, next);
 };
