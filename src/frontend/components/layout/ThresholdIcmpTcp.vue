@@ -511,28 +511,20 @@
     <!-- ========================================== -->
     <!-- TOAST NOTIFICATION                         -->
     <!-- ========================================== -->
-    <Teleport to="body">
-      <div v-if="toast.show" class="fixed top-8 right-8 z-[1100] w-[400px] bg-white border border-slate-200 shadow-xl rounded-xl p-4 flex gap-4 animate-slide-in font-sans">
-        <div class="flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center border" :class="toast.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-rose-50 border-rose-100 text-rose-600'">
-          <i class="text-xl ph-bold" :class="toast.type === 'success' ? 'ph-check-circle' : 'ph-warning-circle'"></i>
-        </div>
-        <div class="flex-1">
-          <div class="flex justify-between items-start">
-            <h3 class="text-slate-900 font-bold text-sm leading-none mb-1.5">{{ toast.title }}</h3>
-            <button @click="toast.show = false" class="text-slate-400 hover:text-slate-600 transition">
-              <i class="ph-bold ph-x text-sm"></i>
-            </button>
-          </div>
-          <p class="text-slate-600 text-xs font-medium leading-relaxed">{{ toast.message }}</p>
-        </div>
-      </div>
-    </Teleport>
+    <ToastNotification
+      :show="toast.show"
+      :type="toast.type"
+      :title="toast.title"
+      :message="toast.message"
+      @close="toast.show = false"
+    />
 
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import ToastNotification from '@/components/common/ToastNotification.vue';
 
 const networkTargets = ref([]);
 const catalogTargets = ref([]); // Data mentah katalog dari API

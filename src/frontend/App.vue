@@ -28,47 +28,37 @@
   <div class="hidden md:block relative font-sans">
     
     <!-- TOAST SUCCESS LOGIN -->
-    <Teleport to="body">
-      <div v-if="showSuccessToast" class="fixed top-8 right-8 z-[1100] w-[400px] bg-white border border-slate-200 rounded-xl shadow-xl p-4 flex gap-4 animate-slide-in font-sans">
-        <div class="flex-shrink-0 w-10 h-10 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center">
-          <i class="ph-bold ph-check-circle text-xl"></i>
-        </div>
-        <div class="flex-1">
-          <div class="flex justify-between items-start">
-            <h3 class="text-slate-900 font-bold text-sm leading-none mb-1.5">Login Berhasil!</h3>
-            <button @click="showSuccessToast = false" class="text-slate-400 hover:text-slate-600 transition">
-              <i class="ph-bold ph-x text-sm"></i>
-            </button>
-          </div>
-          <p class="text-slate-600 font-medium text-xs leading-relaxed mb-1">
-            Selamat datang kembali, <span class="font-bold text-slate-900">{{ userName }}</span>.
-          </p>
-          <p class="text-slate-600 font-medium text-xs leading-relaxed">
-            Sesi otentikasi aktif untuk role <span class="text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.5 rounded-md font-mono tracking-tight font-bold text-[10px] uppercase ml-0.5">{{ userRole }}</span>.
-          </p>
-        </div>
-      </div>
-    </Teleport>
+    <ToastNotification
+      :show="showSuccessToast"
+      type="success"
+      title="Login Berhasil!"
+      @close="showSuccessToast = false"
+    >
+      <p class="text-slate-600 font-medium text-xs leading-relaxed mb-1">
+        Selamat datang kembali, <span class="font-bold text-slate-900">{{ userName }}</span>.
+      </p>
+      <p class="text-slate-600 font-medium text-xs leading-relaxed">
+        Sesi otentikasi aktif untuk role <span class="text-emerald-700 bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.5 rounded-md font-mono tracking-tight font-bold text-[10px] uppercase ml-0.5">{{ userRole }}</span>.
+      </p>
+    </ToastNotification>
 
     <!-- TOAST LOGOUT -->
-    <Teleport to="body">
-      <div v-if="showLogoutToast" class="fixed top-8 right-8 z-[1100] w-[400px] bg-white border border-slate-200 rounded-xl shadow-xl p-4 flex gap-4 animate-slide-in font-sans">
-        <div class="flex-shrink-0 w-10 h-10 bg-slate-50 border border-slate-200 text-slate-600 rounded-lg flex items-center justify-center">
-          <i class="ph-bold ph-sign-out text-xl"></i>
-        </div>
-        <div class="flex-1">
-          <div class="flex justify-between items-start">
-            <h3 class="text-slate-900 font-bold text-sm leading-none mb-1.5">Sesi Telah Ditutup</h3>
-            <button @click="showLogoutToast = false" class="text-slate-400 hover:text-slate-600 transition">
-              <i class="ph-bold ph-x text-sm"></i>
-            </button>
-          </div>
-          <p class="text-slate-600 font-medium text-xs leading-relaxed">
-            Token sesi Anda telah berhasil dihapus. Sampai jumpa kembali di konsol monitoring.
-          </p>
-        </div>
-      </div>
-    </Teleport>
+    <ToastNotification
+      :show="showLogoutToast"
+      type="logout"
+      title="Sesi Telah Ditutup"
+      message="Token sesi Anda telah berhasil dihapus. Sampai jumpa kembali di konsol monitoring."
+      @close="showLogoutToast = false"
+    />
+
+    <!-- TOAST NOTIFIKASI GLOBAL -->
+    <ToastNotification
+      :show="globalToast.show"
+      :type="globalToast.type"
+      :title="globalToast.title"
+      :message="globalToast.message"
+      @close="hideGlobalToast"
+    />
 
     <!-- MODAL POP-UP TIMEOUT (Custom Alert) -->
     <Teleport to="body">
@@ -113,6 +103,8 @@ import { useRoute, useRouter } from 'vue-router';
 
 import Sidebar from '@/components/layout/Sidebar.vue';
 import Navbar from '@/components/layout/Navbar.vue';
+import ToastNotification from '@/components/common/ToastNotification.vue';
+import { globalToast, hideGlobalToast } from '@/utils/toast.js';
 
 const route = useRoute();
 const router = useRouter();

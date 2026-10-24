@@ -515,29 +515,20 @@
     <!-- ========================================== -->
     <!-- CUSTOM TOAST NOTIFICATION                  -->
     <!-- ========================================== -->
-    <Teleport to="body">
-      <div v-if="toast.show" class="fixed top-8 right-8 z-[1100] w-[400px] bg-white border border-slate-200 shadow-xl rounded-xl p-4 flex gap-4 animate-slide-in font-sans">
-        <div 
-          class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border"
-          :class="toast.type === 'success' ? 'bg-emerald-50 border-emerald-100 text-emerald-500' : 'bg-rose-50 border-rose-100 text-rose-500'"
-        >
-          <i :class="toast.type === 'success' ? 'ph-fill ph-check-circle' : 'ph-fill ph-x-circle'" class="text-2xl"></i>
-        </div>
-        <div class="flex-1">
-          <h4 class="text-sm font-bold text-slate-900">{{ toast.title }}</h4>
-          <p class="text-xs font-medium text-slate-500 mt-1 leading-relaxed">{{ toast.message }}</p>
-        </div>
-        <button @click="toast.show = false" class="text-slate-400 hover:text-slate-700 self-start">
-          <i class="ph-bold ph-x text-sm"></i>
-        </button>
-      </div>
-    </Teleport>
+    <ToastNotification
+      :show="toast.show"
+      :type="toast.type"
+      :title="toast.title"
+      :message="toast.message"
+      @close="toast.show = false"
+    />
 
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import ToastNotification from '@/components/common/ToastNotification.vue';
 
 const monitoredTargets = ref([]);
 const liveCatalog = ref([]); // Menampung hasil scrape dari Live API
